@@ -1,3 +1,3 @@
-marlin
-pio_venv
-*workspace
+*
+!makefile
+!README.md
