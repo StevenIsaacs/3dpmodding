@@ -18,7 +18,7 @@
 #
 # Two Python virtual environments are used. One for ed-oscad (installed
 # by ed-oscad) and the other for Platformio. These are separate environments
-# to eliminate the risk of version conflict.
+# to reduce the risk of version conflict and cross-contanimation.
 #-
 
 ifndef project_mk
@@ -29,24 +29,51 @@ $(info Goal: ${MAKECMDGOALS})
 project_dir = $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 $(info project_dir: $(project_dir))
 
-define USAGE
-Usage: "make <target>"
-<target> A single target.
+define Usage
+Usage: "make MOD=<mod> <target>"
+MOD=<mod>     Which mod to build.
+<target>      A single target. This defaults to display this help.
 Possible targets:
-    all       All assembly files are processed and .stl and .png files
-              produced (default).
+    all       The firmware is built and all assembly files are processed
+              to generate the 3D printable parts.
     firmware  Build the printer firmware only.
     parts     3D printable parts only.
-    clean	  Remove the dependency files and the output files.
-    help	  Display this help message (default).
+    clean     Remove the dependency files and the output files.
+    help      Display this help message (default).
     show-<variable>
               This is a special target which can be used to display
               any makefile variable and exit.
 endef
 
-export USAGE
+export Usage
 help:
-	@echo "$$USAGE"
+	@echo "$$Usage"
+
+MOD = target_mod
+ModDir = $(realpath $(MOD))
+ifeq ($(ModDir),)
+  ifneq ($(MOD),target_mod)
+    $(error MOD directory does not exist)
+  else
+    $(error MOD has not been specified. Use 'make MOD=<mod> <target>')
+  endif
+endif
+
+ifneq ($(MOD),target_mod)
+  $(info Creating MOD symlink)
+  $(info MOD=$(MOD))
+  $(info ModDir=$(ModDir))
+  $(shell rm -f target_mod)
+  $(shell ln -s $(ModDir) target_mod)
+endif
+
+$(info Processing $(MOD))
+
+include options.mk
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Marlin firmware
+#----------------------------------------------------------------------------
 
 #+
 # Python virtual environment requirements needed to run PlatformIO.
@@ -58,7 +85,7 @@ PioVenvPackageDir = \
   $(PioVirtualEnvDir)/lib/python$(PioPythonVersion)/site-packages
 
 $(PioPythonBin):
-	python3 -m venv --copies ./$(PioVirtualEnvDir)
+	python$(PioPythonVersion) -m venv --copies ./$(PioVirtualEnvDir)
 
 PioVenvRequirements = \
   $(PioPythonBin) \
@@ -81,19 +108,26 @@ $(PioVenvPackageDir)/platformio/__init__.py:
 #-
 PlatformIoRequirements = $(PioVenvRequirements)
 
-#+
-# For custom Marlin mods.
-#-
-MARLIN_REPO = git@github.com:StevenIsaacs/Marlin.git
-MARLIN_BRANCH = ed
-MARLIN_DIR = marlin
+MarlinBuildDir = $(MARLIN_DIR)/.pio/build
+
 MarlinInstallFile = $(MARLIN_DIR)/README.md
-MarlinModFiles = \
-  $(MARLIN_DIR)/makefile
+
+MarlinConfigInstallFile = $(MARLIN_CONFIG_DIR)/README.md
 
 $(MarlinInstallFile):
-	git clone $(MARLIN_REPO) $(MARLIN_DIR)
+	git clone $(MARLIN_REPO) $(MARLIN_DIR); \
+	cd $(MARLIN_DIR); \
 	git checkout $(MARLIN_BRANCH)
+
+$(MarlinConfigInstallFile):
+	git clone $(MARLIN_CONFIG_REPO) $(MARLIN_CONFIG_DIR); \
+	cd $(MARLIN_CONFIG_DIR); \
+	git checkout $(MARLIN_BRANCH)
+
+MarlinDeps = \
+  $(PlatformIoRequirements) \
+  $(MarlinInstallFile) \
+  $(MarlinConfigInstallFile)
 
 .PHONY: pio_python
 pio_python: $(PioVenvRequirements)
@@ -105,40 +139,38 @@ pio_python: $(PioVenvRequirements)
 	)
 
 .PHONY: marlin
-marlin: \
-  $(PlatformIoRequirements) \
-  $(MarlinInstallFile) \
-  $(MarlinModFiles)
+marlin: $(MarlinDeps)
 
 #+
 # The custom modded Marlin firmware.
+# The prefix for mod specific files is TX5SAPM_.
 #-
-TronxyX5saProBin = $(MARLIN_DIR)/.pio/build/chitu_f103/update.cbd
+MarlinModDir = $(MOD)
 
-$(TronxyX5saProBin): \
-  $(PlatformIoRequirements) \
-  $(MarlinInstallFile) \
-  $(MarlinModFiles)
-	. $(PioVirtualEnvDir)/bin/activate; \
-	cd $(MARLIN_DIR); \
-	platformio run -e $(X5saBoard); \
-	deactivate
-
-firmware: $(TronxyX5saProBin)
+-include $(MarlinModDir)/marlin_mod.mk
 
 #+
-# Custom 3D printed parts.
-#
-# NOTE: ed-oscad supports multiple models. It may be more convenient to
-# install ed-oscad in a different location than within this directory. If
-# so then simply reference that other location using ED_OSCAD_DIR.
-#
-# The default assumes ed-oscad is installed with the intent of working with
-# multiple models.
+# All the files maintained for this mod.
 #-
-ED_OSCAD_REPO = git@bitbucket.org:StevenIsaacs/ed-oscad.git
-ED_OSCAD_DIR = ../ed-oscad
-ED_OSCAD_BRANCH = dev
+MarlinModFiles = $(shell find $(MarlinModDir)/Marlin -type f)
+
+#+
+# To build Marlin using the mod files.
+#-
+$(MARLIN_MOD_BIN): $(MarlinDeps) $(MarlinModFiles)
+	cd $(MARLIN_DIR); git checkout .
+	cp -r $(MarlinModDir)/Marlin/* $(MARLIN_DIR)/Marlin
+	. $(PioVirtualEnvDir)/bin/activate; \
+	cd $(MARLIN_DIR); \
+	platformio run -e $(MARLIN_MOD_BOARD); \
+	deactivate
+
+firmware: $(MARLIN_MOD_BIN)
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Custom 3D printed parts.
+#----------------------------------------------------------------------------
+
 EdOscadInstallFile = $(ED_OSCAD_DIR)/README.md
 
 $(EdOscadInstallFile):
@@ -148,14 +180,19 @@ $(EdOscadInstallFile):
 .PHONY: ed-oscad
 ed-oscad: $(EdOscadInstallFile)
 
-TronxyX5saProModel = tronxy_x5sa_p
-
 # 3D printable parts.
 .PHONY: parts
 parts: $(EdOscadInstallFile)
 	cd $(ED_OSCAD_DIR); \
-	$(MAKE) MODEL=$(TronxyX5saProModel)
+	$(MAKE) MODEL=$(MOD_MODEL)
 
-all: $(TronxyX5saProBin) parts
+all: $(MARLIN_MOD_BIN) parts
+
+# Display the value of any variable.
+show-%:
+	@echo '$*=$($*)'
+
+clean:
+	rm -rf $(MarlinBuildDir)/$(MARLIN_MOD_BOARD)
 
 endif
