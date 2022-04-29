@@ -26,12 +26,16 @@ project_mk = tronxy-x5sa-project
 
 $(info Goal: ${MAKECMDGOALS})
 
-project_dir = $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
-$(info project_dir: $(project_dir))
+project_dir = $(dir $(realpath $(firstword ${MAKEFILE_LIST})))
+$(info project_dir: ${project_dir})
 
-define Usage
-Usage: "make MOD=<mod> <target>"
-MOD=<mod>     Which mod to build.
+define Mod3dpUsage
+Usage: "make [MOD=<mod>] [MODEL_TARGET=<ed-oscad-target>] <target>"
+MOD=<mod>     Which mod to build. Defaults to the active_mod symlink. This
+              must be used the first time and then will be optional.
+MODEL_TARGET=<ed-oscad-target>
+              An optional target for ed-oscad. Use ed-oscad-help for more
+              information.
 <target>      A single target. This defaults to display this help.
 Possible targets:
     all       The firmware is built and all assembly files are processed
@@ -40,36 +44,46 @@ Possible targets:
     parts     3D printable parts only.
     clean     Remove the dependency files and the output files.
     help      Display this help message (default).
+    ed-oscad-help
+              Display the ed-oscad help.
     show-<variable>
               This is a special target which can be used to display
               any makefile variable and exit.
 endef
 
-export Usage
+export Mod3dpUsage
 help:
-	@echo "$$Usage"
+	@echo "$$Mod3dpUsage"
 
-MOD = target_mod
-ModDir = $(realpath $(MOD))
-ifeq ($(ModDir),)
-  ifneq ($(MOD),target_mod)
+include options.mk
+
+# For downloaded files.
+DOWNLOADS_DIR = $(realpath downloads)
+OS_IMAGE_DIR = $(realpath os_images)
+
+# Which mod to build.
+MOD = active_mod
+MOD_DIR = $(realpath ${MODS_DIR}/${MOD})
+ifeq (${MOD_DIR},)
+  ifneq (${MOD},active_mod)
     $(error MOD directory does not exist)
   else
+    $(info ${Mod3dpUsage})
     $(error MOD has not been specified. Use 'make MOD=<mod> <target>')
   endif
 endif
 
-ifneq ($(MOD),target_mod)
+# A symlink is used so it is not necessary to specify the MOD on the
+# command line every time.
+ifneq (${MOD},active_mod)
   $(info Creating MOD symlink)
-  $(info MOD=$(MOD))
-  $(info ModDir=$(ModDir))
-  $(shell rm -f target_mod)
-  $(shell ln -s $(ModDir) target_mod)
+  $(info MOD=${MOD})
+  $(info MOD_DIR=${MODS_DIR}/${MOD_DIR})
+  $(shell rm -f ${MODS_DIR}/active_mod)
+  $(shell ln -s ${MOD_DIR} ${MODS_DIR}/active_mod)
 endif
 
-$(info Processing $(MOD))
-
-include options.mk
+$(info Processing ${MOD})
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Marlin firmware
@@ -80,119 +94,124 @@ include options.mk
 #-
 PioPythonVersion = 3.8
 PioVirtualEnvDir = pio_venv
-PioPythonBin = $(PioVirtualEnvDir)/bin/python3
+PioPythonBin = ${PioVirtualEnvDir}/bin/python3
 PioVenvPackageDir = \
-  $(PioVirtualEnvDir)/lib/python$(PioPythonVersion)/site-packages
+  ${PioVirtualEnvDir}/lib/python${PioPythonVersion}/site-packages
 
-$(PioPythonBin):
-	python$(PioPythonVersion) -m venv --copies ./$(PioVirtualEnvDir)
+${PioPythonBin}:
+	python${PioPythonVersion} -m venv --copies ./${PioVirtualEnvDir}
 
 PioVenvRequirements = \
-  $(PioPythonBin) \
-  $(PioVenvPackageDir)/platformio/__init__.py
+  ${PioPythonBin} \
+  ${PioVenvPackageDir}/platformio/__init__.py
 
 define PioInstallPythonPackage =
 $(info ++++++++++++)
 $(info PioInstallPythonPackage $1)
 	( \
-	  . $(PioVirtualEnvDir)/bin/activate; \
+	  . ${PioVirtualEnvDir}/bin/activate; \
 	  pip3 install $1; \
 	)
 endef
 
-$(PioVenvPackageDir)/platformio/__init__.py:
+${PioVenvPackageDir}/platformio/__init__.py:
 	$(call PioInstallPythonPackage, platformio)
 
 #+
 # For Platformio which is used to build the Marlin firmware.
 #-
-PlatformIoRequirements = $(PioVenvRequirements)
+PlatformIoRequirements = ${PioVenvRequirements}
 
-MarlinBuildDir = $(MARLIN_DIR)/.pio/build
+MarlinBuildDir = ${MARLIN_DIR}/.pio/build
 
-MarlinInstallFile = $(MARLIN_DIR)/README.md
+MarlinInstallFile = ${MARLIN_DIR}/README.md
 
-MarlinConfigInstallFile = $(MARLIN_CONFIG_DIR)/README.md
+MarlinConfigInstallFile = ${MARLIN_CONFIG_DIR}/README.md
 
-$(MarlinInstallFile):
-	git clone $(MARLIN_REPO) $(MARLIN_DIR); \
-	cd $(MARLIN_DIR); \
-	git checkout $(MARLIN_BRANCH)
+${MarlinInstallFile}:
+	git clone ${MARLIN_REPO} ${MARLIN_DIR}; \
+	cd ${MARLIN_DIR}; \
+	git checkout ${MARLIN_BRANCH}
 
 $(MarlinConfigInstallFile):
-	git clone $(MARLIN_CONFIG_REPO) $(MARLIN_CONFIG_DIR); \
-	cd $(MARLIN_CONFIG_DIR); \
-	git checkout $(MARLIN_BRANCH)
+	git clone ${MARLIN_CONFIG_REPO} ${MARLIN_CONFIG_DIR}; \
+	cd ${MARLIN_CONFIG_DIR}; \
+	git checkout ${MARLIN_BRANCH}
 
 MarlinDeps = \
-  $(PlatformIoRequirements) \
-  $(MarlinInstallFile) \
+  ${PlatformIoRequirements} \
+  ${MarlinInstallFile} \
   $(MarlinConfigInstallFile)
 
 .PHONY: pio_python
-pio_python: $(PioVenvRequirements)
+pio_python: ${PioVenvRequirements}
 	( \
-	. $(PioVirtualEnvDir)/bin/activate; \
+	. ${PioVirtualEnvDir}/bin/activate; \
 	cd ${MARLIN_DIR}; \
 	python; \
 	deactivate; \
 	)
 
 .PHONY: marlin
-marlin: $(MarlinDeps)
+marlin: ${MarlinDeps}
 
-#+
-# The custom modded Marlin firmware.
-# The prefix for mod specific files is TX5SAPM_.
-#-
-MarlinModDir = $(MOD)
-
--include $(MarlinModDir)/marlin_mod.mk
+-include ${MOD_DIR}/mod.mk
 
 #+
 # All the files maintained for this mod.
 #-
-MarlinModFiles = $(shell find $(MarlinModDir)/Marlin -type f)
+MarlinModFiles = $(shell find ${MOD_DIR}/Marlin -type f)
 
 #+
 # To build Marlin using the mod files.
+# NOTE: The mod directory structure is expected to match the Marlin
+# directory structure.
 #-
-$(MARLIN_MOD_BIN): $(MarlinDeps) $(MarlinModFiles)
-	cd $(MARLIN_DIR); git checkout .
-	cp -r $(MarlinModDir)/Marlin/* $(MARLIN_DIR)/Marlin
-	. $(PioVirtualEnvDir)/bin/activate; \
-	cd $(MARLIN_DIR); \
-	platformio run -e $(MARLIN_MOD_BOARD); \
+${MARLIN_MOD_BIN}: ${MarlinDeps} ${MarlinModFiles}
+	cd ${MARLIN_DIR}; git checkout .
+	cp -r ${MOD_DIR}/Marlin/* ${MARLIN_DIR}/Marlin
+	. ${PioVirtualEnvDir}/bin/activate; \
+	cd ${MARLIN_DIR}; \
+	platformio run -e ${MARLIN_MOD_BOARD}; \
 	deactivate
 
-firmware: $(MARLIN_MOD_BIN)
+firmware: ${MARLIN_MOD_BIN}
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Custom 3D printed parts.
 #----------------------------------------------------------------------------
 
-EdOscadInstallFile = $(ED_OSCAD_DIR)/README.md
+EdOscadInstallFile = ${ED_OSCAD_DIR}/README.md
 
-$(EdOscadInstallFile):
-	git clone $(ED_OSCAD_REPO) $(ED_OSCAD_DIR)
-	git checkout $(ED_OSCAD_BRANCH)
+${EdOscadInstallFile}:
+	git clone ${ED_OSCAD_REPO} ${ED_OSCAD_DIR}
+	cd ${ED_OSCAD_DIR}; git checkout ${ED_OSCAD_BRANCH}
 
 .PHONY: ed-oscad
-ed-oscad: $(EdOscadInstallFile)
+ed-oscad: ${EdOscadInstallFile}
+
+.PHONY: ed-oscad-help
+ed-oscad-help: ${EdOscadInstallFile}
+	cd ${ED_OSCAD_DIR}; make help
 
 # 3D printable parts.
 .PHONY: parts
-parts: $(EdOscadInstallFile)
-	cd $(ED_OSCAD_DIR); \
-	$(MAKE) MODEL=$(MOD_MODEL)
+parts: ${EdOscadInstallFile}
+	cd ${ED_OSCAD_DIR}; \
+	${MAKE} MODEL_DIR=${MOD_DIR}/model ${MODEL_OPTIONS} ${MODEL_TARGET}
 
-all: $(MARLIN_MOD_BIN) parts
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# The entire project.
+#----------------------------------------------------------------------------
+
+all: ${MARLIN_MOD_BIN} ${MOD_DEPS} parts
 
 # Display the value of any variable.
 show-%:
 	@echo '$*=$($*)'
 
 clean:
-	rm -rf $(MarlinBuildDir)/$(MARLIN_MOD_BOARD)
+	cd ${MARLIN_DIR}; git checkout .
+	rm -rf ${MarlinBuildDir}/${MARLIN_MOD_BOARD}
 
 endif
