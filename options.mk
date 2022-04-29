@@ -6,13 +6,13 @@
 #+
 # Installing the 3D printer mods.
 #-
-# MODS_DEV = YES
+MODS_DEV = YES
 ifeq (${MODS_DEV},YES)
   MODS_REPO = git@github.com:StevenIsaacs/3dpmods.git
   MODS_BRANCH = dev
   MODS_DIR = 3dpmods-dev
 else
-  MODS_REPO = git@github.com:StevenIsaacs/3dpmods.git
+  MODS_REPO = https://github.com:StevenIsaacs/3dpmods.git
   MODS_BRANCH = release/0.0.1
   MODS_DIR = 3dpmods
 endif
@@ -48,7 +48,7 @@ endif
 ED_OSCAD_DEV=YES
 ifeq (${ED_OSCAD_DEV},YES)
   ED_OSCAD_REPO = git@bitbucket.org:StevenIsaacs/ed-oscad.git
-  ED_OSCAD_DIR = ed-oscad
+  ED_OSCAD_DIR = ed-oscad-dev
   ED_OSCAD_BRANCH = dev
 else
   ED_OSCAD_REPO = https://bitbucket.org/StevenIsaacs/ed-oscad.git

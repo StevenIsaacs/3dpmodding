@@ -61,6 +61,22 @@ include options.mk
 DOWNLOADS_DIR = $(realpath downloads)
 OS_IMAGE_DIR = $(realpath os_images)
 
+# Install the mods repo if it doesn't exist.
+# NOT using dependencies because this is always needed.
+ifeq ($(realpath ${MODS_DIR}),)
+  $(info Cloning ${MODS_REPO})
+  r = $(shell git clone ${MODS_REPO} ${MODS_DIR})
+  $(info r=${r} status=$(.SHELLSTATUS))
+  ifneq ($(.SHELLSTATUS),0)
+    $(error Could not clone ${MODS_REPO})
+  endif
+  $(info Checking out ${MODS_BRANCH})
+  r = $(shell cd ${MODS_DIR}; git checkout ${MODS_BRANCH})
+  $(info r=${r} status=$(.SHELLSTATUS))
+  ifneq ($(.SHELLSTATUS),0)
+    $(error Could not set MODS branch to ${MODS_BRANCH})
+  endif
+endif
 # Which mod to build.
 MOD = active_mod
 MOD_DIR = $(realpath ${MODS_DIR}/${MOD})
