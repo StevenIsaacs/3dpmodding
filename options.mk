@@ -1,7 +1,16 @@
 #+
-# Modify this file to suite your needs. Using this file it should not be
-# necessary to modify the makefile.
+# Override these on the make command line as needed. Using overrides it should
+# not be necessary to modify the makefile.
 #-
+
+# Where various tools are downloaded and installed.
+# NOTE: This directory is in .gitignore.
+$(shell mkdir -p tools)
+TOOLS_DIR = $(realpath tools)
+
+# For downloaded files.
+DOWNLOADS_DIR = ${TOOLS_DIR}/downloads
+OS_IMAGE_DIR = ${TOOLS_DIR}/os_images
 
 #+
 # Installing the 3D printer mods.
@@ -19,20 +28,23 @@ endif
 
 #+
 # For custom Marlin mods.
+#
+# The Marlin configurations are installed to serve as starting points
+# for new mods or for comparison with existing mods.
 #-
 # MARLIN_DEV = YES
 ifeq (${MARLIN_DEV},YES)
   MARLIN_REPO = git@github.com:StevenIsaacs/Marlin.git
-  MARLIN_BRANCH = tronxy-x5sa-pro-mod
-  MARLIN_DIR = marlin-dev
+  MARLIN_BRANCH = dev
+  MARLIN_DIR = ${TOOLS_DIR}/marlin-dev
   MARLIN_CONFIG_REPO = git@github.com:StevenIsaacs/Configurations.git
-  MARLIN_CONFIG_DIR = marlin-configs-dev
+  MARLIN_CONFIG_DIR = ${TOOLS_DIR}/marlin-configs-dev
 else
   MARLIN_REPO = https://github.com/MarlinFirmware/Marlin.git
   MARLIN_BRANCH = bugfix-2.0.x
-  MARLIN_DIR = marlin
+  MARLIN_DIR = ${TOOLS_DIR}/marlin
   MARLIN_CONFIG_REPO = https://github.com/MarlinFirmware/Configurations.git
-  MARLIN_CONFIG_DIR = marlin-configs
+  MARLIN_CONFIG_DIR = ${TOOLS_DIR}/marlin-configs
 endif
 
 #+
@@ -48,10 +60,10 @@ endif
 ED_OSCAD_DEV=YES
 ifeq (${ED_OSCAD_DEV},YES)
   ED_OSCAD_REPO = git@bitbucket.org:StevenIsaacs/ed-oscad.git
-  ED_OSCAD_DIR = ed-oscad-dev
+  ED_OSCAD_DIR = ${TOOLS_DIR}/ed-oscad-dev
   ED_OSCAD_BRANCH = dev
 else
   ED_OSCAD_REPO = https://bitbucket.org/StevenIsaacs/ed-oscad.git
-  ED_OSCAD_DIR = ed-oscad
+  ED_OSCAD_DIR = ${TOOLS_DIR}/ed-oscad
   ED_OSCAD_BRANCH = release/0.0.1
 endif
