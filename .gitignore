@@ -1,4 +1,5 @@
-*
-!makefile
-!README.md
-!options.mk
+remove
+.vscode
+*workspace
+tools
+3dpmods*
