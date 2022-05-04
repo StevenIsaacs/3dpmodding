@@ -24,6 +24,9 @@ ifndef project_mk
 project_mk = 3dpmodding
 
 $(info Goal: ${MAKECMDGOALS})
+ifeq (${MAKECMDGOALS},)
+  $(info No target was specified.)
+endif
 
 project_dir = $(dir $(realpath $(firstword ${MAKEFILE_LIST})))
 $(info project_dir: ${project_dir})
