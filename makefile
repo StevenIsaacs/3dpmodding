@@ -88,7 +88,7 @@ endif
 ifneq (${MOD},active_mod)
   $(info Creating MOD symlink)
   $(info MOD=${MOD})
-  $(info MOD_DIR=${MODS_DIR}/${MOD_DIR})
+  $(info MOD_DIR=${MOD_DIR})
   $(shell rm -f ${MODS_DIR}/active_mod)
   $(shell ln -s ${MOD_DIR} ${MODS_DIR}/active_mod)
 endif
