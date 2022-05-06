@@ -1,7 +1,10 @@
 #+
-# This make file serves to build components for modding a 3D printer.
-# It is structured to be compatible with Apis SDE builds using
-# Jenkins. To do so create a symbolic link to this file named "project.mk".
+# This make file serves to build components for modding computer aided
+# manufacturing (CAM) software and hardware. This includes 3D printers,
+# laser engravers, CNC machines and more.
+#
+# This is structured to be compatible with Apis SDE builds using Jenkins.
+# To do so create a symbolic link to this file named "project.mk".
 #
 # All that is needed is a clone of this repository and then run make within
 # project directory. All of the necessary tools are installed within the
@@ -12,16 +15,10 @@
 # are scripted using OpenSCAD or SolidPython which are then processed using
 # ed-oscad to generate the corresponding STL files. Because of the differences
 # between the various slicers and 3D printers gcode is not produced.
-#
-# Platformio is used to build the Marlin firmware.
-#
-# Two Python virtual environments are used. One for ed-oscad (installed
-# by ed-oscad) and the other for Platformio. These are separate environments
-# to reduce the risk of version conflict and cross-contanimation.
 #-
 
 ifndef project_mk
-project_mk = 3dpmodding
+project_mk = cammodding
 
 $(info Goal: ${MAKECMDGOALS})
 ifeq (${MAKECMDGOALS},)
@@ -31,7 +28,7 @@ endif
 project_dir = $(dir $(realpath $(firstword ${MAKEFILE_LIST})))
 $(info project_dir: ${project_dir})
 
-define Mod3dpUsage
+define ModCamUsage
 Usage: "make [MOD=<mod>] [MODEL_TARGET=<ed-oscad-target>] <target>"
 MOD=<mod>     Which mod to build. Defaults to the active_mod symlink. This
               must be used the first time and then will be optional.
@@ -52,9 +49,9 @@ Possible targets:
               any makefile variable and exit.
 endef
 
-export Mod3dpUsage
+export ModCamUsage
 help:
-	@echo "$$Mod3dpUsage"
+	@echo "$$ModCamUsage"
 
 include options.mk
 
@@ -81,7 +78,7 @@ ifeq (${MOD_DIR},)
   ifneq (${MOD},active_mod)
     $(error MOD directory does not exist)
   else
-    $(info ${Mod3dpUsage})
+    $(info ${ModCamUsage})
     $(error MOD has not been specified. Use 'make MOD=<mod> <target>')
   endif
 endif
