@@ -1,2 +1,2 @@
 # cammodding
-A framework for modding CAM software and hardware.
+A framework for modding computer aided manufacturing (CAM) software and hardware.
