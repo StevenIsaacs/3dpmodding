@@ -17,9 +17,6 @@
 # between the various slicers and 3D printers gcode is not produced.
 #-
 
-ifndef project_mk
-project_mk = cammodding
-
 $(info Goal: ${MAKECMDGOALS})
 ifeq (${MAKECMDGOALS},)
   $(info No target was specified.)
@@ -27,6 +24,7 @@ endif
 
 project_dir = $(dir $(realpath $(firstword ${MAKEFILE_LIST})))
 $(info project_dir: ${project_dir})
+mk_dir = $(realpath ${project_dir}/mk)
 
 define ModCamUsage
 Usage: "make [MOD=<mod>] [MODEL_TARGET=<ed-oscad-target>] <target>"
@@ -57,23 +55,23 @@ include options.mk
 
 # Install the mods repo if it doesn't exist.
 # NOT using dependencies because this is always needed.
-ifeq ($(realpath ${MODS_DIR}),)
-  $(info Cloning ${MODS_REPO})
-  r = $(shell git clone ${MODS_REPO} ${MODS_DIR})
+ifeq ($(realpath ${MODS_3DP_DIR}),)
+  $(info Cloning ${MODS_3DP_REPO})
+  r = $(shell git clone ${MODS_3DP_REPO} ${MODS_3DP_DIR})
   $(info r=${r} status=$(.SHELLSTATUS))
   ifneq ($(.SHELLSTATUS),0)
-    $(error Could not clone ${MODS_REPO})
+    $(error Could not clone ${MODS_3DP_REPO})
   endif
-  $(info Checking out ${MODS_BRANCH})
-  r = $(shell cd ${MODS_DIR}; git checkout ${MODS_BRANCH})
+  $(info Checking out ${MODS_3DP_BRANCH})
+  r = $(shell cd ${MODS_3DP_DIR}; git checkout ${MODS_3DP_BRANCH})
   $(info r=${r} status=$(.SHELLSTATUS))
   ifneq ($(.SHELLSTATUS),0)
-    $(error Could not set MODS branch to ${MODS_BRANCH})
+    $(error Could not set MODS branch to ${MODS_3DP_BRANCH})
   endif
 endif
 # Which mod to build.
 MOD = active_mod
-MOD_DIR = $(realpath ${MODS_DIR}/${MOD})
+MOD_DIR = $(realpath ${MODS_3DP_DIR}/${MOD})
 ifeq (${MOD_DIR},)
   ifneq (${MOD},active_mod)
     $(error MOD directory does not exist)
@@ -89,8 +87,8 @@ ifneq (${MOD},active_mod)
   $(info Creating MOD symlink)
   $(info MOD=${MOD})
   $(info MOD_DIR=${MOD_DIR})
-  $(shell rm -f ${MODS_DIR}/active_mod)
-  $(shell ln -s ${MOD_DIR} ${MODS_DIR}/active_mod)
+  $(shell rm -f ${MODS_3DP_DIR}/active_mod)
+  $(shell ln -s ${MOD_DIR} ${MODS_3DP_DIR}/active_mod)
 endif
 
 $(info Processing ${MOD})
@@ -101,8 +99,27 @@ ifeq (${MODEL_TARGET},)
   MODEL_TARGET = all
 endif
 
-ifeq (${USE_MARLIN},YES)
-  include mk/marlin.mk
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Firmware
+#----------------------------------------------------------------------------
+
+# These are mutually exclusive options.
+BuildFirmware = $(filter YES,${USE_MARLIN} ${USE_KLIPPER})
+ifeq (${BuildFirmware},YES)
+  # Only one option was selected.
+  ifeq (${USE_MARLIN},YES)
+    include ${mk_dir}/marlin.mk
+  endif
+
+  ifeq (${USE_KLIPPER},YES)
+    # NOTE: This also builds the HOST OS image.
+    # include ${mk_dir}/klipper.mk
+    $(info USE_KLIPPER ignored. This is a future enhancement.)
+  endif
+else
+  ifeq (${BuildFirmware},YES YES)
+    $(warning Multiple firmware variations specified -- skipping. )
+  endif
 endif
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -110,11 +127,30 @@ endif
 #----------------------------------------------------------------------------
 
 ifeq (${USE_ED_OSCAD},YES)
-  include mk/ed-oscad.mk
+  include ${mk_dir}/ed-oscad.mk
 endif
 
-ifeq (${USE_OCTOPRINT},YES)
-  include mk/octoprint.mk
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# HOST OS image and remote printer control.
+#----------------------------------------------------------------------------
+
+# These are mutually exclusive options.
+BuildOsImage = $(filter YES,${USE_OCTOPRINT} ${USE_KLIPPER})
+ifeq (${BuildOsImage},YES)
+  # Only one option was selected.
+  ifeq (${USE_OCTOPRINT},YES)
+    include ${mk_dir}/octoprint.mk
+  endif
+
+  ifeq (${USE_KLIPPER},YES)
+    # NOTE: This also builds the HOST OS image.
+    # ${mk_dir}/klipper.mk was include int the firmware section.
+    $(info USE_KLIPPER ignored. This is a future enhancement.)
+  endif
+else
+  ifeq (${BuildOsImage},YES YES)
+    $(warning Multiple OS image variations specified -- skipping. )
+  endif
 endif
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -130,5 +166,3 @@ show-%:
 clean:
 	cd ${MARLIN_DIR}; git checkout .
 	rm -rf ${MarlinBuildDir}/${MARLIN_MOD_BOARD}
-
-endif
