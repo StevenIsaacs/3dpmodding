@@ -34,28 +34,28 @@ Defined in options.mk:
                 The size in bytes of the first partition.
   ${OS_VARIANT}_OS_P2_NAME
                 The mount point for the second partition if it exists.
-				Leave undefined if there is no second partiton.
+                Leave undefined if there is no second partiton.
   ${OS_VARIANT}_OS_P2_OFFSET
                 The offset in bytes to the start of the second partition.
   ${OS_VARIANT}_OS_P2_SIZE
                 The size in bytes of the second partition.
   ${OS_VARIANT}_OS_BOOT_DIR
                 Path to the boot directory.
-				(${${OS_VARIANT}_OS_BOOT_DIR}).
+                (${${OS_VARIANT}_OS_BOOT_DIR}).
   ${OS_VARIANT}_OS_ROOT_DIR
                 Path to the root directory.
-				(${${OS_VARIANT}_OS_ROOT_DIR}).
+                (${${OS_VARIANT}_OS_ROOT_DIR}).
 
 Defines:
   mount-os-image      A callable macro to mount the OS image partitions.
                       An example is the mount_os_image target. Other make
-					  segments can call this macro to mount partitions before
-					  installing files in the partitions.
+                      segments can call this macro to mount partitions before
+                      installing files in the partitions.
   unmount-os-image    A callable macro to unmount the OS image partitions.
                       An example is the unmount_os_image target. Other make
-					  segments can call this macro to unmount partitions.
-					  WARNING: If unmount-os-image is not called then
-					  subsequent attempts to mount the partitions will fail.
+                      segments can call this macro to unmount partitions.
+                      WARNING: If unmount-os-image is not called then
+                      subsequent attempts to mount the partitions will fail.
 
 Command line targets:
 	help-os_image     Display this help.
@@ -64,10 +64,10 @@ Command line targets:
 	mount_os_image    Mount the OS image partitions (uses sudo).
 	unmount_os_image  Unmount the OS image partitions (uses sudo).
 	os_image_partitions
-	                  Display the partitions in an OS image and where they
-					  are moounted. This can be used to determine offsets
-					  and sizes. NOTE: The displayed size is in bytes but
-					  the offsets are the number of 512 byte sectors.
+                      Display the partitions in an OS image and where they
+                      are moounted. This can be used to determine offsets
+                      and sizes. NOTE: The displayed size is in bytes but
+                      the offsets are the number of 512 byte sectors.
 
 Uses:
 
