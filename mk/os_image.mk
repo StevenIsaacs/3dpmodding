@@ -58,12 +58,12 @@ Defines:
                       subsequent attempts to mount the partitions will fail.
 
 Command line targets:
-	help-os_image     Display this help.
-	os_image_file     Download the OS image package file.
-	os_image          Unpack the OS image package file.
-	mount_os_image    Mount the OS image partitions (uses sudo).
-	unmount_os_image  Unmount the OS image partitions (uses sudo).
-	os_image_partitions
+  help-os_image       Display this help.
+  os_image_file       Download the OS image package file.
+  os_image            Unpack the OS image package file.
+  mount_os_image      Mount the OS image partitions (uses sudo).
+  unmount_os_image    Unmount the OS image partitions (uses sudo).
+  os_image_partitions
                       Display the partitions in an OS image and where they
                       are moounted. This can be used to determine offsets
                       and sizes. NOTE: The displayed size is in bytes but
