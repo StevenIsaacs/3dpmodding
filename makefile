@@ -26,14 +26,14 @@ project_dir = $(dir $(realpath $(firstword ${MAKEFILE_LIST})))
 $(info project_dir: ${project_dir})
 mk_dir = $(realpath ${project_dir}/mk)
 
-define ModCamUsage
+define CamModUsage
 Usage: "make [MOD=<mod>] [MODEL_TARGET=<ed-oscad-target>] <target>"
 MOD=<mod>     Which mod to build. Defaults to the active_mod symlink. This
               must be used the first time and then will be optional.
 MODEL_TARGET=<ed-oscad-target>
               An optional target for ed-oscad. This defaults to all.
 <target>      A single target. This defaults to display this help.
-Possible targets:
+Command line targets:
     all       The firmware is built and all assembly files are processed
               to generate the 3D printable parts.
     firmware  Build the printer firmware only.
@@ -45,11 +45,13 @@ Possible targets:
     show-<variable>
               This is a special target which can be used to display
               any makefile variable and exit.
+    help-<segment>
+              Display a make segment specifig help.
 endef
 
-export ModCamUsage
+export CamModUsage
 help:
-	@echo "$$ModCamUsage"
+	@echo "$$CamModUsage"
 
 include options.mk
 
@@ -76,7 +78,7 @@ ifeq (${MOD_DIR},)
   ifneq (${MOD},active_mod)
     $(error MOD directory does not exist)
   else
-    $(info ${ModCamUsage})
+    $(info ${CamModUsage})
     $(error MOD has not been specified. Use 'make MOD=<mod> <target>')
   endif
 endif

@@ -1,23 +1,38 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Octoprint
 #----------------------------------------------------------------------------
+define OctoprintHelp
+Make segment: octoprint.mk
 
-# For Octoprint.
-# USE_OCTOPRINT = YES
+This segement is used to install Octoprint in an OS image which can then
+be copied to an SD card and booted on an SBC for controlling a 3D printer.
 
-# OctoPrint on an Orange PI Zero.
-# USE_OPIZ = YES
+Defined in mod.mk:
+  USE_OCTOPRINT = YES   Triggers include of this make segment.
+  USE_OCTOPI = YES      Use a prebuilt OctoPi image. Requires USE_RPI3
+                        or USE_RPI4.
 
-# OctoPrint on a Raspberry PI 3.
-# USE_RPI3 = YES
+Defined in options.mk:
 
-# OctoPrint on a Raspberry PI 4.
-# USE_RPI4 = YES
+  Define which SBC to use. These are mutually exclusive (use only one):
+  USE_OPIZ = YES        OctoPrint on an Orange PI Zero.
+  USE_RPI3 = YES        OctoPrint on a Raspberry PI 3.
+  USE_RPI4 = YES        OctoPrint on a Raspberry PI 4.
 
-# Use a prebuilt OctoPi image.
-# USE_OCTOPI = YES
+Defines:
+  MODEL_OPTIONS are appended in case the model defines cases for the boards.
 
-# MODEL_OPTIONS are appended in case the model defines cases for the boards.
+Command line targets:
+  help-octoprint        Display this help.
+
+Uses:
+  os_image.mk
+endef
+
+export OctoprintHelp
+help-octoprint:
+	@echo "$$OctoprintHelp"
+
 MODEL_OPTIONS += USE_OCTOPRINT=YES
 
 # These are mutually exclusive options. Because USE_OCTOPRINT=YES at least
