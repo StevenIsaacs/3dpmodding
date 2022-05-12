@@ -40,8 +40,6 @@ Command line targets:
     parts     3D printable parts only.
     clean     Remove the dependency files and the output files.
     help      Display this help message (default).
-    ed-oscad-help
-              Display the ed-oscad help.
     show-<variable>
               This is a special target which can be used to display
               any makefile variable and exit.
@@ -96,10 +94,6 @@ endif
 $(info Processing ${MOD})
 
 -include ${MOD_DIR}/mod.mk
-
-ifeq (${MODEL_TARGET},)
-  MODEL_TARGET = all
-endif
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Firmware

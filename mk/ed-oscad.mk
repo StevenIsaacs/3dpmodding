@@ -1,18 +1,6 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # 3D Printed Parts
 #----------------------------------------------------------------------------
-# Defined in options.mk:
-#   ED_OSCAD_DEV
-#   ED_OSCAD_DIR
-#   ED_OSCAD_BRANCH
-#   MODEL_OPTIONS
-#
-# Expected to be defined in mod.mk:
-#   USE_ED_OSCAD
-# Other possible overrides:
-#   MOD_DIR
-#   MODEL_TARGET
-#
 define EdOscadHelp
 Make segment: ed-oscad.mk
 
@@ -32,6 +20,10 @@ Defined in options.mk:
   ED_OSCAD_BRANCH Which branch to use.
 
 Defines:
+  MODEL_TARGET    The target to pass to the ed-oscad makefile. This defaults
+                  to "all" and can be overridden in mod.mk or on the
+                  command line (e.g. MODEL_TARGET=docs).
+
 Command line targets:
   help-ed-oscad   Display this help.
   ed-oscad        Clone ed-oscad into the clone directory and checkout the
@@ -42,12 +34,16 @@ Command line targets:
 				  gcode for a specific 3D printer.
 
 Uses:
-
+  The ed-oscad makefile.
 endef
 
 export EdOscadHelp
 help-ed-oscad:
 	@echo "$$EdOscadHelp"
+
+ifeq (${MODEL_TARGET},)
+  MODEL_TARGET = all
+endif
 
 EdOscadInstallFile = ${ED_OSCAD_DIR}/README.md
 
@@ -60,7 +56,7 @@ ed-oscad: ${EdOscadInstallFile}
 
 .PHONY: ed-oscad-help
 ed-oscad-help: ${EdOscadInstallFile}
-	cd ${ED_OSCAD_DIR}; make help
+	cd ${ED_OSCAD_DIR}; ${MAKE} MODEL_DIR=${MOD_DIR}/model help
 
 # 3D printable parts.
 .PHONY: parts

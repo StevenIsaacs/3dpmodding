@@ -11,7 +11,9 @@ first time script which runs the first time the OS is booted. See other
 segments for more information.
 
 Defined in the segment which included this file:
-  OS_VARIANT    Which variant of the OS to use. Currently - ${OS_VARIANT}
+  OS_VARIANT    Which variant of the OS to use.
+                Currently - ${OS_VARIANT}
+                Selected by USE_${OS_VARIANT}
 
 Defined in mod.mk:
 
@@ -50,7 +52,7 @@ Defines:
   mount-os-image      A callable macro to mount the OS image partitions.
                       An example is the mount_os_image target. Other make
                       segments can call this macro to mount partitions before
-                      installing files in the partitions.
+                      installing or modifying files in the partitions.
   unmount-os-image    A callable macro to unmount the OS image partitions.
                       An example is the unmount_os_image target. Other make
                       segments can call this macro to unmount partitions.
