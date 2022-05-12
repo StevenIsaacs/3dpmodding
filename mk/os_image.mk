@@ -10,12 +10,17 @@ as if it were part of the file system. Typically these modules install a
 first time script which runs the first time the OS is booted. See other
 segments for more information.
 
+Defined in mod.mk:
+  USE_OPIZ      Use an Orange PI zero.
+  USE_RPI3      Use a Raspberry PI 3.
+  USE_RPI4      Use a Raspberry PI 4.
+  NOTE: These options are mutually exclusive.
+
 Defined in the segment which included this file:
-  OS_VARIANT    Which variant of the OS to use.
+  OS_VARIANT    Which variant of the OS to use. Determined by which USE_<board>
+                option was specified in mod.mk.
                 Currently - ${OS_VARIANT}
                 Selected by USE_${OS_VARIANT}
-
-Defined in mod.mk:
 
 Defined in options.mk:
   DOWNLOADS_DIR Where to put downladed packaged (e.g. compressed) image files.
