@@ -27,6 +27,7 @@ Command line targets:
 
 Uses:
   os_image.mk
+  firsttime.mk
 endef
 
 export OctoprintHelp
@@ -67,6 +68,7 @@ ifeq (${BuildOsVariant},YES)
 	endif
   endif
   include ${mk_dir}/os_image.mk
+  include ${mk_dir}/firsttime.mk
 else
   ifeq (${BuildOsVariant},)
     $(error Select ONE and only ONE OS variant)
