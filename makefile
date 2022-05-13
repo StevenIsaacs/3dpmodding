@@ -52,6 +52,11 @@ help:
 	@echo "$$CamModUsage"
 
 include options.mk
+# To simplfy the command line common option overrides can be placed in
+# a separate make segment. This file is NOT maintained in source control
+# (i.e. Ignored in .gitignore). It is included if it exists.
+# NOTE: The options can still be overridden on the command line.
+-include overrides.mk
 
 # Install the mods repo if it doesn't exist.
 # NOT using dependencies because this is always needed.
