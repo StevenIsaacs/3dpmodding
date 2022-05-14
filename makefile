@@ -75,7 +75,7 @@ ifeq ($(realpath ${MODS_3DP_DIR}),)
   endif
 endif
 # Which mod to build.
-ifeq (${MOD)},)
+ifeq (${MOD},)
   MOD = active_mod
 endif
 MOD_DIR = $(realpath ${MODS_3DP_DIR}/${MOD})
