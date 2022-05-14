@@ -24,7 +24,7 @@ endif
 
 project_dir = $(dir $(realpath $(firstword ${MAKEFILE_LIST})))
 $(info project_dir: ${project_dir})
-mk_dir = $(realpath ${project_dir}/mk)
+mk_dir = $(realpath ${project_dir}/modules)
 
 define CamModUsage
 Usage: "make [MOD=<mod>] [MODEL_TARGET=<ed-oscad-target>] <target>"
