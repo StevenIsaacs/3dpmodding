@@ -14,6 +14,8 @@ TOOLS_DIR = ${project_dir}/tools
 DOWNLOADS_DIR = ${TOOLS_DIR}/downloads
 OS_IMAGE_DIR = ${TOOLS_DIR}/os_images
 # realpath is handy for reducing duplicate slashes (//) in paths.
+# realpath returns null if the directory does not exist.
+$(shell mkdir -p ${OS_IMAGE_DIR}/mnt)
 OS_IMAGE_MNT_DIR = $(realpath ${OS_IMAGE_DIR}/mnt)
 
 #+
