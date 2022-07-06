@@ -1,8 +1,17 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# First Time
+# OS First Time
 #----------------------------------------------------------------------------
+# Not all variants need a specific os-firsttime.mk
+-include ${MK_DIR}/${OS_VARIANT}_os-firsttime.mk
+
+install-os-firsttime:
+	$(call mount-os-image)
+	echo "$$GenFirstTimeScript" > ${FirstTimeDir}
+	$(call unmount-os-image)
+
+ifeq (${MAKECMDGOALS},help-os-firsttime)
 define FirstTimeHelp
-Make segment: firsttime.mk
+Make segment: os-firsttime.mk
 
 This segment installs a first time script into an OS image. To do so it
 uses os_image to mount the image. Each OS_VARIANT requires its own version
@@ -21,29 +30,23 @@ Defined in the segment which included this file:
                 Currently - ${OS_VARIANT}
                 Selected by USE_${OS_VARIANT}
 
-Defined in options.mk:
+Defined in config.mk:
 
 Defines:
 
 Command line targets:
-  help-firsttime    Display this help.
-  install-firsttime Mount the OS image, install the first time script and then
+  help-os-firsttime    Display this help.
+  install-os-firsttime Mount the OS image, install the first time script and then
                     unmount the OS image.
 
 Uses:
-  ${OS_VARIANT}_firsttime.mk
+  ${OS_VARIANT}_os-firsttime.mk
   mount-os-image in os_image.mk
   unmount-os-image in os_image.mk
 endef
 
-# Not all variants need a specific firsttime.mk
--include ${mk_dir}/${OS_VARIANT}_firsttime.mk
-
 export FirstTimeHelp
-help-firsttime:
-	@echo "$$FirstTimeHelp"
+help-os-firsttime:
+	@echo "$$FirstTimeHelp" | less
 
-install-firsttime:
-    $(call mount-os-image)
-	echo "$$GenFirstTimeScript" > ${FirstTimeDir}
-	$(call unmount-os-image)
+endif

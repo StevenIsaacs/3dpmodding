@@ -1,6 +1,8 @@
 remove
 .vscode
 *workspace
-tools
-3dpmods*
+.modfw
 overrides.mk
+kits
+tools
+staging
