@@ -31,7 +31,7 @@ ${_OsModdingSegment}:
 	cd ${OS_MODDING_DIR}; git checkout ${OS_MODDING_BRANCH}
 
 include ${_OsModdingSegment}
-MOD_DEPS += ${OSM_IMAGE_DIR}/${OSM_IMAGE}
+ModDeps += ${OSM_IMAGE_DIR}/${OSM_IMAGE}
 
 .PHONY: os-modding
 os-modding: ${_OsModdingSegment}

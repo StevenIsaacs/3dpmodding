@@ -12,7 +12,7 @@ ifndef PIO_PYTHON_VARIANT
   PIO_PYTHON_VARIANT = 3.8
 endif
 
-PioVirtualEnvDir = ${TOOLS_DIR}/pio_venv_${PIO_PYTHON_VARIANT}
+PioVirtualEnvDir = ${BIN_DIR}/pio_venv_${PIO_PYTHON_VARIANT}
 _PioPythonBin = ${PioVirtualEnvDir}/bin/python3
 
 PioVenvRequirements = \
@@ -64,7 +64,7 @@ Defined in mod.mk:
     Which version of Python to use. If undefined then a default is used.
 
 Defined in config.mk:
-  TOOLS_DIR	= ${TOOLS_DIR}
+  BIN_DIR = ${BIN_DIR}
     Where to install PlatformIO.
 
 Defines:

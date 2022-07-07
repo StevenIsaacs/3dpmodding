@@ -16,8 +16,8 @@ else
   endif
 endif
 
-ifeq (${MAKECMDGOALS},help-mods)
-define HelpModsMsg
+ifeq (${MAKECMDGOALS},help-kit)
+define HelpKitMsg
 Make segment: ${KIT}.mk
 
 This segment describes a kit of mods intended for developing or modding 3D
@@ -46,7 +46,7 @@ Command line targets:
   help-mods       Display this help.
 endef
 
-export HelpModsMsg
-help-mods:
-	@echo "$$HelpModsMsg" | less
+export HelpKitMsg
+help-kit:
+	@echo "$$HelpKitMsg" | less
 endif

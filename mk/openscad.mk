@@ -57,50 +57,57 @@ ModelDeps = ${MODEL_LIBS} ${MODEL_DEPS}
 
 # OpenSCAD source files.
 _sc_drawing_files = $(wildcard ${OSC_DRAW_DIR}/*.scad)
-_sc__printable_files = $(wildcard ${OSC_PRINT_DIR}/*.scad)
+_sc_printable_files = $(wildcard ${OSC_PRINT_DIR}/*.scad)
 _sc_assembly_files = $(wildcard ${OSC_ASM_DIR}/${ASM}*.scad)
 _sc_model_files = \
-  ${_sc_drawing_files} ${_sc__printable_files} ${_sc_assembly_files}
+  ${_sc_drawing_files} ${_sc_printable_files} ${_sc_assembly_files}
 
-_sc__stl_files = $(foreach file, ${_sc__printable_files}, ${OSC_STL_DIR}/$(basename $(notdir $(file))).stl)
-_sc__png_files = $(foreach file, ${_sc_model_files}, ${OSC_PNG_DIR}/$(basename $(notdir $(file))).png)
+_sc_stl_files = $(foreach file, ${_sc_printable_files}, ${OSC_STL_DIR}/$(basename $(notdir $(file))).stl)
+_sc_png_files = $(foreach file, ${_sc_model_files}, ${OSC_PNG_DIR}/$(basename $(notdir $(file))).png)
 
-_printable_files = ${_sc__printable_files}
+_printable_files = ${_sc_printable_files}
 _model_files = ${_sc_model_files}
 
 # _SolidPython source files.
 _sp_parts_files = $(wildcard ${OSC_PART_DIR}/*.py)
 _sp_drawing_files = $(wildcard ${OSC_DRAW_DIR}/*.py)
-_sp__printable_files = $(wildcard ${OSC_PRINT_DIR}/*.py)
+_sp_printable_files = $(wildcard ${OSC_PRINT_DIR}/*.py)
 _sp_assembly_files = $(wildcard ${OSC_ASM_DIR}/${ASM}*.py)
 _sp_import_files = $(wildcard ${OSC_INC_DIR}/*.py)
-_sp_model_files = ${_sp_drawing_files} ${_sp__printable_files} ${_sp_assembly_files}
+_sp_model_files = ${_sp_drawing_files} ${_sp_printable_files} ${_sp_assembly_files}
 
 _sp_dep_files = $(foreach file, ${_sp_model_files}, ${OSC_BUILD_DIR}/$(basename $(notdir $(file))).pdeps)
-_sp__stl_files = $(foreach file, ${_sp__printable_files}, ${OSC_STL_DIR}/$(basename $(notdir $(file))).stl)
+_sp_stl_files = $(foreach file, ${_sp_printable_files}, ${OSC_STL_DIR}/$(basename $(notdir $(file))).stl)
 ifneq (${Platform},Microsoft)
-_sp__png_files = $(foreach file, ${_sp_model_files}, ${OSC_PNG_DIR}/$(basename $(notdir $(file))).png)
+_sp_png_files = $(foreach file, ${_sp_model_files}, ${OSC_PNG_DIR}/$(basename $(notdir $(file))).png)
 endif
-_sp_scad_files = $(foreach file, ${_sp__stl_files}, ${OSC_BUILD_DIR}/$(notdir $(file)).scad)
+_sp_scad_files = $(foreach file, ${_sp_stl_files}, ${OSC_BUILD_DIR}/$(notdir $(file)).scad)
 _sp_doc_files = $(foreach file, \
 	${_sp_model_files} ${_sp_import_files} ${_sp_parts_files}, \
 	${OSC_DOC_DIR}/$(basename $(notdir $(file))).md)
 
-_printable_files += ${_sp__printable_files}
+_printable_files += ${_sp_printable_files}
 _model_files += ${_sp_model_files}
 
-osc-all: ${OPENSCAD_CLI} ${ModelDeps} \
-  ${_sc__stl_files} \
-  ${_sc__png_files} \
-  ${_sp__stl_files} \
-  ${_sp__png_files} \
+AllModelDeps = \
+  ${OPENSCAD_CLI} \
+  ${ModelDeps} \
+  ${_sc_stl_files} \
+  ${_sc_png_files} \
+  ${_sp_stl_files} \
+  ${_sp_png_files} \
   ${_sp_doc_files}
 
+osc-all: ${AllModelDeps}
+
+# Only the parts files.
+parts: ${_sc_stl_files} ${_sp_stl_files}
+
 #+
-# If python files are present then assume _SolidPython in a virtual Platform
+# If python files are present then assume SolidPython in a virtual Platform
 # is needed.
 #-
-$(info Using _SolidPython)
+$(info Using SolidPython)
 
 _SolidPythonPath = ${MODEL_DIR}:${OSC_LIB_DIR}
 
@@ -442,13 +449,17 @@ Optionally defined in mod.mk or on the command line:
 Defined by the model in model.mk:
   MODEL_DEPS = ${MODEL_DEPS}
     Model specific dependencies. This is most often used to trigger download
-	of off the shelf parts but can be used for other model defined
-	dependencies.
+    of off the shelf parts but can be used for other model defined
+    dependencies.
+  MODEL_LIBS = ${MODEL_LIBS}
+    OpenSCAD libraries used by the model.
 
 Defines:
   OSC_BIN_DIR = ${OSC_BIN_DIR}
     Where the OpenSCAD binaries and the _SolidPython virtual environment are
     installed.
+  AllModelDeps = (use show-ModelDeps to display)
+    The all model dependencies for the complete make.
 
   Standard model directories:
   OSC_INC_DIR = ${OSC_INC_DIR}

@@ -70,14 +70,17 @@ _MarlinFirmware = ${_MarlinBuildDir}/${MARLIN_MOD_BOARD}/${MARLIN_FIRMWARE}
 # directory structure.
 #-
 ${_MarlinFirmware}: ${_MarlinDeps} ${_MarlinModFiles}
-	cd ${MARLIN_DIR}; git checkout .
+	cd ${MARLIN_DIR}; git checkout .; git checkout ${FIRMWARE_VARIANT}
 	cp -r ${MOD_DIR}/Marlin/* ${MARLIN_DIR}/Marlin
 	. ${PioVirtualEnvDir}/bin/activate; \
 	cd ${MARLIN_DIR}; \
 	platformio run -e ${MARLIN_MOD_BOARD}; \
 	deactivate
 
-firmware: ${_MarlinFirmware}
+${MOD_STAGING_DIR}/${MARLIN_FIRMWARE}: ${_MarlinFirmware}
+	cp $< $@
+
+firmware: ${MOD_STAGING_DIR}/${MARLIN_FIRMWARE}
 
 ModFirmware = ${_MarlinFirmware}
 
@@ -106,7 +109,9 @@ Defined in mod.mk:
     The name of the file produced by the Marlin build to be installed on
     the CAM controller board.
 
-Defined in config.mk:
+Defined in kit.mk:
+  MOD_STAGING_DIR = ${MOD_STAGING_DIR}
+    Where the firmare image is staged.
 
 Defines:
   MARLIN_REPO = ${MARLIN_REPO}

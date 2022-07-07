@@ -23,7 +23,7 @@ ModStagingDir = ${STAGING_DIR}/${KIT}/${KIT_VARIANT}/${MOD}
 # Supported mod kit descriptions.
 #----------------------------------------------------------------------------
 
-include ${KIT_CONFIGS_DIR}/${KIT}.mk
+-include ${KIT_CONFIGS_DIR}/${KIT}.mk
 
 # This is structured so that help-kits can be used to determine which kits
 # are avialable without loading any kit or mod.
@@ -37,7 +37,7 @@ This segment defines variables based upon the selected mod kit. A number
 of supported kits will be available. Additional custom kits can be defined in
 overrides.mk or, preferably, another make segement included by overrides.mk.
 
-Sticky command line options:
+Required sticky command line options:
   KIT=${KIT}
     Selects which kit of mods to use.
     This is required when no kit has been selected. Once selected this
@@ -46,10 +46,10 @@ Sticky command line options:
     Which variant of the kit to use. This determines which repo URL to use
     to clone the kit and which branch to checkout once cloned. KIT_VARIANT
     is equal to this.
-	Valid options are:
-    rel = Use the current release branch.
-    dev = Use the development branch.
-    Otherwise the variant is assumed to be a valid branch.
+    Valid options are:
+      rel = Use the current release branch.
+      dev = Use the development branch.
+      Otherwise the variant is assumed to be a valid branch.
   MOD=${MOD}
     Which mod to load.
 
@@ -97,6 +97,10 @@ else
     $(info See help-kits)
     $(error No description for the kit: ${KIT})
   else
+    ifeq (${MOD},)
+    $(info See help-kits)
+    $(error MOD has not been defined)
+  endif
 
 _KitSegment = ${KIT_DIR}/kit.mk
 
