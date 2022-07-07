@@ -10,6 +10,8 @@ endif
 project_dir = $(realpath $(dir $(realpath $(firstword ${MAKEFILE_LIST}))))
 $(info project_dir: ${project_dir})
 
+.DEFAULT_GOAL := all
+
 include config.mk
 # To simplfy the command line common option overrides can be placed in
 # a separate make segment. This file is NOT maintained in source control
@@ -34,6 +36,7 @@ endif
 
 # Custom 3D printed parts.
 ifdef CAD_TOOL
+  # This defines AllModelDeps.
   include ${MK_DIR}/${CAD_TOOL}.mk
 endif
 
@@ -66,7 +69,7 @@ endif
 # The entire project.
 #----------------------------------------------------------------------------
 
-all: ${ModFirmware} ${MOD_DEPS} parts
+all: ${ModFirmware} ${ModDeps} ${AllModelDeps}
 
 # Display the value of any variable.
 show-%:
