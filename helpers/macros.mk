@@ -6,9 +6,20 @@
 #-
 
 #+
+# Get the included file base name (no path or extension).
+#
+# Returns:
+#   The segment base name.
+#-
+this_segment = \
+  $(basename $(notdir $(word $(words ${MAKEFILE_LIST}),${MAKEFILE_LIST})))
+
+#+
 # Make a variable sticky (see help-config).
 # Parameters:
 #  1 = Variable name
+# Returns:
+#  The variable value.
 #-
 define sticky
   $(info Sticky variable: ${1})
