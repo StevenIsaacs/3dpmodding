@@ -30,7 +30,7 @@ KITS_DIR = ${project_dir}/kits
 # The development git server for supported kits.
 KIT_DEV_SERVER = git@github.com:StevenIsaacs
 # The release git server for supported kits.
-KIT_REL_SERVER = https://github.com:StevenIsaacs
+KIT_REL_SERVER = https://github.com/StevenIsaacs
 
 #+
 # NOTE: The following directories are ignored (see .gitignore). These can be

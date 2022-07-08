@@ -10,7 +10,7 @@ ifeq (${${KIT}_VARIANT},dev)
 else
   KIT_REPO = ${KIT_REL_SERVER}/${KIT}.git
   ifeq (${${KIT}_VARIANT},rel)
-    KIT_VARIANT = release/0.0.1
+    KIT_VARIANT = dev
    else
     KIT_VARIANT = ${${KIT}_VARIANT}
   endif
