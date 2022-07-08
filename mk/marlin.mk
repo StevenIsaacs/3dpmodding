@@ -80,6 +80,7 @@ ${_MarlinFirmware}: ${_MarlinDeps} ${_MarlinModFiles}
 ModFirmware = ${MOD_STAGING_DIR}/${MARLIN_FIRMWARE}
 
 ${ModFirmware}: ${_MarlinFirmware}
+	mkdir -p $(@D)
 	cp $< $@
 
 firmware: ${ModFirmware}
