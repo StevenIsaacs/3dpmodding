@@ -111,7 +111,7 @@ Defined in mod.mk:
     The name of the file produced by the Marlin build to be installed on
     the CAM controller board.
 
-Defined in kit.mk:
+Defined in kits.mk:
   MOD_STAGING_DIR = ${MOD_STAGING_DIR}
     Where the firmare image is staged.
 

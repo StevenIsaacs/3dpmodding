@@ -12,18 +12,27 @@ $(call sticky,${KIT}_VARIANT)
 KIT_VARIANT = ${${KIT}_VARIANT}
 $(call sticky,MOD)
 
+MOD_DIR = ${KIT_DIR}/${MOD}
+
 # Where the kit is cloned to.
 CLONE_DIR = ${KIT}-${${KIT}_VARIANT}
 KIT_DIR = ${KITS_DIR}/${CLONE_DIR}
 
+# Where the mod intermediate files are stored.
+MOD_BUILD_DIR = ${BUILD_DIR}/${KIT}/${KIT_VARIANT}/${MOD}
 # Where the mod output files are staged.
-ModStagingDir = ${STAGING_DIR}/${KIT}/${KIT_VARIANT}/${MOD}
+MOD_STAGING_DIR = ${STAGING_DIR}/${KIT}/${KIT_VARIANT}/${MOD}
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Supported mod kit descriptions.
 #----------------------------------------------------------------------------
 
 -include ${KIT_CONFIGS_DIR}/${KIT}.mk
+
+ifndef ActiveKit
+  $(info See help-kits)
+  $(error No description for the kit: ${KIT})
+endif
 
 # This is structured so that help-kits can be used to determine which kits
 # are avialable without loading any kit or mod.
@@ -58,7 +67,9 @@ Defines:
     The name of the directory for the kit clone.
   KIT_DIR = ${KIT_DIR}
     Where the kit is cloned to.
-  ModStagingDir = ${ModStagingDir}
+  MOD_BUILD_DIR = ${MOD_BUILD_DIR}
+    Where the mod intermediate files are stored.
+  MOD_STAGING_DIR = ${MOD_STAGING_DIR}
     Where the mod output files are staged.
 
 Defined in config.mk:
@@ -93,22 +104,19 @@ help-kits:
 	@echo "$$HelpKitsMsg" | less
 
 else
-  ifndef ActiveKit
-    $(info See help-kits)
-    $(error No description for the kit: ${KIT})
-  endif
-  ifeq (${KIT_VARIANT},)
-    $(info See help-kits)
-    $(error The kit variant has not been defined)
-  endif
-  ifeq (${MOD},)
-    $(info See help-kits)
-    $(error MOD has not been defined)
-  endif
 
-MOD_DIR = ${KIT_DIR}/${MOD}
-MOD_BUILD_DIR = ${BUILD_DIR}/${KIT}/${MOD}
-MOD_STAGING_DIR = ${STAGING_DIR}/${KIT}/${MOD}
+ifeq (${KIT},)
+  $(info See help-kits)
+  $(error The kit has not been defined)
+endif
+ifeq (${KIT_VARIANT},)
+  $(info See help-kits)
+  $(error The kit variant has not been defined)
+endif
+ifeq (${MOD},)
+  $(info See help-kits)
+  $(error MOD has not been defined)
+endif
 
 _KitSegment = ${KIT_DIR}/kit.mk
 
