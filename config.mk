@@ -36,6 +36,9 @@ KIT_REL_SERVER = https://github.com/StevenIsaacs
 # NOTE: The following directories are ignored (see .gitignore). These can be
 # deleted by a clean.
 #-
+# Where intermediate build files are stored.
+BUILD_DIR = ${project_dir}/build
+
 # Where the mod output files are staged.
 STAGING_DIR = ${project_dir}/staging
 
