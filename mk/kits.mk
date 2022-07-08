@@ -106,6 +106,10 @@ else
     $(error MOD has not been defined)
   endif
 
+MOD_DIR = ${KIT_DIR}/${MOD}
+MOD_BUILD_DIR = ${BUILD_DIR}/${KIT}/${MOD}
+MOD_STAGING_DIR = ${STAGING_DIR}/${KIT}/${MOD}
+
 _KitSegment = ${KIT_DIR}/kit.mk
 
 ${_KitSegment}:
