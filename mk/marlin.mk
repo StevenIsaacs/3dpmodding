@@ -77,12 +77,13 @@ ${_MarlinFirmware}: ${_MarlinDeps} ${_MarlinModFiles}
 	platformio run -e ${MARLIN_MOD_BOARD}; \
 	deactivate
 
-${MOD_STAGING_DIR}/${MARLIN_FIRMWARE}: ${_MarlinFirmware}
+ModFirmware = ${MOD_STAGING_DIR}/${MARLIN_FIRMWARE}
+
+${ModFirmware}: ${_MarlinFirmware}
 	cp $< $@
 
-firmware: ${MOD_STAGING_DIR}/${MARLIN_FIRMWARE}
+firmware: ${ModFirmware}
 
-ModFirmware = ${_MarlinFirmware}
 
 ifeq (${MAKECMDGOALS},help-marlin)
 define HelpMarlinMsg
