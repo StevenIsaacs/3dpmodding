@@ -6,13 +6,13 @@
 # Some behavior depends upon which platform.
 ifeq ($(shell grep WSL /proc/version > /dev/null; echo $$?),0)
   Platform = Microsoft
-endif
-ifeq ($(shell echo $$(expr substr $$(uname -s) 1 5)),Linux)
+else ifeq ($(shell echo $$(expr substr $$(uname -s) 1 5)),Linux)
   Platform = Linux
-endif
+else ifeq ($(shell uname),Darwin)
 # Detecting OS X is untested.
-ifeq ($(shell uname),Darwin)
   Platform = OsX
+else
+  $(error Unable to identify platform)
 endif
 $(info Running on: ${Platform})
 
