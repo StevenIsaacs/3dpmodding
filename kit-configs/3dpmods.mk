@@ -2,8 +2,8 @@
 # 3dpmods is a collection of mods intended for modding 3D printers.
 #----------------------------------------------------------------------------
 
-# ACTIVE_KIT indicates this is a valid kit.
-ACTIVE_KIT = ${KIT}
+# ActiveKit indicates this is a valid kit.
+ActiveKit = ${KIT}
 ifeq (${${KIT}_VARIANT},dev)
   KIT_REPO = ${KIT_DEV_SERVER}/${KIT}.git
   KIT_VARIANT = dev
@@ -30,7 +30,7 @@ Parameters:
     becomes optional.
 
 Defines:
-  ACTIVE_KIT = ${ACTIVE_KIT}
+  ActiveKit = ${ActiveKit}
     Which kit is currently being used.
   KIT_REPO = ${KIT_REPO}
     The repository from which to clone the kit containing the mod.

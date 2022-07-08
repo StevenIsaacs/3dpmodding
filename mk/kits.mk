@@ -70,7 +70,7 @@ Defined in config.mk:
     The top level staging directory.
 
 A kit config defines:
-  ACTIVE_KIT = ${ACTIVE_KIT}
+  ActiveKit = ${ActiveKit}
     When defined indicates the selected kit has been defined. If not defined
 	as a result of specifying a non-existant kit an error is reported.
   KIT_REPO = ${KIT_REPO}
@@ -93,14 +93,19 @@ help-kits:
 	@echo "$$HelpKitsMsg" | less
 
 else
-  ifndef ACTIVE_KIT
+  ifndef ActiveKit
     $(info See help-kits)
     $(error No description for the kit: ${KIT})
-  else
-    ifeq (${MOD},)
+  endif
+  ifeq (${KIT_VARIANT},)
+    $(info See help-kits)
+    $(error The kit variant has not been defined)
+  endif
+  ifeq (${MOD},)
     $(info See help-kits)
     $(error MOD has not been defined)
   endif
+endif
 
 _KitSegment = ${KIT_DIR}/kit.mk
 
