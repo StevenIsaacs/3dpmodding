@@ -31,10 +31,10 @@ OSC_ASM_DIR = ${MODEL_DIR}/assemblies
 OSC_OTS_DIR = ${MODEL_DIR}/ots
 
 # Output directories.
-OSC_BUILD_DIR = ${MOD_STAGING_DIR}/model
-OSC_DOC_DIR = ${OSC_BUILD_DIR}/doc
-OSC_STL_DIR = ${OSC_BUILD_DIR}/stl
-OSC_PNG_DIR = ${OSC_BUILD_DIR}/png
+OSC_BUILD_DIR = ${MOD_BUILD_DIR}/model
+OSC_DOC_DIR = ${MOD_STAGING_DIR}/doc
+OSC_STL_DIR = ${MOD_STAGING_DIR}/stl
+OSC_PNG_DIR = ${MOD_STAGING_DIR}/png
 
 # Where common OpenSCAD libraries reside.
 OSC_LIB_DIR = ${MK_DIR}/osc-lib
