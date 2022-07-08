@@ -105,7 +105,6 @@ else
     $(info See help-kits)
     $(error MOD has not been defined)
   endif
-endif
 
 _KitSegment = ${KIT_DIR}/kit.mk
 
@@ -117,5 +116,4 @@ ${_KitSegment}:
 # Clone and load the kit and mod.
 include ${_KitSegment}
 
-  endif
 endif
