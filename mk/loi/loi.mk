@@ -48,7 +48,7 @@ $(info Image unpack method: ${${OS_VARIANT}_LOI_UNPACK})
 
 # Image download methods.
 define download_wget
-> wget -O $@ ${${OS_VARIANT}_LOI_IMAGE_URL}
+  wget -O $@ ${${OS_VARIANT}_LOI_IMAGE_URL}
 endef
 
 # Thanks to: https://medium.com/@acpanjan/download-google-drive-files-using-wget-3c2c025a8b99
@@ -72,17 +72,17 @@ ${DOWNLOADS_DIR}/${${OS_VARIANT}_LOI_IMAGE_FILE}:
 
 # Image unpack methods.
 define _loi_unpack_zip
-> unzip $< -d $(@D)
+  unzip $< -d $(@D)
 > touch $@
 endef
 
 define _loi_unpack_xz
-> unxz -c $< > $@
+  unxz -c $< > $@
 > touch $@
 endef
 
 define _loi_unpack_tarz
-> tar -xzf $< -C ${LOI_IMAGE_DIR}
+  tar -xzf $< -C ${LOI_IMAGE_DIR}
 > touch $@
 endef
 
