@@ -47,11 +47,11 @@ ifdef SERVER_SOFTWARE
   include ${MK_DIR}/${SERVER_SOFTWARE}.mk
 
   # Which board to run the server software on.
-  ifdef SBC_BOARD
+  ifdef OS_BOARD
     ifneq (${MAKECMDGOALS},list-os-boards)
-      include ${SBC_BOARDS_DIR}/${SBC_BOARD}.mk
+      include ${OS_BOARDS_DIR}/${OS_BOARD}.mk
       # To trigger the build of a case for the SBC.
-      MODEL_OPTIONS += SBC_BOARD=${SBC_BOARD}
+      MODEL_OPTIONS += OS_BOARD=${OS_BOARD}
     endif
   endif
 
@@ -151,12 +151,12 @@ Defined in mod.mk:
   using devices such as keyboards, displays, and touch screens.
   SERVER_SOFTWARE=${SERVER_SOFTWARE}
     Which server software to use. Server software is hosted on an SBC. If
-    not defined then OS_VARIANT and SBC_BOARD are ignored.
+    not defined then OS_VARIANT and OS_BOARD are ignored.
   OS_VARIANT=${OS_VARIANT}
     The variant of the OS to use. This determines in which OS to install the
     initialization scripts. If undefined then an OS image will not be
     initilized.
-  SBC_BOARD=${SBC_BOARD}
+  OS_BOARD=${OS_BOARD}
     The board on which the OS will run. This can also trigger the build
     of a 3D printed case for the board.
 

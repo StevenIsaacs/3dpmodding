@@ -36,6 +36,12 @@ KIT_REL_SERVER = https://github.com/StevenIsaacs
 # NOTE: The following directories are ignored (see .gitignore). These can be
 # deleted by a clean.
 #-
+# For downloaded files.
+DOWNLOADS_DIR = ${project_dir}/downloads
+
+# For storing sticky options.
+STICKY_DIR = ${project_dir}/.modfw/sticky
+
 # Where intermediate build files are stored.
 BUILD_DIR = ${project_dir}/build
 
@@ -47,12 +53,6 @@ TOOLS_DIR = ${project_dir}/tools
 
 # Where executables are installed.
 BIN_DIR = ${TOOLS_DIR}/bin
-
-# For downloaded files.
-DOWNLOADS_DIR = ${TOOLS_DIR}/downloads
-
-# For storing sticky options.
-STICKY_DIR = ${project_dir}/.modfw/sticky
 
 include ${HELPER_DIR}/macros.mk
 
