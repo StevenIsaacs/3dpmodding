@@ -21,18 +21,17 @@ if len(sys.argv) < 2:
     exit(1)
 
 json_file = sys.argv[1]
-
-print(json_file)
 f = open(json_file)
 j = json.load(f)
 
 h = """
-ifeq (${MAKECMDGOALS},help-partitions)
+ifeq (${{MAKECMDGOALS}},help-partitions)
 define HelpPartitionsMsg
-This make segment describes the partitions in a Linux OS image file.
+This make segment describes the partitions in a Linux OS image file as defined
+in: {}.
 
 Defines:
-"""
+""".format(json_file)
 s = '# Partitions from: {}\n'.format(os.path.realpath(json_file))
 c = 0
 for p in j['partitiontable']['partitions']:

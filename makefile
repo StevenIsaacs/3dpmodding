@@ -42,27 +42,7 @@ endif
 
 # What server software to use. Server software is hosted on an SBC.
 ifdef SERVER_SOFTWARE
-  include ${MK_DIR}/os-modding.mk
-
   include ${MK_DIR}/${SERVER_SOFTWARE}.mk
-
-  # Which board to run the server software on.
-  ifdef OS_BOARD
-    ifneq (${MAKECMDGOALS},list-os-boards)
-      include ${OS_BOARDS_DIR}/${OS_BOARD}.mk
-      # To trigger the build of a case for the SBC.
-      MODEL_OPTIONS += OS_BOARD=${OS_BOARD}
-    endif
-  endif
-
-  # Which variation of the OS to use.
-  ifdef OS_VARIANT
-    ifneq (${MAKECMDGOALS},list-os-variants)
-      include ${OS_VARIANTS_DIR}/${OS_VARIANT}.mk
-      include ${MK_DIR}/os-modding.mk
-      include ${MK_DIR}/firsttime.mk
-    endif
-  endif
 endif
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

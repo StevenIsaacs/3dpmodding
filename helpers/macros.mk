@@ -24,23 +24,19 @@ this_segment_dir = \
   $(basename $(dir $(word $(words ${MAKEFILE_LIST}),${MAKEFILE_LIST})))
 
 #+
-# Use this macro to verify a single variable has been set.
-#  Parameters:
-#    1 = The variable.
-#-
-define require_this
-  ifndef $(1)
-    $(error Variable $(1) must be set.)
-  endif
-endef
-
-#+
 # Use this macro to verify variables are set.
 #  Parameters:
 #    1 = A list of required variables.
 #-
-define requires
-  $(foreach v,$(1),$(eval $(call require_this,$(v))))
+define _require_this
+  $(if ${$(1)},\
+    $(info Required variable: $(1) = ${$(1)}),\
+    $(error Variable $(1) must be set)\
+  )
+endef
+
+define require
+  $(foreach v,$(1),$(call _require_this,$(v)))
 endef
 
 #+

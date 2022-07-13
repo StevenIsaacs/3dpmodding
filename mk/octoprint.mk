@@ -2,7 +2,7 @@
 # Octoprint
 #----------------------------------------------------------------------------
 
-$(eval $(call require_this,OS))
+$(call require,OS)
 
 include ${MK_DIR}/${OS}.mk
 
@@ -13,14 +13,14 @@ define OctoPrintInitScript
 endef
 
 .PHONY: init-octoprint
-init-octoprint:
+init-octoprint: ${OsDeps}
 	echo ${OctoPrintInitScript} > ${OS_IMAGE_MNT_DIR}/root/home/${OCTOPRINT_USER}
 
 ifeq (${MAKECMDGOALS},help-octoprint)
 define HelpOctoprintMsg
 Make segment: octoprint.mk
 
-This segement is used to install the OctoPrint initialization script in
+This segment is used to install the OctoPrint initialization script in
 an OS image for controlling a 3D printer.
 
 Defined in mod.mk:
@@ -28,20 +28,21 @@ Defined in mod.mk:
     Must equal octoprint for this segment to be used.
   OS = ${OS}
     Which OS is installed on the server board (OS_BOARD).
-  OS_BOARD = ${OS_BOARD}
-    Which SBC will be used to run OctoPrint.
-  OS_VARIANT = ${OS_VARIANT}
-    The OS to install the OctoPrint initialization script.
 
 Defined in config.mk:
+
+Defined in ${OS}.mk or a segment it loads:
+  OsDeps = ${OsDeps}
+    A list of dependencies needed in order to mount an OS image for
+    modification.
 
 Defines:
 
 Command line targets:
   help-octoprint        Display this help.
   init-octoprint        Install the initialization script for OctoPrint.
-
-Uses:
+                        This target must be used explicitly before an OS
+                        image will be modified.
 
 endef
 

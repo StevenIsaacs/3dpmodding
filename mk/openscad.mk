@@ -194,7 +194,9 @@ _png_files = $(foreach file, ${_model_files}, \
   ${OSC_PNG_DIR}/$(basename $(notdir $(file))).png)
 endif
 
-$(info Libraries $(wildcard ${OSC_LIB_DIR}/*.mk))
+$(info OpenSCAD libraries:)
+$(info $(wildcard ${OSC_LIB_DIR}/*.mk))
+
 include $(wildcard ${OSC_LIB_DIR}/*.mk)
 
 # This assumes downloading an executable binary (e.g. Appimage).

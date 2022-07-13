@@ -4,7 +4,7 @@
 
 $(call require,OS_VARIANT OS_BOARD)
 
-LOI_DIR = ${project_dir}/loi
+LOI_DIR = ${MK_DIR}/loi
 
 include ${LOI_DIR}/loi.mk
 

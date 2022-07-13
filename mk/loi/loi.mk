@@ -11,7 +11,7 @@
 # point to the corresponding directories.
 #-
 
-_loi_Dir = $(call this_segment_dir)
+_loi_Dir := $(call this_segment_dir)
 
 # Configuration
 LOI_BOARDS_DIR = ${_loi_Dir}/loi_boards
@@ -27,8 +27,6 @@ include ${LOI_VARIANTS_DIR}/${OS_VARIANT}.mk
 $(call require,\
 ${OS_VARIANT}_LOI_IMAGE \
 ${OS_VARIANT}_LOI_IMAGE_FILE \
-${OS_VARIANT}_LOI_IMAGE_URL \
-${OS_VARIANT}_LOI_IMAGE_ID \
 ${OS_VARIANT}_LOI_DOWNLOAD \
 ${OS_VARIANT}_LOI_UNPACK \
 ${OS_VARIANT}_LOI_P1_NAME \
@@ -36,6 +34,14 @@ ${OS_VARIANT}_LOI_P2_NAME \
 ${OS_VARIANT}_LOI_BOOT_DIR \
 ${OS_VARIANT}_LOI_ROOT_DIR \
 )
+
+ifeq (${${OS_VARIANT}_LOI_DOWNLOAD},wget)
+  $(call require, ${OS_VARIANT}_LOI_IMAGE_URL)
+else ifeq (${${OS_VARIANT}_LOI_DOWNLOAD},google)
+  $(call require, ${OS_VARIANT}_LOI_IMAGE_ID)
+else
+  $(error Unsupported download method: ${${OS_VARIANT}_LOI_DOWNLOAD})
+endif
 
 $(info Image download method: ${${OS_VARIANT}_LOI_DOWNLOAD})
 $(info Image unpack method: ${${OS_VARIANT}_LOI_UNPACK})
@@ -72,10 +78,12 @@ endef
 
 define _loi_unpack_xz
 	unxz -c $< > $@
+	touch $@
 endef
 
 define _loi_unpack_tarz
 	tar -xzf $< -C ${LOI_IMAGE_DIR}
+	touch $@
 endef
 
 ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}: ${DOWNLOADS_DIR}/${${OS_VARIANT}_LOI_IMAGE_FILE}
@@ -94,9 +102,10 @@ ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}: ${DOWNLOADS_DIR}/${${OS_VARIANT}_LO
   endif
 
 ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}-p.json: ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}
-	sfdisk -l -json $< > $@
+	sfdisk -l --json $< > $@
 
-${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}.mk: ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}-p.json
+${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}.mk: \
+    ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}-p.json
 	python3 ${HELPER_DIR}/os-image-partitions.py $< > $@
 
 # Get the partition information.
@@ -109,30 +118,38 @@ os-image-file: ${DOWNLOADS_DIR}/${${OS_VARIANT}_LOI_IMAGE_FILE}
 os-image: ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}
 
 define loi_mount_image =
-	@mkdir -p ${LOI_IMAGE_MNT_DIR}/p1
-	@echo "Mounting: p1"; \
-	sudo mount -v -o offset=${OS_IMAGE_P1_OFFSET},sizelimit=${OS_IMAGE_P1_SIZE} ${LOI_BUILD_DIR}/${${OS_VARIANT}_LOI_IMAGE} ${LOI_IMAGE_MNT_DIR}/p1
-	@if [ "${${OS_VARIANT}_LOI_P1_NAME}" = "p2" ]; then \
-	  mkdir -p ${LOI_IMAGE_MNT_DIR}/p2; \
+	@if [ ! "${${OS_VARIANT}_LOI_P1_NAME}" = "" ]; then \
+	  echo "Mounting: ${${OS_VARIANT}_LOI_P1_NAME}"; \
+	  mkdir -p ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P1_NAME}; \
+	  sudo mount -v -o offset=${OS_IMAGE_P1_OFFSET},sizelimit=${OS_IMAGE_P1_SIZE} ${LOI_BUILD_DIR}/${${OS_VARIANT}_LOI_IMAGE} \
+      ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P1_NAME}; \
 	fi
-	@if [ "${${OS_VARIANT}_LOI_P1_NAME}" = "p2" ]; then \
-	  echo "Mounting: p2"; \
-	  sudo mount -v -o offset=${OS_IMAGE_P2_OFFSET},sizelimit=${OS_IMAGE_P2_SIZE} ${LOI_BUILD_DIR}/${${OS_VARIANT}_LOI_IMAGE} ${LOI_IMAGE_MNT_DIR}/p2; \
+	@if [ ! "${${OS_VARIANT}_LOI_P2_NAME}" = "" ]; then \
+	  echo "Mounting: ${${OS_VARIANT}_LOI_P2_NAME}"; \
+	  mkdir -p ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P2_NAME}; \
+	  sudo mount -v -o offset=${OS_IMAGE_P2_OFFSET},sizelimit=${OS_IMAGE_P2_SIZE} ${LOI_BUILD_DIR}/${${OS_VARIANT}_LOI_IMAGE} \
+      ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P2_NAME}; \
 	fi
-	@ln -s ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_BOOT_DIR} ${LOI_IMAGE_MNT_DIR}/boot
-	@ln -s ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_ROOT_DIR} ${LOI_IMAGE_MNT_DIR}/root
+	@if [ -e ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_BOOT_DIR} ]; then \
+	  ln -s ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_BOOT_DIR} \
+      ${LOI_IMAGE_MNT_DIR}/boot; \
+	fi
+	@if [ -e ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_ROOT_DIR} ]; then \
+	  ln -s ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_ROOT_DIR} \
+      ${LOI_IMAGE_MNT_DIR}/root; \
+	fi
 endef
 
 define loi_unmount_image =
-  if mountpoint -q ${LOI_IMAGE_MNT_DIR}/p1; then \
+  if mountpoint -q ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P1_NAME}; then \
     echo "Unmounting: p1"; \
-    sudo umount ${LOI_IMAGE_MNT_DIR}/p1; \
-    rmdir ${LOI_IMAGE_MNT_DIR}/p1; \
+    sudo umount ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P1_NAME}; \
+    rmdir ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P1_NAME}; \
   fi; \
-  if mountpoint -q ${LOI_IMAGE_MNT_DIR}/p2; then \
-	  echo "Unmounting: p2"; \
-	  sudo umount ${LOI_IMAGE_MNT_DIR}/p2; \
-	  rmdir ${LOI_IMAGE_MNT_DIR}/p2; \
+  if mountpoint -q ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P2_NAME}; then \
+	  echo "Unmounting: ${${OS_VARIANT}_LOI_P2_NAME}"; \
+	  sudo umount ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P2_NAME}; \
+	  rmdir ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P2_NAME}; \
 	fi; \
 	rm ${LOI_IMAGE_MNT_DIR}/boot; \
 	rm ${LOI_IMAGE_MNT_DIR}/root
@@ -141,6 +158,8 @@ endef
 ${LOI_BUILD_DIR}/${${OS_VARIANT}_LOI_IMAGE}: \
   ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}
 	cp $< $@
+
+OsDeps = ${LOI_BUILD_DIR}/${${OS_VARIANT}_LOI_IMAGE}
 
 .PHONY: mount-os-image
 mount-os-image: ${LOI_BUILD_DIR}/${${OS_VARIANT}_LOI_IMAGE}
@@ -153,15 +172,17 @@ unmount-os-image:
 .PHONY: os-image-partitions
 os-image-partitions:
 	fdisk -l --bytes ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}
-	mount | grep ${LOI_IMAGE_MNT_DIR}
+	-mount | grep ${LOI_IMAGE_MNT_DIR}
 
-${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}-tree.txt: ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}
+${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}-tree.txt: \
+    ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}
 	$(call loi_mount_image)
 	cd ${LOI_IMAGE_DIR}/mnt; tree -fi boot root > $@
 	$(call loi_unmount_image)
 
 .PHONY: os-image-tree
-os-image-tree: ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}-tree.txt
+os-image-tree: \
+    ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}-tree.txt
 
 .PHONY: list-os-boards
 list-os-boards:
@@ -230,6 +251,8 @@ Defines:
     Where the OS image partitions are mounted for modification.
   LOI_INIT_DIR = ${LOI_INIT_DIR}
     Where the OS init scripts (firsttime) are maintained.
+  OsDeps = ${OsDeps}
+    A list of dependencies needed to mount an OS image.
   loi_mount_image       A callable macro to mount the OS image partitions.
                         Other make segments can call this macro to mount
                         partitions before installing or modifying files in
