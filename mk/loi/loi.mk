@@ -18,8 +18,8 @@ LOI_BOARDS_DIR = ${_loi_Dir}/loi_boards
 LOI_VARIANTS_DIR = ${_loi_Dir}/loi_variants
 LOI_INIT_DIR = ${_loi_Dir}/loi_init
 LOI_IMAGE_DIR = ${DOWNLOADS_DIR}/os-images
-LOI_BUILD_DIR = ${MOD_BUILD_DIR}/os-images
-LOI_IMAGE_MNT_DIR = ${LOI_BUILD_DIR}/mnt
+LOI_STAGING_DIR = ${MOD_STAGING_DIR}/os-images
+LOI_IMAGE_MNT_DIR = ${LOI_STAGING_DIR}/mnt
 
 include ${LOI_BOARDS_DIR}/${OS_BOARD}.mk
 include ${LOI_VARIANTS_DIR}/${OS_VARIANT}.mk
@@ -121,13 +121,13 @@ define loi_mount_image =
 	@if [ ! "${${OS_VARIANT}_LOI_P1_NAME}" = "" ]; then \
 	  echo "Mounting: ${${OS_VARIANT}_LOI_P1_NAME}"; \
 	  mkdir -p ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P1_NAME}; \
-	  sudo mount -v -o offset=${OS_IMAGE_P1_OFFSET},sizelimit=${OS_IMAGE_P1_SIZE} ${LOI_BUILD_DIR}/${${OS_VARIANT}_LOI_IMAGE} \
+	  sudo mount -v -o offset=${OS_IMAGE_P1_OFFSET},sizelimit=${OS_IMAGE_P1_SIZE} ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE} \
       ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P1_NAME}; \
 	fi
 	@if [ ! "${${OS_VARIANT}_LOI_P2_NAME}" = "" ]; then \
 	  echo "Mounting: ${${OS_VARIANT}_LOI_P2_NAME}"; \
 	  mkdir -p ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P2_NAME}; \
-	  sudo mount -v -o offset=${OS_IMAGE_P2_OFFSET},sizelimit=${OS_IMAGE_P2_SIZE} ${LOI_BUILD_DIR}/${${OS_VARIANT}_LOI_IMAGE} \
+	  sudo mount -v -o offset=${OS_IMAGE_P2_OFFSET},sizelimit=${OS_IMAGE_P2_SIZE} ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE} \
       ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P2_NAME}; \
 	fi
 	@if [ -e ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_BOOT_DIR} ]; then \
@@ -155,14 +155,15 @@ define loi_unmount_image =
 	rm ${LOI_IMAGE_MNT_DIR}/root
 endef
 
-${LOI_BUILD_DIR}/${${OS_VARIANT}_LOI_IMAGE}: \
+${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE}: \
   ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}
+	mkdir -p $(@D)
 	cp $< $@
 
-OsDeps = ${LOI_BUILD_DIR}/${${OS_VARIANT}_LOI_IMAGE}
+OsDeps = ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE}
 
 .PHONY: mount-os-image
-mount-os-image: ${LOI_BUILD_DIR}/${${OS_VARIANT}_LOI_IMAGE}
+mount-os-image: ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE}
 	$(call loi_mount_image)
 
 .PHONY: unmount-os-image
@@ -201,7 +202,7 @@ Defined in config.mk:
     Where to put downladed packaged (e.g. compressed) image files.
 
 Defined in kits.mk:
-  MOD_BUILD_DIR = ${MOD_BUILD_DIR}
+  MOD_STAGING_DIR = ${MOD_STAGING_DIR}
     Where the mod build output is stored.
 
 Defined in mod.mk:
@@ -244,7 +245,7 @@ Defines:
   LOI_IMAGE_DIR = ${LOI_IMAGE_DIR}
     Where OS images are stored. These are copied to the build directory for
     modification.
-  LOI_BUILD_DIR = ${LOI_BUILD_DIR}
+  LOI_STAGING_DIR = ${LOI_STAGING_DIR}
     Where the modified OS images are stored. Typically this is a subdirectory
     in the mod build directory.
   LOI_IMAGE_MNT_DIR = ${LOI_IMAGE_MNT_DIR}
