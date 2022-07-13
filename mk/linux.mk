@@ -33,5 +33,5 @@ endef
 
 export HelpLinuxMsg
 help-linux:
-	@echo "$$HelpLinuxMsg" | less
+> @echo "$$HelpLinuxMsg" | less
 endif

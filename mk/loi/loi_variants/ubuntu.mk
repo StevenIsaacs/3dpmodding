@@ -19,6 +19,6 @@ endef
 
 export HelpUbuntuMsg
 help-options:
-	@echo "$$HelpUbuntuMsg"
+> @echo "$$HelpUbuntuMsg"
 
 endif

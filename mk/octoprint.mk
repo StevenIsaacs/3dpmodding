@@ -14,7 +14,7 @@ endef
 
 .PHONY: init-octoprint
 init-octoprint: ${OsDeps}
-	echo ${OctoPrintInitScript} > ${OS_IMAGE_MNT_DIR}/root/home/${OCTOPRINT_USER}
+> echo ${OctoPrintInitScript} > ${OS_IMAGE_MNT_DIR}/root/home/${OCTOPRINT_USER}
 
 ifeq (${MAKECMDGOALS},help-octoprint)
 define HelpOctoprintMsg
@@ -48,7 +48,7 @@ endef
 
 export HelpOctoprintMsg
 help-octoprint:
-	@echo "$$HelpOctoprintMsg" | less
+> @echo "$$HelpOctoprintMsg" | less
 
 else
   $(call requires,OS OS_BOARD OS_VARIANT)

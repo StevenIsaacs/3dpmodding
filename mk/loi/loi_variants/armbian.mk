@@ -19,6 +19,6 @@ endef
 
 export HelpArmbianMsg
 help-options:
-	@echo "$$HelpArmbianMsg"
+> @echo "$$HelpArmbianMsg"
 
 endif

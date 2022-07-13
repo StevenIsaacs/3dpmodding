@@ -115,5 +115,5 @@ endef
 
 export HelpConfigMsg
 help-config:
-	@echo "$$HelpConfigMsg" | less
+> @echo "$$HelpConfigMsg" | less
 endif

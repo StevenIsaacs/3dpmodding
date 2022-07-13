@@ -9,9 +9,9 @@ dimlines_DIR = ${LIB_DIR}/dimlines
 dimlines_DEP = ${dimlines_DIR}/README.md
 
 ${dimlines_DEP}:
-	git clone ${dimlines_GIT_URL} ${dimlines_DIR}
-	cd $(dimlines_DIR) && \
-	git switch ${dimlines_VERSION} && \
-	git switch --detach
+> git clone ${dimlines_GIT_URL} ${dimlines_DIR}
+> cd $(dimlines_DIR) && \
+> git switch ${dimlines_VERSION} && \
+> git switch --detach
 
 dimlines: ${dimlines_DEP}

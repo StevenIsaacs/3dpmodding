@@ -41,14 +41,14 @@ _MarlinInstallFile = ${MARLIN_DIR}/README.md
 _MarlinConfigInstallFile = ${MARLIN_CONFIG_DIR}/README.md
 
 ${_MarlinInstallFile}:
-	git clone ${MARLIN_REPO} ${MARLIN_DIR}; \
-	cd ${MARLIN_DIR}; \
-	git checkout ${MARLIN_VARIANT}
+> git clone ${MARLIN_REPO} ${MARLIN_DIR}; \
+> cd ${MARLIN_DIR}; \
+> git checkout ${MARLIN_VARIANT}
 
 $(_MarlinConfigInstallFile):
-	git clone ${MARLIN_CONFIG_REPO} ${MARLIN_CONFIG_DIR}; \
-	cd ${MARLIN_CONFIG_DIR}; \
-	git checkout ${MARLIN_VARIANT}
+> git clone ${MARLIN_CONFIG_REPO} ${MARLIN_CONFIG_DIR}; \
+> cd ${MARLIN_CONFIG_DIR}; \
+> git checkout ${MARLIN_VARIANT}
 
 _MarlinDeps = \
   ${_PlatformIoRequirements} \
@@ -70,18 +70,18 @@ _MarlinFirmware = ${_MarlinBuildDir}/${MARLIN_MOD_BOARD}/${MARLIN_FIRMWARE}
 # directory structure.
 #-
 ${_MarlinFirmware}: ${_MarlinDeps} ${_MarlinModFiles}
-	cd ${MARLIN_DIR}; git checkout .; git checkout ${FIRMWARE_VARIANT}
-	cp -r ${MOD_DIR}/Marlin/* ${MARLIN_DIR}/Marlin
-	. ${PioVirtualEnvDir}/bin/activate; \
-	cd ${MARLIN_DIR}; \
-	platformio run -e ${MARLIN_MOD_BOARD}; \
-	deactivate
+> cd ${MARLIN_DIR}; git checkout .; git checkout ${FIRMWARE_VARIANT}
+> cp -r ${MOD_DIR}/Marlin/* ${MARLIN_DIR}/Marlin
+> . ${PioVirtualEnvDir}/bin/activate; \
+> cd ${MARLIN_DIR}; \
+> platformio run -e ${MARLIN_MOD_BOARD}; \
+> deactivate
 
 ModFirmware = ${MOD_STAGING_DIR}/${MARLIN_FIRMWARE}
 
 ${ModFirmware}: ${_MarlinFirmware}
-	mkdir -p $(@D)
-	cp $< $@
+> mkdir -p $(@D)
+> cp $< $@
 
 firmware: ${ModFirmware}
 
@@ -141,5 +141,5 @@ endef
 
 export HelpMarlinMsg
 help-marlin:
-	@echo "$$HelpMarlinMsg" | less
+> @echo "$$HelpMarlinMsg" | less
 endif

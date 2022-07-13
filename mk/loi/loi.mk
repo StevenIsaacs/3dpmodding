@@ -48,21 +48,21 @@ $(info Image unpack method: ${${OS_VARIANT}_LOI_UNPACK})
 
 # Image download methods.
 define download_wget
-	wget -O $@ ${${OS_VARIANT}_LOI_IMAGE_URL}
+> wget -O $@ ${${OS_VARIANT}_LOI_IMAGE_URL}
 endef
 
 # Thanks to: https://medium.com/@acpanjan/download-google-drive-files-using-wget-3c2c025a8b99
 define download_google
-	@echo Downloading from Google.
-	wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=${${OS_VARIANT}_LOI_IMAGE_ID}' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=${${OS_VARIANT}_LOI_IMAGE_ID}" -O $@ && rm -rf /tmp/cookies.txt
+  @echo Downloading from Google.
+  wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=${${OS_VARIANT}_LOI_IMAGE_ID}' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=${${OS_VARIANT}_LOI_IMAGE_ID}" -O $@ && rm -rf /tmp/cookies.txt
 endef
 
 ${DOWNLOADS_DIR}/${${OS_VARIANT}_LOI_IMAGE_FILE}:
-	@echo Downloading $@
-	mkdir -p $(@D)
+> @echo Downloading $@
+> mkdir -p $(@D)
   ifneq (${${OS_VARIANT}_LOI_DOWNLOAD},)
     ifdef download_${${OS_VARIANT}_LOI_DOWNLOAD}
-			$(call download_${${OS_VARIANT}_LOI_DOWNLOAD})
+>     $(call download_${${OS_VARIANT}_LOI_DOWNLOAD})
     else
       $(error Unsupported download method: ${${OS_VARIANT}_LOI_DOWNLOAD})
     endif
@@ -72,28 +72,28 @@ ${DOWNLOADS_DIR}/${${OS_VARIANT}_LOI_IMAGE_FILE}:
 
 # Image unpack methods.
 define _loi_unpack_zip
-	unzip $< -d $(@D)
-	touch $@
+> unzip $< -d $(@D)
+> touch $@
 endef
 
 define _loi_unpack_xz
-	unxz -c $< > $@
-	touch $@
+> unxz -c $< > $@
+> touch $@
 endef
 
 define _loi_unpack_tarz
-	tar -xzf $< -C ${LOI_IMAGE_DIR}
-	touch $@
+> tar -xzf $< -C ${LOI_IMAGE_DIR}
+> touch $@
 endef
 
 ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}: ${DOWNLOADS_DIR}/${${OS_VARIANT}_LOI_IMAGE_FILE}
-	mkdir -p $(@D)
-	@echo Extracting $<
-	@echo Compressed file type: $(suffix $<)
-	@echo Image unpack method: ${${OS_VARIANT}_LOI_UNPACK}
+> mkdir -p $(@D)
+> @echo Extracting $<
+> @echo Compressed file type: $(suffix $<)
+> @echo Image unpack method: ${${OS_VARIANT}_LOI_UNPACK}
   ifneq (${${OS_VARIANT}_LOI_UNPACK},)
     ifdef _loi_unpack_${${OS_VARIANT}_LOI_UNPACK}
-			$(call _loi_unpack_${${OS_VARIANT}_LOI_UNPACK})
+>     $(call _loi_unpack_${${OS_VARIANT}_LOI_UNPACK})
     else
       $(error Unsupported unpack method: ${${OS_VARIANT}_LOI_UNPACK})
     endif
@@ -102,11 +102,11 @@ ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}: ${DOWNLOADS_DIR}/${${OS_VARIANT}_LO
   endif
 
 ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}-p.json: ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}
-	sfdisk -l --json $< > $@
+> sfdisk -l --json $< > $@
 
 ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}.mk: \
     ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}-p.json
-	python3 ${HELPER_DIR}/os-image-partitions.py $< > $@
+> python3 ${HELPER_DIR}/os-image-partitions.py $< > $@
 
 # Get the partition information.
 ifneq (${MAKECMDGOALS},help-loi)
@@ -118,26 +118,26 @@ os-image-file: ${DOWNLOADS_DIR}/${${OS_VARIANT}_LOI_IMAGE_FILE}
 os-image: ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}
 
 define loi_mount_image =
-	@if [ ! "${${OS_VARIANT}_LOI_P1_NAME}" = "" ]; then \
-	  echo "Mounting: ${${OS_VARIANT}_LOI_P1_NAME}"; \
-	  mkdir -p ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P1_NAME}; \
-	  sudo mount -v -o offset=${OS_IMAGE_P1_OFFSET},sizelimit=${OS_IMAGE_P1_SIZE} ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE} \
+  @if [ ! "${${OS_VARIANT}_LOI_P1_NAME}" = "" ]; then \
+    echo "Mounting: ${${OS_VARIANT}_LOI_P1_NAME}"; \
+    mkdir -p ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P1_NAME}; \
+    sudo mount -v -o offset=${OS_IMAGE_P1_OFFSET},sizelimit=${OS_IMAGE_P1_SIZE} ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE} \
       ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P1_NAME}; \
-	fi
-	@if [ ! "${${OS_VARIANT}_LOI_P2_NAME}" = "" ]; then \
-	  echo "Mounting: ${${OS_VARIANT}_LOI_P2_NAME}"; \
-	  mkdir -p ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P2_NAME}; \
-	  sudo mount -v -o offset=${OS_IMAGE_P2_OFFSET},sizelimit=${OS_IMAGE_P2_SIZE} ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE} \
+  fi
+  @if [ ! "${${OS_VARIANT}_LOI_P2_NAME}" = "" ]; then \
+    echo "Mounting: ${${OS_VARIANT}_LOI_P2_NAME}"; \
+    mkdir -p ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P2_NAME}; \
+    sudo mount -v -o offset=${OS_IMAGE_P2_OFFSET},sizelimit=${OS_IMAGE_P2_SIZE} ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE} \
       ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P2_NAME}; \
-	fi
-	@if [ -e ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_BOOT_DIR} ]; then \
-	  ln -s ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_BOOT_DIR} \
+  fi
+  @if [ -e ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_BOOT_DIR} ]; then \
+    ln -s ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_BOOT_DIR} \
       ${LOI_IMAGE_MNT_DIR}/boot; \
-	fi
-	@if [ -e ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_ROOT_DIR} ]; then \
-	  ln -s ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_ROOT_DIR} \
+  fi
+  @if [ -e ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_ROOT_DIR} ]; then \
+    ln -s ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_ROOT_DIR} \
       ${LOI_IMAGE_MNT_DIR}/root; \
-	fi
+  fi
 endef
 
 define loi_unmount_image =
@@ -147,39 +147,39 @@ define loi_unmount_image =
     rmdir ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P1_NAME}; \
   fi; \
   if mountpoint -q ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P2_NAME}; then \
-	  echo "Unmounting: ${${OS_VARIANT}_LOI_P2_NAME}"; \
-	  sudo umount ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P2_NAME}; \
-	  rmdir ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P2_NAME}; \
-	fi; \
-	rm ${LOI_IMAGE_MNT_DIR}/boot; \
-	rm ${LOI_IMAGE_MNT_DIR}/root
+    echo "Unmounting: ${${OS_VARIANT}_LOI_P2_NAME}"; \
+    sudo umount ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P2_NAME}; \
+    rmdir ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P2_NAME}; \
+  fi; \
+  rm ${LOI_IMAGE_MNT_DIR}/boot; \
+  rm ${LOI_IMAGE_MNT_DIR}/root
 endef
 
 ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE}: \
   ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}
-	mkdir -p $(@D)
-	cp $< $@
+> mkdir -p $(@D)
+> cp $< $@
 
 OsDeps = ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE}
 
 .PHONY: mount-os-image
 mount-os-image: ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE}
-	$(call loi_mount_image)
+> $(call loi_mount_image)
 
 .PHONY: unmount-os-image
 unmount-os-image:
-	-$(call loi_unmount_image)
+> -$(call loi_unmount_image)
 
 .PHONY: os-image-partitions
 os-image-partitions:
-	fdisk -l --bytes ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}
-	-mount | grep ${LOI_IMAGE_MNT_DIR}
+> fdisk -l --bytes ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}
+> -mount | grep ${LOI_IMAGE_MNT_DIR}
 
 ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}-tree.txt: \
     ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}
-	$(call loi_mount_image)
-	cd ${LOI_IMAGE_DIR}/mnt; tree -fi boot root > $@
-	$(call loi_unmount_image)
+> $(call loi_mount_image)
+> cd ${LOI_IMAGE_DIR}/mnt; tree -fi boot root > $@
+> $(call loi_unmount_image)
 
 .PHONY: os-image-tree
 os-image-tree: \
@@ -187,8 +187,8 @@ os-image-tree: \
 
 .PHONY: list-os-boards
 list-os-boards:
-	@echo "Available boards:"
-	@ls ${LOI_BOARDS_DIR}
+> @echo "Available boards:"
+> @ls ${LOI_BOARDS_DIR}
 
 ifeq (${MAKECMDGOALS},help-loi)
 define HelpLoiMsg
@@ -286,5 +286,5 @@ endef
 
 export HelpLoiMsg
 help-loi:
-	@echo "$$HelpLoiMsg" | less
+> @echo "$$HelpLoiMsg" | less
 endif

@@ -43,9 +43,11 @@ for k in sys.modules.keys():
             deps += [m.__file__]
 
 # Generate the make compatible dependencies.
+# NOTE: This assumes .RECIPEPREFIX in the top make file has been set
+# to '>'.
 s = '{}:'.format(os.path.realpath(python_file))
 for d in deps:
     s += ' \\\n'
     s += '  {}'.format(d)
-s += '\n\ttouch $@'
+s += '\n> touch $@'
 print(s)

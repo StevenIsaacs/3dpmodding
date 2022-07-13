@@ -10,8 +10,8 @@ BOSL_DIR = ${LIB_DIR}/BOSL
 BOSL_DEP = ${BOSL_DIR}/README.md
 
 ${BOSL_DEP}:
-	git clone ${BOSL_GIT_URL} ${BOSL_DIR}
-	cd $(BOSL_DIR) && \
-	git switch --detach ${BOSL_VERSION}
+> git clone ${BOSL_GIT_URL} ${BOSL_DIR}
+> cd $(BOSL_DIR) && \
+> git switch --detach ${BOSL_VERSION}
 
 bosl: ${BOSL_DEP}

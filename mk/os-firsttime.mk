@@ -5,9 +5,9 @@
 -include ${MK_DIR}/${OS_VARIANT}_os-firsttime.mk
 
 install-os-firsttime:
-	$(call mount-os-image)
-	echo "$$GenFirstTimeScript" > ${FirstTimeDir}
-	$(call unmount-os-image)
+> $(call mount-os-image)
+> echo "$$GenFirstTimeScript" > ${FirstTimeDir}
+> $(call unmount-os-image)
 
 ifeq (${MAKECMDGOALS},help-os-firsttime)
 define FirstTimeHelp
@@ -19,7 +19,7 @@ of the first time script.
 
 NOTE: The targets are intended to be used explicitly on the command line.
       No other targets should be dependent of any of the targets described
-	  in this make segment.
+>   in this make segment.
 
 Defined in mod.mk:
   See os_image.mk.
@@ -47,6 +47,6 @@ endef
 
 export FirstTimeHelp
 help-os-firsttime:
-	@echo "$$FirstTimeHelp" | less
+> @echo "$$FirstTimeHelp" | less
 
 endif

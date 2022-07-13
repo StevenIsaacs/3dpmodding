@@ -66,5 +66,5 @@ endef
 export OsVariantsList
 .PHONY: list-os-variants
 list-os-variants:
-	@echo "$$OsVariantsList"
+> @echo "$$OsVariantsList"
 endif

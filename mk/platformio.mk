@@ -23,27 +23,27 @@ _PioVenvPackageDir = \
   ${PioVirtualEnvDir}/lib/python${PIO_PYTHON_VARIANT}/site-packages
 
 ${_PioPythonBin}:
-	python${PIO_PYTHON_VARIANT} -m venv --copies ${PioVirtualEnvDir}
+> python${PIO_PYTHON_VARIANT} -m venv --copies ${PioVirtualEnvDir}
 
 define _PioInstallPythonPackage =
 $(info ++++++++++++)
 $(info _PioInstallPythonPackage $1)
-	( \
-	  . ${PioVirtualEnvDir}/bin/activate; \
-	  pip3 install $1; \
-	)
+> ( \
+>   . ${PioVirtualEnvDir}/bin/activate; \
+>   pip3 install $1; \
+> )
 endef
 
 ${_PioVenvPackageDir}/platformio/__init__.py:
-	$(call _PioInstallPythonPackage, platformio)
+> $(call _PioInstallPythonPackage, platformio)
 
 .PHONY: pio_python
 pio_python: ${PioVenvRequirements}
-	( \
-	. ${PioVirtualEnvDir}/bin/activate; \
-	python; \
-	deactivate; \
-	)
+> ( \
+> . ${PioVirtualEnvDir}/bin/activate; \
+> python; \
+> deactivate; \
+> )
 
 ifeq (${MAKECMDGOALS},help-platformio)
 define HelpPlatformioMsg
@@ -59,7 +59,7 @@ Defined in mod.mk:
   PIO_VARIANT = ${PIO_VARIANT}
     Which version of PlatformIO to use. If undefined then a default is used.
     NOTE: This is the Python version installed on the host used to create
-	the Python virtual environment.
+> the Python virtual environment.
   PIO_PYTHON_VARIANT = ${PIO_PYTHON_VARIANT}
     Which version of Python to use. If undefined then a default is used.
 
@@ -83,5 +83,5 @@ endef
 
 export HelpPlatformioMsg
 help-platformio:
-	@echo "$$HelpPlatformioMsg" | less
+> @echo "$$HelpPlatformioMsg" | less
 endif

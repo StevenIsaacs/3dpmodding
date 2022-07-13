@@ -10,7 +10,7 @@ endef
 export ListOsVariantMsg
 .PHONY: list-os-variants
 list-os-variants:
-	@echo "$$ListOsVariantMsg"
+> @echo "$$ListOsVariantMsg"
 endif
 
 # Octopi prebuilt OS running on a Raspberry PI 3 or 4.

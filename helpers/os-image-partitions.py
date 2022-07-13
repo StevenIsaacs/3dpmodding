@@ -49,7 +49,7 @@ endef
 
 export HelpPartitionsMsg
 help-partitions:
-	@echo \"$$HelpPartitionsMsg\" | less
+> @echo \"$$HelpPartitionsMsg\" | less
 endif
 """
 

@@ -1,6 +1,9 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # ModFw
 #----------------------------------------------------------------------------
+# Changing the prefix because some editors like vscode don't handle tabs
+# in make files very well.
+.RECIPEPREFIX = >
 
 $(info Goal: ${MAKECMDGOALS})
 ifeq (${MAKECMDGOALS},)
@@ -53,12 +56,12 @@ all: ${ModFirmware} ${ModDeps} ${AllModelDeps}
 
 # Display the value of any variable.
 show-%:
-	@echo '$*=$($*)'
+> @echo '$*=$($*)'
 
 .PHONY: clean
 clean: ${Cleaners}
-	cd ${MARLIN_DIR}; git checkout .
-	rm -rf ${MarlinBuildDir}/${MARLIN_MOD_BOARD}
+> rm -rf ${BUILD_DIR}
+> rm -rf ${STAGING_DIR}
 
 ifeq (${MAKECMDGOALS},help)
 define ModFwUsage
@@ -168,5 +171,5 @@ endef
 export ModFwUsage
 .PHONY: help
 help:
-	@echo "$$ModFwUsage" | less
+> @echo "$$ModFwUsage" | less
 endif

@@ -83,7 +83,7 @@ Defined in config.mk:
 A kit config defines:
   ActiveKit = ${ActiveKit}
     When defined indicates the selected kit has been defined. If not defined
-	as a result of specifying a non-existant kit an error is reported.
+> as a result of specifying a non-existant kit an error is reported.
   KIT_REPO = ${KIT_REPO}
     The git URL used to clone the kit.
   KIT_VARIANT = ${KIT_VARIANT}
@@ -101,7 +101,7 @@ endef
 
 export HelpKitsMsg
 help-kits:
-	@echo "$$HelpKitsMsg" | less
+> @echo "$$HelpKitsMsg" | less
 
 else
 
@@ -121,9 +121,9 @@ endif
 _KitSegment = ${KIT_DIR}/kit.mk
 
 ${_KitSegment}:
-	mkdir -p ${KITS_DIR}
-	cd ${KITS_DIR}; git clone ${KIT_REPO} ${CLONE_DIR}
-	cd ${KITS_DIR}/${CLONE_DIR}; git checkout ${KIT_VARIANT}
+> mkdir -p ${KITS_DIR}
+> cd ${KITS_DIR}; git clone ${KIT_REPO} ${CLONE_DIR}
+> cd ${KITS_DIR}/${CLONE_DIR}; git checkout ${KIT_VARIANT}
 
 # Clone and load the kit and mod.
 include ${_KitSegment}

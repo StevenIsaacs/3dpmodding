@@ -19,6 +19,6 @@ endef
 
 export HelpDebianMsg
 help-options:
-	@echo "$$HelpDebianMsg"
+> @echo "$$HelpDebianMsg"
 
 endif
