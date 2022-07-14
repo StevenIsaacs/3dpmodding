@@ -25,12 +25,13 @@ include ${LOI_BOARDS_DIR}/${OS_BOARD}.mk
 include ${LOI_VARIANTS_DIR}/${OS_VARIANT}.mk
 
 $(call require,\
+${OS_VARIANT}_LOI_RELEASE \
+${OS_VARIANT}_LOI_VERSION \
 ${OS_VARIANT}_LOI_IMAGE \
 ${OS_VARIANT}_LOI_IMAGE_FILE \
 ${OS_VARIANT}_LOI_DOWNLOAD \
 ${OS_VARIANT}_LOI_UNPACK \
 ${OS_VARIANT}_LOI_P1_NAME \
-${OS_VARIANT}_LOI_P2_NAME \
 ${OS_VARIANT}_LOI_BOOT_DIR \
 ${OS_VARIANT}_LOI_ROOT_DIR \
 )
@@ -167,11 +168,11 @@ os-image-partitions:
 
 .PHONY: os-image-tree
 os-image-tree: \
-    ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE} FORCE
+    ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE} FORCE
 > $(call loi_mount_image)
 > cd ${LOI_IMAGE_MNT_DIR}; \
     tree -fi ${${OS_VARIANT}_LOI_BOOT_DIR} ${${OS_VARIANT}_LOI_ROOT_DIR} > \
-    ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}-tree.txt
+    ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE}-tree.txt
 > sleep 5 # Allow file system to catch up.
 > $(call loi_unmount_image)
 
