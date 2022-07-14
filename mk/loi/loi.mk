@@ -130,29 +130,19 @@ define loi_mount_image =
     sudo mount -v -o offset=${OS_IMAGE_P2_OFFSET},sizelimit=${OS_IMAGE_P2_SIZE} ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE} \
       ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P2_NAME}; \
   fi
-  @if [ -e ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_BOOT_DIR} ]; then \
-    ln -s ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_BOOT_DIR} \
-      ${LOI_IMAGE_MNT_DIR}/boot; \
-  fi
-  @if [ -e ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_ROOT_DIR} ]; then \
-    ln -s ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_ROOT_DIR} \
-      ${LOI_IMAGE_MNT_DIR}/root; \
-  fi
 endef
 
 define loi_unmount_image =
-  if mountpoint -q ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P1_NAME}; then \
-    echo "Unmounting: p1"; \
+  @if mountpoint -q ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P1_NAME}; then \
+    echo "Unmounting: ${${OS_VARIANT}_LOI_P1_NAME}"; \
     sudo umount ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P1_NAME}; \
     rmdir ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P1_NAME}; \
-  fi; \
-  if mountpoint -q ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P2_NAME}; then \
+  fi
+  @if mountpoint -q ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P2_NAME}; then \
     echo "Unmounting: ${${OS_VARIANT}_LOI_P2_NAME}"; \
     sudo umount ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P2_NAME}; \
     rmdir ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P2_NAME}; \
-  fi; \
-  rm ${LOI_IMAGE_MNT_DIR}/boot; \
-  rm ${LOI_IMAGE_MNT_DIR}/root
+  fi
 endef
 
 ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE}: \
@@ -175,15 +165,15 @@ os-image-partitions:
 > fdisk -l --bytes ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}
 > -mount | grep ${LOI_IMAGE_MNT_DIR}
 
-${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}-tree.txt: \
-    ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}
-> $(call loi_mount_image)
-> cd ${LOI_IMAGE_DIR}/mnt; tree -fi boot root > $@
-> $(call loi_unmount_image)
-
 .PHONY: os-image-tree
 os-image-tree: \
+    ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE} FORCE
+> $(call loi_mount_image)
+> cd ${LOI_IMAGE_MNT_DIR}; \
+    tree -fi ${${OS_VARIANT}_LOI_BOOT_DIR} ${${OS_VARIANT}_LOI_ROOT_DIR} > \
     ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}-tree.txt
+> sleep 5 # Allow file system to catch up.
+> $(call loi_unmount_image)
 
 .PHONY: list-os-boards
 list-os-boards:

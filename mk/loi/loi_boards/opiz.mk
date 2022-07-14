@@ -10,11 +10,9 @@ armbian_LOI_IMAGE_URL = \
   https://redirect.armbian.com/orangepizero/Bullseye_current
 armbian_LOI_DOWNLOAD = wget
 armbian_LOI_UNPACK = xz
-armbian_LOI_P1_NAME = p1
-armbian_LOI_P1_OFFSET = 4194304
-armbian_LOI_P1_SIZE = 1434451968
-armbian_LOI_BOOT_DIR = p1/boot
-armbian_LOI_ROOT_DIR = p1
+armbian_LOI_P1_NAME = root
+armbian_LOI_BOOT_DIR = ${armbian_LOI_P1_NAME}/boot
+armbian_LOI_ROOT_DIR = ${armbian_LOI_P1_NAME}
 
 # OrangePi_zero_ubuntu_xenial_server_linux5.3.5_v1.0.tar.gz
 ubuntu_LOI_RELEASE = v1.0
@@ -26,14 +24,10 @@ ubuntu_LOI_IMAGE_FILE = \
 ubuntu_LOI_IMAGE_ID = 14vsFOV-kqlIl5nqrKVPMB7qldJvX7Ttm
 ubuntu_LOI_DOWNLOAD = google
 ubuntu_LOI_UNPACK = tarz
-ubuntu_LOI_P1_NAME = p1
-ubuntu_LOI_P1_OFFSET = 4194304
-ubuntu_LOI_P1_SIZE = 1434451968
-ubuntu_LOI_P2_NAME = p2
-ubuntu_LOI_P2_OFFSET = 272629760
-ubuntu_LOI_P2_SIZE = 1744830464
-ubuntu_LOI_BOOT_DIR = p1
-ubuntu_LOI_ROOT_DIR = p2
+ubuntu_LOI_P1_NAME = boot
+ubuntu_LOI_P2_NAME = root
+ubuntu_LOI_BOOT_DIR = ${ubuntu_LOI_P1_NAME}
+ubuntu_LOI_ROOT_DIR = ${ubuntu_LOI_P2_NAME}
 
 # OrangePi_zero_debian_stretch_server_linux5.3.5_v1.0.tar.gz
 debian_LOI_RELEASE = v1.0
@@ -45,14 +39,10 @@ debian_LOI_IMAGE_FILE = \
 debian_LOI_IMAGE_ID = 1O9PuWWKFMgDeooJqBTVPC0aEeDMjvOmJ
 debian_LOI_DOWNLOAD = google
 debian_LOI_UNPACK = tarz
-debian_LOI_P1_NAME = p1
-debian_LOI_P1_OFFSET = 20971520
-debian_LOI_P1_SIZE = 52428800
-debian_LOI_P2_NAME = p2
-debian_LOI_P2_OFFSET = 73400320
-debian_LOI_P2_SIZE = 1224736768
-debian_LOI_BOOT_DIR = p1
-debian_LOI_ROOT_DIR = p2
+debian_LOI_P1_NAME = boot
+debian_LOI_P2_NAME = root
+debian_LOI_BOOT_DIR = ${debian_LOI_P1_NAME}
+debian_LOI_ROOT_DIR = ${debian_LOI_P2_NAME}
 
 ifeq (${MAKECMDGOALS},list-os-variants)
 define OsVariantsList

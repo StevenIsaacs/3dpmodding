@@ -15,6 +15,9 @@ $(info project_dir: ${project_dir})
 
 .DEFAULT_GOAL := all
 
+# Special target to force another target.
+FORCE:
+
 include config.mk
 # To simplfy the command line common option overrides can be placed in
 # a separate make segment. This file is NOT maintained in source control
