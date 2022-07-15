@@ -46,6 +46,19 @@ ifdef CAD_TOOL_3DP
   include ${MK_DIR}/${CAD_TOOL_3DP}.mk
 endif
 
+# Custom laser cut/engraved parts.
+ifdef CAD_TOOL_LASER
+  # Future possible is laserweb4.mk.
+  #   https://github.com/LaserWeb/LaserWeb4
+  $(info Laser cutting/engraving will be supported in the future)
+  $(info OpenSCAD 2D mode can be used for laser cutting)
+endif
+
+# Custom CNC'd parts.
+ifdef CAD_TOOL_CNC
+  $(info CNC tools will be supported in the future)
+  $(info OpenSCAD can be used for CNC modeling)
+endif
 # What server software to use. Server software is hosted on an SBC.
 ifdef SERVER_SOFTWARE
   include ${MK_DIR}/${SERVER_SOFTWARE}.mk
