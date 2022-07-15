@@ -1,8 +1,8 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# ModFw
+# ModFw - A framework for modifying and developing devices.
 #----------------------------------------------------------------------------
 # Changing the prefix because some editors like vscode don't handle tabs
-# in make files very well.
+# in make files very well. This also slightly improves readability.
 .RECIPEPREFIX = >
 
 $(info Goal: ${MAKECMDGOALS})
@@ -40,10 +40,10 @@ ifdef FIRMWARE
   include ${MK_DIR}/${FIRMWARE}.mk
 endif
 
-# Custom 3D printed parts.
-ifdef CAD_TOOL
+# Custom 3d printed parts.
+ifdef CAD_TOOL_3DP
   # This defines AllModelDeps.
-  include ${MK_DIR}/${CAD_TOOL}.mk
+  include ${MK_DIR}/${CAD_TOOL_3DP}.mk
 endif
 
 # What server software to use. Server software is hosted on an SBC.
@@ -114,13 +114,13 @@ Command line options:
 Defined in mod.mk:
   A scripted CAD tool is used to generate STLs for 3D printing or CNC machines.
   The STLs can be imported into slice or route softare to generate gcode.
-  CAD_TOOL=${CAD_TOOL}
+  CAD_TOOL_3DP=${CAD_TOOL_3DP}
     Which scripted CAD tool to use. If left undefined it is assumed no 3D
     printed parts are in the mod.
     Available tools are:
       ed-oscad  OpenSCAD and SolidPython.
       ed-cq     (future) CADQuery.
-  CAD_TOOL_VARIANT=${CAD_TOOL_VARIANT}
+  CAD_TOOL_3DP_VARIANT=${CAD_TOOL_3DP_VARIANT}
     Which branch or release of the CAD tool to use.
 
   Firmware runs on the device hardware.
@@ -146,7 +146,7 @@ Defined in mod.mk:
     The board on which the OS will run. This can also trigger the build
     of a 3D printed case for the board.
 
-  Not defining CAD_TOOL, FIRMWARE, and SERVER_SOFTWARE will disable the
+  Not defining CAD_TOOL_3DP, FIRMWARE, and SERVER_SOFTWARE will disable the
   corresponding section of a build.
 
 Command line targets:
