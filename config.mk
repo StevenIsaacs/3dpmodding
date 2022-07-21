@@ -18,6 +18,8 @@ $(info Running on: ${Platform})
 
 # Helper scripts and utilities.
 HELPER_DIR = ${project_dir}/helpers
+# These are helper functions for shell scripts (Bash).
+HELPER_FUNCTIONS = ${HELPER_DIR}/modfw-functions.sh
 
 # Make segments and related files for specific features.
 MK_DIR = ${project_dir}/mk

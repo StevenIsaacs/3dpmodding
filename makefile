@@ -46,8 +46,11 @@ ifdef CAD_TOOL_3DP
   include ${MK_DIR}/${CAD_TOOL_3DP}.mk
 endif
 
+# TODO: Slicer software for 3D printing and CNC.
+
 # Custom laser cut/engraved parts.
 ifdef CAD_TOOL_LASER
+  # TODO: Add CAD for laser.
   # Future possible is laserweb4.mk.
   #   https://github.com/LaserWeb/LaserWeb4
   $(info Laser cutting/engraving will be supported in the future)
@@ -56,11 +59,18 @@ endif
 
 # Custom CNC'd parts.
 ifdef CAD_TOOL_CNC
+  # TODO: Add CAD for CNC.
   $(info CNC tools will be supported in the future)
   $(info OpenSCAD can be used for CNC modeling)
 endif
+
+# TODO: Scripted schematic capture and PCB layout using tools like those
+# mentioned in this article:
+# https://hackaday.com/2021/03/30/wires-vs-words-pcb-routing-in-python/
+
 # What server software to use. Server software is hosted on an SBC.
 ifdef SERVER_SOFTWARE
+  ModOsInitScripts = ${HELPER_FUNCTIONS}
   include ${MK_DIR}/${SERVER_SOFTWARE}.mk
 endif
 

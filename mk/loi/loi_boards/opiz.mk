@@ -1,5 +1,8 @@
 $(info Using OS board: ${OS_BOARD})
 
+# This is important for emulation.
+OS_ARCH = arm
+
 # Bullseye is Debian based.
 armbian_LOI_RELEASE = 22.02.1
 armbian_LOI_VERSION = bullseye_current_5.15.25
@@ -44,8 +47,22 @@ debian_LOI_P2_NAME = root
 debian_LOI_BOOT_DIR = ${debian_LOI_P1_NAME}
 debian_LOI_ROOT_DIR = ${debian_LOI_P2_NAME}
 
-ifeq (${MAKECMDGOALS},list-os-variants)
-define OsVariantsList
+ifeq (${MAKECMDGOALS},help-${OS_BOARD})
+define ${OS_BOARD}_Help
+The Orange PI Zero does not have a display interface. To monitor the boot
+process it is necessary to use the serial port. Some instructions can be
+found here: https://www.sigmdel.ca/michel/ha/opi/OPiZ_uart_en.html
+NOTE: Any USB/serial adaptor can be used as long as the adaptor can work
+with the low TTL voltage (3.3V).
+
++---------------------------+
+|   +-+ +------+  [] Gnd    |
+|   |U| | Eth  |  o  TX     | <- USB/TTL adaptor connections
+|   |S| |      |  o  RX     |
+|   |B| |      |            |
+|   +-+ +------+            |
+....
+
 Supported OS variants for Orange PI Zero.
 
 armbian     The armbian.com based image.
@@ -53,8 +70,8 @@ ubuntu      Ubuntu version of the Orange PI OS.
 debian      Debian version of teh Orange PI OS.
 endef
 
-export OsVariantsList
-.PHONY: list-os-variants
-list-os-variants:
-> @echo "$$OsVariantsList"
+export ${OS_BOARD}_Help
+.PHONY: help-${OS_BOARD}
+help-${OS_BOARD}:
+> @echo "$$${OS_BOARD}_Help"
 endif

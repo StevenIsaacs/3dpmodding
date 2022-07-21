@@ -36,7 +36,8 @@ define _require_this
 endef
 
 define require
-  $(foreach v,$(1),$(call _require_this,$(v)))
+  $(info $(1))
+  $(foreach v,$(2),$(call _require_this,$(v)))
 endef
 
 #+

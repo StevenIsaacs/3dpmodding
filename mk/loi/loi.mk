@@ -13,6 +13,13 @@
 
 _loi_Dir := $(call this_segment_dir)
 
+$(call require, Defined in config.mk, HELPER_FUNCTIONS)
+
+$(call require,\
+This must be defined in ${SERVER_SOFTWARE}.mk, \
+SERVER_INIT_SCRIPT \
+)
+
 # Configuration
 LOI_BOARDS_DIR = ${_loi_Dir}/loi_boards
 LOI_VARIANTS_DIR = ${_loi_Dir}/loi_variants
@@ -25,6 +32,19 @@ include ${LOI_BOARDS_DIR}/${OS_BOARD}.mk
 include ${LOI_VARIANTS_DIR}/${OS_VARIANT}.mk
 
 $(call require,\
+Where the init scripts are stored. They can be removed after use., \
+${OS_VARIANT}_TMP_DIR \
+)
+
+# To shorten references a bit.
+_OsTmpDir = ${${OS_VARIANT}_TMP_DIR}
+_OsImageTmpDir = ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_ROOT_DIR}/${_OsTmpDir}
+
+LoiInitScripts = ${HELPER_FUNCTIONS}
+
+$(call require,\
+These must be defined by the OS board mk,\
+OS_ARCH \
 ${OS_VARIANT}_LOI_RELEASE \
 ${OS_VARIANT}_LOI_VERSION \
 ${OS_VARIANT}_LOI_IMAGE \
@@ -36,10 +56,21 @@ ${OS_VARIANT}_LOI_BOOT_DIR \
 ${OS_VARIANT}_LOI_ROOT_DIR \
 )
 
+$(call require,\
+These must be defined in ${OS_VARIANT}.mk,\
+${OS_VARIANT}_TMP_DIR \
+${OS_VARIANT}_ETC_DIR \
+${OS_VARIANT}_HOME_DIR \
+${OS_VARIANT}_USER_HOME_DIR \
+${OS_VARIANT}_USER_TMP_DIR \
+${OS_VARIANT}_ADMIN_HOME_DIR \
+${OS_VARIANT}_ADMIN_TMP_DIR \
+)
+
 ifeq (${${OS_VARIANT}_LOI_DOWNLOAD},wget)
-  $(call require, ${OS_VARIANT}_LOI_IMAGE_URL)
+  $(call require, Defined in board.mk,${OS_VARIANT}_LOI_IMAGE_URL)
 else ifeq (${${OS_VARIANT}_LOI_DOWNLOAD},google)
-  $(call require, ${OS_VARIANT}_LOI_IMAGE_ID)
+  $(call require, Defined in board.mk,${OS_VARIANT}_LOI_IMAGE_ID)
 else
   $(error Unsupported download method: ${${OS_VARIANT}_LOI_DOWNLOAD})
 endif
@@ -87,7 +118,8 @@ define _loi_unpack_tarz
 > touch $@
 endef
 
-${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}: ${DOWNLOADS_DIR}/${${OS_VARIANT}_LOI_IMAGE_FILE}
+${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}: \
+  ${DOWNLOADS_DIR}/${${OS_VARIANT}_LOI_IMAGE_FILE}
 > mkdir -p $(@D)
 > @echo Extracting $<
 > @echo Compressed file type: $(suffix $<)
@@ -181,12 +213,71 @@ list-os-boards:
 > @echo "Available boards:"
 > @ls ${LOI_BOARDS_DIR}
 
+# The emulator QEMU is used to run an init script in an OS image environment
+# without having to bood the OS on the target board.
+/usr/bin/qemu-${OS_ARCH}:
+> sudo apt update
+> sudo apt install qemu-user
+
+/usr/bin/proot: | /usr/bin/qemu-${OS_ARCH}
+> sudo apt install proot
+
+# Start the emulation to aid running the staging scripts.
+PROOT = sudo proot -q qemu-${OS_ARCH} -0 -w /root \
+  -r ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_ROOT_DIR}
+
+# Restrict to command line target only.
+ifeq (${MAKECMDGOALS},stage-os-image)
+define LoiInitConfig
+OS_ADMIN=${SERVER_ADMIN}
+OS_ADMIN_ID=${SERVER_ADMIN_ID}
+OS_ADMIN_GID=${SERVER_ADMIN_GID}
+OS_USER=${SERVER_USER}
+OS_USER_ID=${SERVER_USER_ID}
+OS_USER_GID=${SERVER_USER_GID}
+SERVER_INIT=${SERVER_INIT_SCRIPT}
+endef
+
+export LoiInitConfig
+# It is possible the OS image is already mounted.
+.PHONY: stage-os-image
+stage-os-image: /usr/bin/proot \
+    ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE} \
+    ${LoiInitScripts}
+> $(call loi_mount_image)
+> printf "%s" "$$LoiInitConfig" > ${_OsImageTmpDir}/options.conf
+> cp ${LoiInitScripts} ${_OsImageTmpDir}
+> $(call stage_${OS_VARIANT},${_OsImageTmpDir})
+> $(call stage_${SERVER_SOFTWARE},${_OsImageTmpDir})
+> -${PROOT} ${_OsTmpDir}/stage-${OS_VARIANT}
+> $(call loi_unmount_image)
+endif # stage-os-image
+
+.PHONY: os-image-shell
+os-image-shell: \
+    /usr/bin/proot \
+    ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE}
+> $(call loi_mount_image)
+> -${PROOT} /bin/bash
+> $(call loi_unmount_image)
+
+.PHONY: clean-os-image
+clean-os-image:
+> rm ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE}
+
 ifeq (${MAKECMDGOALS},help-loi)
 define HelpLoiMsg
 Using the mount feature other segments can modify the contents of os image
 as if it were part of the file system. Typically these modules install a
-first time script which runs the first time the OS is booted. See other
-segments for more information.
+first time script which runs the first time the OS is booted. The actual
+method and contents of these scripts is OS dependent. See the OS segments
+for more information (e.g. help-${OS_VARIANT}).
+
+WARNING: Because of the use of sudo and proot this creates a security risk.
+Every effort has been made to avoid corruption of the host OS but use with
+caution. Because of this the targets in this make segment must be invoked
+explicitly on the make command line and are not invoked from any other make
+segment.
 
 Defined in config.mk:
   DOWNLOADS_DIR=${DOWNLOADS_DIR}
@@ -232,7 +323,10 @@ Defines:
     Where the OS variant descriptions are maintained. These describe
     distro specifics for each OS variant.
   LOI_INIT_DIR = ${LOI_INIT_DIR}
-    Where variant specific init scripts are maintained.
+    Where variant specific init scripts are maintained. These are designed to
+    be run in a QEMU emulation environment. There are two flavors. The first
+    is for OS specific initialization and the second for server specific
+    initialization.
   LOI_IMAGE_DIR = ${LOI_IMAGE_DIR}
     Where OS images are stored. These are copied to the build directory for
     modification.
@@ -241,8 +335,6 @@ Defines:
     in the mod build directory.
   LOI_IMAGE_MNT_DIR = ${LOI_IMAGE_MNT_DIR}
     Where the OS image partitions are mounted for modification.
-  LOI_INIT_DIR = ${LOI_INIT_DIR}
-    Where the OS init scripts (firsttime) are maintained.
   OsDeps = ${OsDeps}
     A list of dependencies needed to mount an OS image.
   loi_mount_image       A callable macro to mount the OS image partitions.
@@ -257,8 +349,6 @@ Command line targets:
   help-loi              Display this help.
   list-os-boards        Display a list of available boards on which an OS
                         can be installed.
-  list-os-variants      Display a list of available OS variants. NOTE: The OS
-                        board determines which variants can be used.
   os-image-file         Download the OS image package file.
   os-image              Unpack the OS image package file.
   mount-os-image        Mount the OS image partitions (uses sudo).
@@ -270,8 +360,15 @@ Command line targets:
   os-image-tree         Generates a text file containing a full list of Files
                         in the OS image. This can be used for locating files
                         in the image without having to mount it.
+  stage-os-image        Use QEMU and proot to prepare an OS image for firstrun
+                        initialization. Staging scripts are executed using
+                        the target OS in an emulation environment.
+  os-image-shell        Use QEMU and proot to start a shell session using the
+                        OS image in an emulation environment.
+  clean-os-image        Remove the OS image file from the staging directory.
 
 Uses:
+  stage_${OS_VARIANT} defined in ${OS_VARIANT}.mk
 
 endef
 
