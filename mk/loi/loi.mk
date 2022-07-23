@@ -226,8 +226,6 @@ list-os-boards:
 PROOT = sudo proot -q qemu-${OS_ARCH} -0 -w /root \
   -r ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_ROOT_DIR}
 
-# Restrict to command line target only.
-ifeq (${MAKECMDGOALS},stage-os-image)
 define LoiInitConfig
 OS_ADMIN=${SERVER_ADMIN}
 OS_ADMIN_ID=${SERVER_ADMIN_ID}
@@ -251,7 +249,23 @@ stage-os-image: /usr/bin/proot \
 > $(call stage_${SERVER_SOFTWARE},${_OsImageTmpDir})
 > -${PROOT} ${_OsTmpDir}/stage-${OS_VARIANT}
 > $(call loi_unmount_image)
-endif # stage-os-image
+
+# Use BOOT_DEV to specify the device on the make command line.
+ifdef BOOT_DEV
+  _Device = --device ${BOOT_DEV}
+endif
+
+.PHONY: install-os-image
+install-os-image: stage-os-image
+> cd ${LOI_STAGING_DIR} && \
+  ${HELPER_DIR}/makebootable \
+    --os-image ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE} \
+    ${_Device}
+
+.PHONY: help-makebootable
+help-makebootable:
+> cd ${LOI_STAGING_DIR} && \
+  ${HELPER_DIR}/makebootable --help
 
 .PHONY: os-image-shell
 os-image-shell: \
@@ -363,9 +377,25 @@ Command line targets:
   stage-os-image        Use QEMU and proot to prepare an OS image for firstrun
                         initialization. Staging scripts are executed using
                         the target OS in an emulation environment.
+  install-os-image      Install the OS image file onto a USB flash card to
+                        make the card bootable on the target device. This
+                        uses the helper script makebootable. The makebootable
+                        setting are saved in ~/.modfw/makebootable. The
+                        boot device defaults to a device scan or the previous
+                        device. Use BOOT_DEV on the command line to specify
+                        which device to install the OS image to.
+  help-makebootable     Display the help and current settings for the
+                        makebootable helper script.
   os-image-shell        Use QEMU and proot to start a shell session using the
                         OS image in an emulation environment.
   clean-os-image        Remove the OS image file from the staging directory.
+
+Command line variables:
+  BOOT_DEV=<device>     (optional) This is used by install-os-image to select
+                        which device to install the OS onto. This must be a
+                        removable USB storage device and defaults to the
+                        first removable USB storage found in a downward scan
+                        from sdj to sdc.
 
 Uses:
   stage_${OS_VARIANT} defined in ${OS_VARIANT}.mk
