@@ -255,12 +255,17 @@ ifdef BOOT_DEV
   _Device = --device ${BOOT_DEV}
 endif
 
+ifneq (${Platform},Microsoft)
 .PHONY: install-os-image
 install-os-image: stage-os-image
 > cd ${LOI_STAGING_DIR} && \
   ${HELPER_DIR}/makebootable \
     --os-image ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE} \
     ${_Device}
+else
+install-os-image:
+> $(error USB storage device support is not available in WSL2)
+endif
 
 .PHONY: help-makebootable
 help-makebootable:
