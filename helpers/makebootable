@@ -186,7 +186,7 @@ fi
 # to manually unmount it.
 #-
 if is_mounted /dev/$Device; then
-    die "The target device $Device is mounted."
+  die "The target device $Device is mounted."
 fi
 
 warning "This is destructive. Install onto /dev/$Device?"
