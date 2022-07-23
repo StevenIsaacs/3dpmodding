@@ -119,7 +119,8 @@ is_usb_storage () {
     if [ "$r" = "1" ]; then
       i=`udevadm info /dev/$1 | grep ID_USB_DRIVER | cut -d = -f 2`
       if [ "$i" = "usb-storage" ]; then
-        return 0
+        grep $1 /proc/partitions
+        return $?
       fi
     fi
   fi
