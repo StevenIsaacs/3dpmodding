@@ -3,17 +3,20 @@
 #----------------------------------------------------------------------------
 
 $(call require,\
-These must be defined by mod.mk, \
-OS_VARIANT \
-OS_BOARD \
-SERVER_ADMIN \
-SERVER_ADMIN_ID \
-SERVER_ADMIN_GID \
-SERVER_USER \
-SERVER_USER_ID \
-SERVER_USER_GID \
-SERVER_ACCESS \
+mod.mk, \
+HUI_OS_VARIANT \
+HUI_OS_BOARD \
+HUI_ADMIN \
+HUI_ADMIN_ID \
+HUI_ADMIN_GID \
+HUI_USER \
+HUI_USER_ID \
+HUI_USER_GID \
+HUI_ACCESS \
 )
+
+# Ensure using one of the valid access modes.
+$(call must_be_one_of,HUI_ACCESS,console ssh brokered)
 
 LOI_DIR = ${MK_DIR}/loi
 
@@ -23,9 +26,9 @@ LOI_DIR = ${MK_DIR}/loi
 LINUX_TMP_DIR = /tmp
 LINUX_ETC_DIR = /etc
 LINUX_HOME_DIR = /home
-LINUX_USER_HOME_DIR = ${LINUX_HOME_DIR}/${SERVER_USER}
+LINUX_USER_HOME_DIR = ${LINUX_HOME_DIR}/${HUI_USER}
 LINUX_USER_TMP_DIR = ${LINUX_USER_HOME_DIR}/tmp
-LINUX_ADMIN_HOME_DIR = ${LINUX_HOME_DIR}/${SERVER_ADMIN}
+LINUX_ADMIN_HOME_DIR = ${LINUX_HOME_DIR}/${HUI_ADMIN}
 LINUX_ADMIN_TMP_DIR = ${LINUX_ADMIN_HOME_DIR}/tmp
 
 include ${LOI_DIR}/loi.mk
@@ -38,9 +41,9 @@ This segment serves as a wrapper for the Linux OS image modding segments. Its
 purpose is to provide a means for overriding the paths to the modding segments.
 
 Defined in mod.mk (required):
-  OS_VARIANT = ${OS_VARIANT}
+  HUI_OS_VARIANT = ${HUI_OS_VARIANT}
     Which variant or branch to use.
-  OS_BOARD = ${OS_BOARD}
+  HUI_OS_BOARD = ${HUI_OS_BOARD}
     Which board the OS will be installed on.
 
 Defines:

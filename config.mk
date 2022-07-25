@@ -12,7 +12,7 @@ else ifeq ($(shell uname),Darwin)
 # Detecting OS X is untested.
   Platform = OsX
 else
-  $(error Unable to identify platform)
+  $(call signal_error,Unable to identify platform)
 endif
 $(info Running on: ${Platform})
 

@@ -31,7 +31,7 @@ MOD_STAGING_DIR = ${STAGING_DIR}/${KIT}/${KIT_VARIANT}/${MOD}
 
 ifndef ActiveKit
   $(info See help-kits)
-  $(error No description for the kit: ${KIT})
+  $(call signal_error,No description for the kit: ${KIT})
 endif
 
 # This is structured so that help-kits can be used to determine which kits
@@ -107,15 +107,15 @@ else
 
 ifeq (${KIT},)
   $(info See help-kits)
-  $(error The kit has not been defined)
+  $(call signal_error,The kit has not been defined)
 endif
 ifeq (${KIT_VARIANT},)
   $(info See help-kits)
-  $(error The kit variant has not been defined)
+  $(call signal_error,The kit variant has not been defined)
 endif
 ifeq (${MOD},)
   $(info See help-kits)
-  $(error MOD has not been defined)
+  $(call signal_error,MOD has not been defined)
 endif
 
 _KitSegment = ${KIT_DIR}/kit.mk

@@ -36,10 +36,10 @@ s = '# Partitions from: {}\n'.format(os.path.realpath(json_file))
 c = 0
 for p in j['partitiontable']['partitions']:
     c += 1
-    s += 'OS_IMAGE_P{}_OFFSET = {}\n'.format(c, p['start'] * 512)
-    s += 'OS_IMAGE_P{}_SIZE = {}\n'.format(c, p['size'] * 512)
-    h += 'OS_IMAGE_P{}_OFFSET = ${{OS_IMAGE_P{}_OFFSET}}\n'.format(c, c)
-    h += 'OS_IMAGE_P{}_SIZE = ${{OS_IMAGE_P{}_SIZE}}\n'.format(c, c)
+    s += 'HUI_OS_IMAGE_P{}_OFFSET = {}\n'.format(c, p['start'] * 512)
+    s += 'HUI_OS_IMAGE_P{}_SIZE = {}\n'.format(c, p['size'] * 512)
+    h += 'HUI_OS_IMAGE_P{}_OFFSET = ${{HUI_OS_IMAGE_P{}_OFFSET}}\n'.format(c, c)
+    h += 'HUI_OS_IMAGE_P{}_SIZE = ${{HUI_OS_IMAGE_P{}_SIZE}}\n'.format(c, c)
 
 s += h
 # The following causes Python linters to complain about using a tab for

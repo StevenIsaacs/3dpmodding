@@ -24,20 +24,55 @@ this_segment_dir = \
   $(basename $(dir $(word $(words ${MAKEFILE_LIST}),${MAKEFILE_LIST})))
 
 #+
+# Use this macro to insert new lines into multiline messages.
+#-
+define newline
+nlnl
+endef
+
+#+
+# Use this macro to issue an error message as a warning and signal an
+# error exit.
+#  Paramaters:
+#    1 = The error message.
+#-
+ifeq (${MAKECMDGOALS},help)
+  define signal_error
+    ErrorMessage += "$(1)$(newline)"
+  endef
+else
+  define signal_error
+    $(error ERROR: $1 -- Use: make help)
+  endef
+endif
+
+#+
 # Use this macro to verify variables are set.
 #  Parameters:
 #    1 = A list of required variables.
 #-
 define _require_this
   $(if ${$(1)},\
-    $(info Required variable: $(1) = ${$(1)}),\
-    $(error Variable $(1) must be set)\
+    ,\
+    $(eval ErrorMessage += Variable $(1) must be defined in: $(2)$(newline))\
   )
 endef
 
 define require
-  $(info $(1))
-  $(foreach v,$(2),$(call _require_this,$(v)))
+  $(foreach v,$(2),$(call _require_this,$(v), $(1)))
+endef
+
+#+
+# Verify a variable has a valid value. If doesn't then error.
+# Parameters:
+#  1 = Variable name
+#  2 = List of valid values.
+#-
+define must_be_one_of
+  $(if $(findstring ${$(1)},$(2)),\
+    $(info $(1) = ${$(1)} and is a valid option),\
+    $(warning $(1) must equal one of: $(2))\
+  )
 endef
 
 #+

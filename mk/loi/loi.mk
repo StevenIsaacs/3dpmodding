@@ -13,12 +13,13 @@
 
 _loi_Dir := $(call this_segment_dir)
 
-$(call require, Defined in config.mk, HELPER_FUNCTIONS)
+$(call require,config.mk, HELPER_FUNCTIONS)
 
 $(call require,\
-This must be defined in ${SERVER_SOFTWARE}.mk, \
-SERVER_INIT_SCRIPT \
+${HUI_SOFTWARE}.mk, \
+HUI_INIT_SCRIPT \
 )
+
 
 # Configuration
 LOI_BOARDS_DIR = ${_loi_Dir}/loi_boards
@@ -28,75 +29,75 @@ LOI_IMAGE_DIR = ${DOWNLOADS_DIR}/os-images
 LOI_STAGING_DIR = ${MOD_STAGING_DIR}/os-images
 LOI_IMAGE_MNT_DIR = ${LOI_STAGING_DIR}/mnt
 
-include ${LOI_BOARDS_DIR}/${OS_BOARD}.mk
-include ${LOI_VARIANTS_DIR}/${OS_VARIANT}.mk
+include ${LOI_BOARDS_DIR}/${HUI_OS_BOARD}.mk
+include ${LOI_VARIANTS_DIR}/${HUI_OS_VARIANT}.mk
 
 $(call require,\
-Where the init scripts are stored. They can be removed after use., \
-${OS_VARIANT}_TMP_DIR \
+${HUI_OS_VARIANT}.mk, \
+${HUI_OS_VARIANT}_TMP_DIR \
 )
 
 # To shorten references a bit.
-_OsTmpDir = ${${OS_VARIANT}_TMP_DIR}
-_OsImageTmpDir = ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_ROOT_DIR}/${_OsTmpDir}
+_OsTmpDir = ${${HUI_OS_VARIANT}_TMP_DIR}
+_OsImageTmpDir = ${LOI_IMAGE_MNT_DIR}/${${HUI_OS_VARIANT}_LOI_ROOT_DIR}/${_OsTmpDir}
 
 LoiInitScripts = ${HELPER_FUNCTIONS}
 
 $(call require,\
-These must be defined by the OS board mk,\
-OS_ARCH \
-${OS_VARIANT}_LOI_RELEASE \
-${OS_VARIANT}_LOI_VERSION \
-${OS_VARIANT}_LOI_IMAGE \
-${OS_VARIANT}_LOI_IMAGE_FILE \
-${OS_VARIANT}_LOI_DOWNLOAD \
-${OS_VARIANT}_LOI_UNPACK \
-${OS_VARIANT}_LOI_P1_NAME \
-${OS_VARIANT}_LOI_BOOT_DIR \
-${OS_VARIANT}_LOI_ROOT_DIR \
+${HUI_OS_BOARD}.mk,\
+HUI_OS_ARCH \
+${HUI_OS_VARIANT}_LOI_RELEASE \
+${HUI_OS_VARIANT}_LOI_VERSION \
+${HUI_OS_VARIANT}_LOI_IMAGE \
+${HUI_OS_VARIANT}_LOI_IMAGE_FILE \
+${HUI_OS_VARIANT}_LOI_DOWNLOAD \
+${HUI_OS_VARIANT}_LOI_UNPACK \
+${HUI_OS_VARIANT}_LOI_P1_NAME \
+${HUI_OS_VARIANT}_LOI_BOOT_DIR \
+${HUI_OS_VARIANT}_LOI_ROOT_DIR \
 )
 
 $(call require,\
-These must be defined in ${OS_VARIANT}.mk,\
-${OS_VARIANT}_TMP_DIR \
-${OS_VARIANT}_ETC_DIR \
-${OS_VARIANT}_HOME_DIR \
-${OS_VARIANT}_USER_HOME_DIR \
-${OS_VARIANT}_USER_TMP_DIR \
-${OS_VARIANT}_ADMIN_HOME_DIR \
-${OS_VARIANT}_ADMIN_TMP_DIR \
+${HUI_OS_VARIANT}.mk,\
+${HUI_OS_VARIANT}_TMP_DIR \
+${HUI_OS_VARIANT}_ETC_DIR \
+${HUI_OS_VARIANT}_HOME_DIR \
+${HUI_OS_VARIANT}_USER_HOME_DIR \
+${HUI_OS_VARIANT}_USER_TMP_DIR \
+${HUI_OS_VARIANT}_ADMIN_HOME_DIR \
+${HUI_OS_VARIANT}_ADMIN_TMP_DIR \
 )
 
-ifeq (${${OS_VARIANT}_LOI_DOWNLOAD},wget)
-  $(call require, Defined in board.mk,${OS_VARIANT}_LOI_IMAGE_URL)
-else ifeq (${${OS_VARIANT}_LOI_DOWNLOAD},google)
-  $(call require, Defined in board.mk,${OS_VARIANT}_LOI_IMAGE_ID)
+ifeq (${${HUI_OS_VARIANT}_LOI_DOWNLOAD},wget)
+  $(call require, ${HUI_OS_BOARD}.mk,${HUI_OS_VARIANT}_LOI_IMAGE_URL)
+else ifeq (${${HUI_OS_VARIANT}_LOI_DOWNLOAD},google)
+  $(call require, ${HUI_OS_BOARD}.mk,${HUI_OS_VARIANT}_LOI_IMAGE_ID)
 else
-  $(error Unsupported download method: ${${OS_VARIANT}_LOI_DOWNLOAD})
+  $(call signal_error,Unsupported download method: ${${HUI_OS_VARIANT}_LOI_DOWNLOAD})
 endif
 
-$(info Image download method: ${${OS_VARIANT}_LOI_DOWNLOAD})
-$(info Image unpack method: ${${OS_VARIANT}_LOI_UNPACK})
+$(info Image download method: ${${HUI_OS_VARIANT}_LOI_DOWNLOAD})
+$(info Image unpack method: ${${HUI_OS_VARIANT}_LOI_UNPACK})
 
 # Image download methods.
 define download_wget
-  wget -O $@ ${${OS_VARIANT}_LOI_IMAGE_URL}
+  wget -O $@ ${${HUI_OS_VARIANT}_LOI_IMAGE_URL}
 endef
 
 # Thanks to: https://medium.com/@acpanjan/download-google-drive-files-using-wget-3c2c025a8b99
 define download_google
   @echo Downloading from Google.
-  wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=${${OS_VARIANT}_LOI_IMAGE_ID}' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=${${OS_VARIANT}_LOI_IMAGE_ID}" -O $@ && rm -rf /tmp/cookies.txt
+  wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=${${HUI_OS_VARIANT}_LOI_IMAGE_ID}' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=${${HUI_OS_VARIANT}_LOI_IMAGE_ID}" -O $@ && rm -rf /tmp/cookies.txt
 endef
 
-${DOWNLOADS_DIR}/${${OS_VARIANT}_LOI_IMAGE_FILE}:
+${DOWNLOADS_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE_FILE}:
 > @echo Downloading $@
 > mkdir -p $(@D)
-  ifneq (${${OS_VARIANT}_LOI_DOWNLOAD},)
-    ifdef download_${${OS_VARIANT}_LOI_DOWNLOAD}
->     $(call download_${${OS_VARIANT}_LOI_DOWNLOAD})
+  ifneq (${${HUI_OS_VARIANT}_LOI_DOWNLOAD},)
+    ifdef download_${${HUI_OS_VARIANT}_LOI_DOWNLOAD}
+>     $(call download_${${HUI_OS_VARIANT}_LOI_DOWNLOAD})
     else
-      $(error Unsupported download method: ${${OS_VARIANT}_LOI_DOWNLOAD})
+      $(call signal_error,Unsupported download method: ${${HUI_OS_VARIANT}_LOI_DOWNLOAD})
     endif
   else
     $(info Image download method not specified)
@@ -118,75 +119,75 @@ define _loi_unpack_tarz
 > touch $@
 endef
 
-${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}: \
-  ${DOWNLOADS_DIR}/${${OS_VARIANT}_LOI_IMAGE_FILE}
+${LOI_IMAGE_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE}: \
+  ${DOWNLOADS_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE_FILE}
 > mkdir -p $(@D)
 > @echo Extracting $<
 > @echo Compressed file type: $(suffix $<)
-> @echo Image unpack method: ${${OS_VARIANT}_LOI_UNPACK}
-  ifneq (${${OS_VARIANT}_LOI_UNPACK},)
-    ifdef _loi_unpack_${${OS_VARIANT}_LOI_UNPACK}
->     $(call _loi_unpack_${${OS_VARIANT}_LOI_UNPACK})
+> @echo Image unpack method: ${${HUI_OS_VARIANT}_LOI_UNPACK}
+  ifneq (${${HUI_OS_VARIANT}_LOI_UNPACK},)
+    ifdef _loi_unpack_${${HUI_OS_VARIANT}_LOI_UNPACK}
+>     $(call _loi_unpack_${${HUI_OS_VARIANT}_LOI_UNPACK})
     else
-      $(error Unsupported unpack method: ${${OS_VARIANT}_LOI_UNPACK})
+      $(call signal_error,Unsupported unpack method: ${${HUI_OS_VARIANT}_LOI_UNPACK})
     endif
   else
     $(info Image unpack method not specified)
   endif
 
-${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}-p.json: ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}
+${LOI_IMAGE_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE}-p.json: ${LOI_IMAGE_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE}
 > sfdisk -l --json $< > $@
 
-${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}.mk: \
-    ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}-p.json
+${LOI_IMAGE_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE}.mk: \
+    ${LOI_IMAGE_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE}-p.json
 > python3 ${HELPER_DIR}/os-image-partitions.py $< > $@
 
 # Get the partition information.
 ifneq (${MAKECMDGOALS},help-loi)
-  include ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}.mk
+  include ${LOI_IMAGE_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE}.mk
 endif
 
-os-image-file: ${DOWNLOADS_DIR}/${${OS_VARIANT}_LOI_IMAGE_FILE}
+os-image-file: ${DOWNLOADS_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE_FILE}
 
-os-image: ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}
+os-image: ${LOI_IMAGE_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE}
 
 define loi_mount_image =
-  @if [ ! "${${OS_VARIANT}_LOI_P1_NAME}" = "" ]; then \
-    echo "Mounting: ${${OS_VARIANT}_LOI_P1_NAME}"; \
-    mkdir -p ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P1_NAME}; \
-    sudo mount -v -o offset=${OS_IMAGE_P1_OFFSET},sizelimit=${OS_IMAGE_P1_SIZE} ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE} \
-      ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P1_NAME}; \
+  @if [ ! "${${HUI_OS_VARIANT}_LOI_P1_NAME}" = "" ]; then \
+    echo "Mounting: ${${HUI_OS_VARIANT}_LOI_P1_NAME}"; \
+    mkdir -p ${LOI_IMAGE_MNT_DIR}/${${HUI_OS_VARIANT}_LOI_P1_NAME}; \
+    sudo mount -v -o offset=${HUI_OS_IMAGE_P1_OFFSET},sizelimit=${HUI_OS_IMAGE_P1_SIZE} ${LOI_STAGING_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE} \
+      ${LOI_IMAGE_MNT_DIR}/${${HUI_OS_VARIANT}_LOI_P1_NAME}; \
   fi
-  @if [ ! "${${OS_VARIANT}_LOI_P2_NAME}" = "" ]; then \
-    echo "Mounting: ${${OS_VARIANT}_LOI_P2_NAME}"; \
-    mkdir -p ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P2_NAME}; \
-    sudo mount -v -o offset=${OS_IMAGE_P2_OFFSET},sizelimit=${OS_IMAGE_P2_SIZE} ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE} \
-      ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P2_NAME}; \
+  @if [ ! "${${HUI_OS_VARIANT}_LOI_P2_NAME}" = "" ]; then \
+    echo "Mounting: ${${HUI_OS_VARIANT}_LOI_P2_NAME}"; \
+    mkdir -p ${LOI_IMAGE_MNT_DIR}/${${HUI_OS_VARIANT}_LOI_P2_NAME}; \
+    sudo mount -v -o offset=${HUI_OS_IMAGE_P2_OFFSET},sizelimit=${HUI_OS_IMAGE_P2_SIZE} ${LOI_STAGING_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE} \
+      ${LOI_IMAGE_MNT_DIR}/${${HUI_OS_VARIANT}_LOI_P2_NAME}; \
   fi
 endef
 
 define loi_unmount_image =
-  @if mountpoint -q ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P1_NAME}; then \
-    echo "Unmounting: ${${OS_VARIANT}_LOI_P1_NAME}"; \
-    sudo umount ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P1_NAME}; \
-    rmdir ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P1_NAME}; \
+  @if mountpoint -q ${LOI_IMAGE_MNT_DIR}/${${HUI_OS_VARIANT}_LOI_P1_NAME}; then \
+    echo "Unmounting: ${${HUI_OS_VARIANT}_LOI_P1_NAME}"; \
+    sudo umount ${LOI_IMAGE_MNT_DIR}/${${HUI_OS_VARIANT}_LOI_P1_NAME}; \
+    rmdir ${LOI_IMAGE_MNT_DIR}/${${HUI_OS_VARIANT}_LOI_P1_NAME}; \
   fi
-  @if mountpoint -q ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P2_NAME}; then \
-    echo "Unmounting: ${${OS_VARIANT}_LOI_P2_NAME}"; \
-    sudo umount ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P2_NAME}; \
-    rmdir ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_P2_NAME}; \
+  @if mountpoint -q ${LOI_IMAGE_MNT_DIR}/${${HUI_OS_VARIANT}_LOI_P2_NAME}; then \
+    echo "Unmounting: ${${HUI_OS_VARIANT}_LOI_P2_NAME}"; \
+    sudo umount ${LOI_IMAGE_MNT_DIR}/${${HUI_OS_VARIANT}_LOI_P2_NAME}; \
+    rmdir ${LOI_IMAGE_MNT_DIR}/${${HUI_OS_VARIANT}_LOI_P2_NAME}; \
   fi
 endef
 
-${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE}: \
-  ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}
+${LOI_STAGING_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE}: \
+  ${LOI_IMAGE_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE}
 > mkdir -p $(@D)
 > cp $< $@
 
-OsDeps = ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE}
+OsDeps = ${LOI_STAGING_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE}
 
 .PHONY: mount-os-image
-mount-os-image: ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE}
+mount-os-image: ${LOI_STAGING_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE}
 > $(call loi_mount_image)
 
 .PHONY: unmount-os-image
@@ -195,16 +196,16 @@ unmount-os-image:
 
 .PHONY: os-image-partitions
 os-image-partitions:
-> fdisk -l --bytes ${LOI_IMAGE_DIR}/${${OS_VARIANT}_LOI_IMAGE}
+> fdisk -l --bytes ${LOI_IMAGE_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE}
 > -mount | grep ${LOI_IMAGE_MNT_DIR}
 
 .PHONY: os-image-tree
 os-image-tree: \
-    ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE} FORCE
+    ${LOI_STAGING_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE} FORCE
 > $(call loi_mount_image)
 > cd ${LOI_IMAGE_MNT_DIR}; \
-    tree -fi ${${OS_VARIANT}_LOI_BOOT_DIR} ${${OS_VARIANT}_LOI_ROOT_DIR} > \
-    ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE}-tree.txt
+    tree -fi ${${HUI_OS_VARIANT}_LOI_BOOT_DIR} ${${HUI_OS_VARIANT}_LOI_ROOT_DIR} > \
+    ${LOI_STAGING_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE}-tree.txt
 > sleep 5 # Allow file system to catch up.
 > $(call loi_unmount_image)
 
@@ -215,39 +216,42 @@ list-os-boards:
 
 # The emulator QEMU is used to run an init script in an OS image environment
 # without having to bood the OS on the target board.
-/usr/bin/qemu-${OS_ARCH}:
+/usr/bin/qemu-${HUI_OS_ARCH}:
 > sudo apt update
 > sudo apt install qemu-user
 
-/usr/bin/proot: | /usr/bin/qemu-${OS_ARCH}
+/usr/bin/proot: | /usr/bin/qemu-${HUI_OS_ARCH}
 > sudo apt install proot
 
+ifeq (${MAKECMDGOALS},stage-os-image)
 # Start the emulation to aid running the staging scripts.
-PROOT = sudo proot -q qemu-${OS_ARCH} -0 -w /root \
-  -r ${LOI_IMAGE_MNT_DIR}/${${OS_VARIANT}_LOI_ROOT_DIR}
+PROOT = sudo proot -q qemu-${HUI_OS_ARCH} -0 -w /root \
+  -r ${LOI_IMAGE_MNT_DIR}/${${HUI_OS_VARIANT}_LOI_ROOT_DIR}
 
 define LoiInitConfig
-OS_ADMIN=${SERVER_ADMIN}
-OS_ADMIN_ID=${SERVER_ADMIN_ID}
-OS_ADMIN_GID=${SERVER_ADMIN_GID}
-OS_USER=${SERVER_USER}
-OS_USER_ID=${SERVER_USER_ID}
-OS_USER_GID=${SERVER_USER_GID}
-SERVER_INIT=${SERVER_INIT_SCRIPT}
+HUI_OS_ADMIN=${HUI_ADMIN}
+HUI_OS_ADMIN_ID=${HUI_ADMIN_ID}
+HUI_OS_ADMIN_GID=${HUI_ADMIN_GID}
+HUI_OS_USER=${HUI_USER}
+HUI_OS_USER_ID=${HUI_USER_ID}
+HUI_OS_USER_GID=${HUI_USER_GID}
+HUI_INIT=${HUI_INIT_SCRIPT}
 endef
 
 export LoiInitConfig
 # It is possible the OS image is already mounted.
 .PHONY: stage-os-image
 stage-os-image: /usr/bin/proot \
-    ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE} \
+    ${LOI_STAGING_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE} \
     ${LoiInitScripts}
 > $(call loi_mount_image)
 > printf "%s" "$$LoiInitConfig" > ${_OsImageTmpDir}/options.conf
 > cp ${LoiInitScripts} ${_OsImageTmpDir}
-> $(call stage_${OS_VARIANT},${_OsImageTmpDir})
-> $(call stage_${SERVER_SOFTWARE},${_OsImageTmpDir})
-> -${PROOT} ${_OsTmpDir}/stage-${OS_VARIANT}
+> $(call stage_${HUI_OS_VARIANT},${_OsImageTmpDir})
+> $(call stage_${HUI_SOFTWARE},${_OsImageTmpDir})
+> -${PROOT} ${_OsTmpDir}/stage-${HUI_OS_VARIANT}
+> date >${LOI_STAGING_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE}.staged
+> cp ${LOI_STAGING_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE}.staged ${_OsImageTmpDir}
 > $(call loi_unmount_image)
 
 # Use BOOT_DEV to specify the device on the make command line.
@@ -255,16 +259,22 @@ ifdef BOOT_DEV
   _Device = --device ${BOOT_DEV}
 endif
 
+endif # stage-os-image
+
+${LOI_STAGING_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE}.staged:
+> @echo "Cannot install the OS image. Use stage-os-image first."; exit 1
+
 ifneq (${Platform},Microsoft)
 .PHONY: install-os-image
-install-os-image: stage-os-image
+install-os-image: \
+  ${LOI_STAGING_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE}.staged
 > cd ${LOI_STAGING_DIR} && \
   ${HELPER_DIR}/makebootable \
-    --os-image ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE} \
+    --os-image ${LOI_STAGING_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE} \
     ${_Device}
 else
 install-os-image:
-> $(error USB storage device support is not available in WSL2)
+> $(call signal_error,USB storage device support is not available in WSL2)
 endif
 
 .PHONY: help-makebootable
@@ -275,14 +285,14 @@ help-makebootable:
 .PHONY: os-image-shell
 os-image-shell: \
     /usr/bin/proot \
-    ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE}
+    ${LOI_STAGING_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE}
 > $(call loi_mount_image)
 > -${PROOT} /bin/bash
 > $(call loi_unmount_image)
 
 .PHONY: clean-os-image
 clean-os-image:
-> rm ${LOI_STAGING_DIR}/${${OS_VARIANT}_LOI_IMAGE}
+> rm ${LOI_STAGING_DIR}/${${HUI_OS_VARIANT}_LOI_IMAGE}
 
 ifeq (${MAKECMDGOALS},help-loi)
 define HelpLoiMsg
@@ -290,7 +300,7 @@ Using the mount feature other segments can modify the contents of os image
 as if it were part of the file system. Typically these modules install a
 first time script which runs the first time the OS is booted. The actual
 method and contents of these scripts is OS dependent. See the OS segments
-for more information (e.g. help-${OS_VARIANT}).
+for more information (e.g. help-${HUI_OS_VARIANT}).
 
 WARNING: Because of the use of sudo and proot this creates a security risk.
 Every effort has been made to avoid corruption of the host OS but use with
@@ -307,31 +317,31 @@ Defined in kits.mk:
     Where the mod build output is stored.
 
 Defined in mod.mk:
-  OS_BOARD=${OS_BOARD}
+  HUI_OS_BOARD=${HUI_OS_BOARD}
     Which board to use (show-os-boards for more info).
-  OS_VARIANT=${OS_VARIANT}
+  HUI_OS_VARIANT=${HUI_OS_VARIANT}
     Which OS variant to use for the selected OS board
     (show-os-variants for more info).
 
-Defined in ${OS_BOARD}.mk:
-  ${OS_VARIANT}_LOI_IMAGE = ${${OS_VARIANT}_LOI_IMAGE}
+Defined in ${HUI_OS_BOARD}.mk:
+  ${HUI_OS_VARIANT}_LOI_IMAGE = ${${HUI_OS_VARIANT}_LOI_IMAGE}
     The OS image (typically .img).
-  ${OS_VARIANT}_LOI_IMAGE_FILE = ${${OS_VARIANT}_LOI_IMAGE_FILE}
+  ${HUI_OS_VARIANT}_LOI_IMAGE_FILE = ${${HUI_OS_VARIANT}_LOI_IMAGE_FILE}
     The OS image package file.
-  ${OS_VARIANT}_LOI_IMAGE_URL = ${${OS_VARIANT}_LOI_IMAGE_URL}
+  ${HUI_OS_VARIANT}_LOI_IMAGE_URL = ${${HUI_OS_VARIANT}_LOI_IMAGE_URL}
     Where to download the OS image package file from.
-  ${OS_VARIANT}_LOI_DOWNLOAD = ${${OS_VARIANT}_LOI_DOWNLOAD}
+  ${HUI_OS_VARIANT}_LOI_DOWNLOAD = ${${HUI_OS_VARIANT}_LOI_DOWNLOAD}
     The tool to use to download the OS image file.
-  ${OS_VARIANT}_LOI_UNPACK = ${${OS_VARIANT}_LOI_UNPACK}
+  ${HUI_OS_VARIANT}_LOI_UNPACK = ${${HUI_OS_VARIANT}_LOI_UNPACK}
     The tool to use to unpack the OS image package.
-  ${OS_VARIANT}_LOI_P1_NAME = ${${OS_VARIANT}_LOI_P1_NAME}
+  ${HUI_OS_VARIANT}_LOI_P1_NAME = ${${HUI_OS_VARIANT}_LOI_P1_NAME}
     The name of the mount point for the first partition.
-  ${OS_VARIANT}_LOI_P2_NAME = ${${OS_VARIANT}_LOI_P2_NAME}
+  ${HUI_OS_VARIANT}_LOI_P2_NAME = ${${HUI_OS_VARIANT}_LOI_P2_NAME}
     The mount point for the second partition if it exists.
     Leave undefined if there is no second partiton.
-  ${OS_VARIANT}_LOI_BOOT_DIR = ${${OS_VARIANT}_LOI_BOOT_DIR}
+  ${HUI_OS_VARIANT}_LOI_BOOT_DIR = ${${HUI_OS_VARIANT}_LOI_BOOT_DIR}
     Path to the boot directory.
-  ${OS_VARIANT}_LOI_ROOT_DIR = ${${OS_VARIANT}_LOI_ROOT_DIR}
+  ${HUI_OS_VARIANT}_LOI_ROOT_DIR = ${${HUI_OS_VARIANT}_LOI_ROOT_DIR}
     Path to the root directory.
 
 Defines:
@@ -344,7 +354,7 @@ Defines:
   LOI_INIT_DIR = ${LOI_INIT_DIR}
     Where variant specific init scripts are maintained. These are designed to
     be run in a QEMU emulation environment. There are two flavors. The first
-    is for OS specific initialization and the second for server specific
+    is for OS specific initialization and the second for user interface specific
     initialization.
   LOI_IMAGE_DIR = ${LOI_IMAGE_DIR}
     Where OS images are stored. These are copied to the build directory for
@@ -385,11 +395,11 @@ Command line targets:
   install-os-image      Install the OS image file onto a USB flash card to
                         make the card bootable on the target device. This
                         uses the helper script makebootable. The makebootable
-                        setting are saved in ~/.modfw/makebootable. The
+                        options are saved in ~/.modfw/makebootable. The
                         boot device defaults to a device scan or the previous
                         device. Use BOOT_DEV on the command line to specify
                         which device to install the OS image to.
-  help-makebootable     Display the help and current settings for the
+  help-makebootable     Display the help and current options for the
                         makebootable helper script.
   os-image-shell        Use QEMU and proot to start a shell session using the
                         OS image in an emulation environment.
@@ -403,7 +413,7 @@ Command line variables:
                         from sdj to sdc.
 
 Uses:
-  stage_${OS_VARIANT} defined in ${OS_VARIANT}.mk
+  stage_${HUI_OS_VARIANT} defined in ${HUI_OS_VARIANT}.mk
 
 endef
 

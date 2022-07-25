@@ -1,7 +1,7 @@
 #+
 # OS Variant definitions for the Debian OS.
 #-
-$(info Using OS variant: ${OS_VARIANT})
+$(info Using OS variant: ${HUI_OS_VARIANT})
 
 ifeq (${MAKECMDGOALS},help-debian)
 define HelpDebianMsg

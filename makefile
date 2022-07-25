@@ -61,17 +61,21 @@ endif
 ifdef CAD_TOOL_CNC
   # TODO: Add CAD for CNC.
   $(info CNC tools will be supported in the future)
-  $(info OpenSCAD can be used for CNC modeling)
+  $(info In the meantime OpenSCAD can be used for CNC modeling)
 endif
 
+ifdef CAD_TOOL_PCB
 # TODO: Scripted schematic capture and PCB layout using tools like those
 # mentioned in this article:
 # https://hackaday.com/2021/03/30/wires-vs-words-pcb-routing-in-python/
+$(info PCB CAD tools will be supported in the future)
+endif
 
-# What server software to use. Server software is hosted on an SBC.
-ifdef SERVER_SOFTWARE
+# What user interface software to use. User interface software is hosted on
+# a single board computer (SBC).
+ifdef HUI_SOFTWARE
   ModOsInitScripts = ${HELPER_FUNCTIONS}
-  include ${MK_DIR}/${SERVER_SOFTWARE}.mk
+  include ${MK_DIR}/${HUI_SOFTWARE}.mk
 endif
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -89,16 +93,40 @@ clean: ${Cleaners}
 > rm -rf ${BUILD_DIR}
 > rm -rf ${STAGING_DIR}
 
+SHELL = /bin/bash
+
 ifeq (${MAKECMDGOALS},help)
 define ModFwUsage
-Usage: make [<option>=<value>] <target>
+Usage: make [<option>=<value> ...] <target>
 
 This make file and the included make segments define a framework
 for developing and modifying devices or small embedded systems.
 
 The collection of files for a given device or system is termed a mod.
-Semantically, a mod is a modification of a device or system. A mod
-can also be the development a complete device or system.
+Semantically, a mod is a modification of an existing device or system.
+A mod can also be the development a new device or system.
+
+ModFW directly supports the following design patterns. This pattern
+is usable in most situations where remote access to devices is needed.
+If necessary mods can either change a pattern or define a new one.
+
+Design patterns:
+
+  Local network.
+  +-PC----------+   +-SBC------------+   +-MCU--------+
+  | Workstation |<->| User Interface |<->| Controller |
+  +-------------+ ^ +----------------+ ^ +------------+
+                  |                    |
+                  SSH                  MCU defined
+                                       (typically serial port)
+
+  Secure brokered remote access using SSH tunnels.
+  +-PC----------+   +-cloud--+   +-SBC------------+   +-MCU--------+
+  | Workstation |<->| Broker |<->| User Interface |<->| Controller |
+  +-------------+ ^ +--------+ ^ +----------------+ ^ +------------+
+                  |            |                    |
+                  SSH tunnel   SSH tunnel           MCU defined
+                                                    (typically serial port)
 
 A git repository is used to maintain one or more kit with each mod
 having its own subdirectory within the git repository.
@@ -114,12 +142,11 @@ automatically installed within the context of the project directory so
 that different projects can use different versions of tools without
 conflicts between versions.
 
-All of the 3D models are either downloaded as STLs from various websites or
-are scripted using OpenSCAD which are then processed using ed-oscad to
-generate the corresponding STL files. Because of the differences
-between the various slicers and 3D printers gcode is not produced.
-
-NOTE: SolidPython, ed-sp, will also be supported at some time in the future.
+All of the CAD models are either downloaded as STLs from various websites or
+are scripted using a corresponding scripting tool (e.g. 3D models using
+OpenSCAD) which are then processed using the corresponding tool to
+generate the corresponding output files. See the individual tool help targets
+for more information.
 
 Command line options:
   Use help-<segment> to view the segment specific command line options.
@@ -135,14 +162,14 @@ Command line options:
   <target>      A single target. This defaults to display this help.
 
 Defined in mod.mk:
-  A scripted CAD tool is used to generate STLs for 3D printing or CNC machines.
-  The STLs can be imported into slice or route softare to generate gcode.
   CAD_TOOL_3DP=${CAD_TOOL_3DP}
     Which scripted CAD tool to use. If left undefined it is assumed no 3D
     printed parts are in the mod.
+    A scripted CAD tool is used to generate STLs for 3D printing or CNC
+    machines. The STLs can be imported into slice or route software to
+    generate gcode.
     Available tools are:
-      ed-oscad  OpenSCAD and SolidPython.
-      ed-cq     (future) CADQuery.
+      openscad   OpenSCAD and SolidPython.
   CAD_TOOL_3DP_VARIANT=${CAD_TOOL_3DP_VARIANT}
     Which branch or release of the CAD tool to use.
 
@@ -155,21 +182,22 @@ Defined in mod.mk:
   FIRMWARE_VARIANT=${FIRMWARE_VARIANT}
     Which branch or release of the firmware to use.
 
-  Server software connects to the firmware running on the device to provide
-  access via a network. Server software can also provide a user interface
-  using devices such as keyboards, displays, and touch screens.
-  SERVER_SOFTWARE=${SERVER_SOFTWARE}
-    Which server software to use. Server software is hosted on an SBC. If
-    not defined then OS_VARIANT and OS_BOARD are ignored.
-  OS_VARIANT=${OS_VARIANT}
+  Host user interface (HUI) software connects to the firmware running on the
+  controller to provide monitoring and access via a GUI, console, or a network.
+  The HUI uses devices such as keyboards, displays, and touch screens.
+  HUI_SOFTWARE=${HUI_SOFTWARE}
+    Which user interface software to use. User interface software is typcially
+    hosted on an SBC. If not defined then HUI_OS_VARIANT and HUI_OS_BOARD are
+    ignored.
+  HUI_OS_VARIANT=${HUI_OS_VARIANT}
     The variant of the OS to use. This determines in which OS to install the
     initialization scripts. If undefined then an OS image will not be
     initilized.
-  OS_BOARD=${OS_BOARD}
+  HUI_OS_BOARD=${HUI_OS_BOARD}
     The board on which the OS will run. This can also trigger the build
-    of a 3D printed case for the board.
+    of a 3D printed enclosuer for the board determined by the mod.
 
-  Not defining CAD_TOOL_3DP, FIRMWARE, and SERVER_SOFTWARE will disable the
+  Not defining CAD_TOOL_xxx, FIRMWARE, and HUI_SOFTWARE will disable the
   corresponding section of a build.
 
 Command line targets:
@@ -197,5 +225,14 @@ endef
 export ModFwUsage
 .PHONY: help
 help:
+> @if [ -n "${ErrorMessage}" ]; then\
+    echo Errors encountered:;\
+    m="${ErrorMessage}";printf " $${m//nlnl/\\n}";\
+    read -p "Press ENTER to continue...";\
+  fi
 > @echo "$$ModFwUsage" | less
-endif
+else
+  ifdef ErrorMessage
+    $(error Errors encountered. See make help)
+  endif
+endif # help
