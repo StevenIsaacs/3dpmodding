@@ -13,8 +13,8 @@ if [ -f ${${HUI_OS_VARIANT}_TMP_DIR}/${${HUI_OS_VARIANT}_SCRIPT} ]; then
 fi
 
 # Load the access level initialization.
-if [ -f ${${HUI_OS_VARIANT}_TMP_DIR}/${${HUI_ACCESS}_SCRIPT} ]; then
-  . ${${HUI_OS_VARIANT}_TMP_DIR}/${${HUI_ACCESS}_SCRIPT}
+if [ -f ${${HUI_OS_VARIANT}_TMP_DIR}/${${HUI_ACCESS_METHOD}_SCRIPT} ]; then
+  . ${${HUI_OS_VARIANT}_TMP_DIR}/${${HUI_ACCESS_METHOD}_SCRIPT}
 fi
 
 # Load the user interface specific initialization.

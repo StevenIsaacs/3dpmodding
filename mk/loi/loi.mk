@@ -13,21 +13,39 @@
 
 _loi_Dir := $(call this_segment_dir)
 
+# Configuration
+LOI_BOARDS_DIR = ${_loi_Dir}/loi_boards
+LOI_VARIANTS_DIR = ${_loi_Dir}/loi_variants
+LOI_ACCESS_METHODS_DIR = ${_loi_Dir}/loi_access_methods
+LOI_INIT_DIR = ${_loi_Dir}/loi_init
+LOI_IMAGE_DIR = ${DOWNLOADS_DIR}/os-images
+LOI_STAGING_DIR = ${MOD_STAGING_DIR}/os-images
+LOI_IMAGE_MNT_DIR = ${LOI_STAGING_DIR}/mnt
+
 $(call require,config.mk, HELPER_FUNCTIONS)
+
+$(call require,\
+mod.mk, \
+HUI_OS_VARIANT \
+HUI_OS_BOARD \
+HUI_ADMIN \
+HUI_ADMIN_ID \
+HUI_ADMIN_GID \
+HUI_USER \
+HUI_USER_ID \
+HUI_USER_GID \
+HUI_ACCESS_METHOD \
+)
+
+# Ensure using one of the valid access modes.
+_AccessMethods = $(call basenames_in,${LOI_ACCESS_METHODS_DIR}/*.mk)
+
+$(call must_be_one_of,HUI_ACCESS_METHOD,${_AccessMethods})
 
 $(call require,\
 ${HUI_SOFTWARE}.mk, \
 HUI_INIT_SCRIPT \
 )
-
-
-# Configuration
-LOI_BOARDS_DIR = ${_loi_Dir}/loi_boards
-LOI_VARIANTS_DIR = ${_loi_Dir}/loi_variants
-LOI_INIT_DIR = ${_loi_Dir}/loi_init
-LOI_IMAGE_DIR = ${DOWNLOADS_DIR}/os-images
-LOI_STAGING_DIR = ${MOD_STAGING_DIR}/os-images
-LOI_IMAGE_MNT_DIR = ${LOI_STAGING_DIR}/mnt
 
 include ${LOI_BOARDS_DIR}/${HUI_OS_BOARD}.mk
 include ${LOI_VARIANTS_DIR}/${HUI_OS_VARIANT}.mk

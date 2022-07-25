@@ -2,22 +2,6 @@
 # Modding a Linux OS image (LOI).
 #----------------------------------------------------------------------------
 
-$(call require,\
-mod.mk, \
-HUI_OS_VARIANT \
-HUI_OS_BOARD \
-HUI_ADMIN \
-HUI_ADMIN_ID \
-HUI_ADMIN_GID \
-HUI_USER \
-HUI_USER_ID \
-HUI_USER_GID \
-HUI_ACCESS \
-)
-
-# Ensure using one of the valid access modes.
-$(call must_be_one_of,HUI_ACCESS,console ssh brokered)
-
 LOI_DIR = ${MK_DIR}/loi
 
 # Common Linux paths.

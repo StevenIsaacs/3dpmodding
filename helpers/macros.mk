@@ -86,3 +86,12 @@ define sticky
   $(info Sticky variable: ${1})
   $(eval $(1)=$(shell ${HELPER_DIR}/sticky.sh $(1)=${$(1)} ${STICKY_DIR}))
 endef
+
+#+
+# Get the basenames of all the files in a directory matching a glob pattern.
+# Parameters:
+#  1 = The glob pattern including path.
+#+
+define basenames_in
+  $(foreach file,$(wildcard $(1)),$(basename $(notdir ${file})))
+endef
