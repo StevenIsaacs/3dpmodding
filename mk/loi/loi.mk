@@ -37,18 +37,15 @@ HUI_USER_GID \
 HUI_ACCESS_METHOD \
 )
 
-# Ensure using one of the valid access modes.
+# Ensure using one of the supported access modes.
 _AccessMethods = $(call basenames_in,${LOI_ACCESS_METHODS_DIR}/*.mk)
-
 $(call must_be_one_of,HUI_ACCESS_METHOD,${_AccessMethods})
 
-$(call require,\
-${HUI_SOFTWARE}.mk, \
-HUI_INIT_SCRIPT \
-)
+$(call require,${HUI_SOFTWARE}.mk,HUI_INIT_SCRIPT)
 
 include ${LOI_BOARDS_DIR}/${HUI_OS_BOARD}.mk
 include ${LOI_VARIANTS_DIR}/${HUI_OS_VARIANT}.mk
+include ${LOI_ACCESS_METHODS_DIR}/${HUI_ACCESS_METHOD}.mk
 
 $(call require,\
 ${HUI_OS_VARIANT}.mk, \

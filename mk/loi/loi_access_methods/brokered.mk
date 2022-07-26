@@ -3,8 +3,8 @@
 # access.
 #-
 
-ifeq (${MAKECMDGOALS},help-${HUI_ACCESS_METHOD})
-define Help${HUI_ACCESS_METHOD}Msg
+ifeq (${MAKECMDGOALS},help-access-method)
+define HelpAccessMethodMsg
 Make segment: ${HUI_ACCESS_METHOD}.mk
 
 This defines the variables, targets, and functions for configuring an OS for
@@ -18,8 +18,8 @@ Access requires a valid broker account with valid keys.
 
 endef
 
-export Help${HUI_ACCESS_METHOD}Msg
-help-${HUI_ACCESS_METHOD}:
-> @echo "$$Help${HUI_ACCESS_METHOD}Msg"
+export HelpAccessMethodMsg
+help-access-method:
+> @echo "$$HelpAccessMethodMsg"
 
-endif # help-${HUI_ACCESS_METHOD}
+endif # help-access-method
