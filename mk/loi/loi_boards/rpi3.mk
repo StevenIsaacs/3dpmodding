@@ -1,6 +1,6 @@
 
 # This is important for emulation.
-HUI_OS_ARCH = arm
+SBC_OS_ARCH = arm
 
 # Octopi prebuilt OS running on a Raspberry PI 3 or 4.
 # This used when USE_OCTOPI=YES.

@@ -29,11 +29,6 @@ MOD_STAGING_DIR = ${STAGING_DIR}/${KIT}/${KIT_VARIANT}/${MOD}
 
 -include ${KIT_CONFIGS_DIR}/${KIT}.mk
 
-ifndef ActiveKit
-  $(info See help-kits)
-  $(call signal_error,No description for the kit: ${KIT})
-endif
-
 # This is structured so that help-kits can be used to determine which kits
 # are avialable without loading any kit or mod.
 ifeq (${MAKECMDGOALS},help-kits)
@@ -106,15 +101,17 @@ help-kits:
 else
 
 ifeq (${KIT},)
-  $(info See help-kits)
   $(call signal_error,The kit has not been defined)
+else
+  ifndef ActiveKit
+    $(call signal_error,No description for the kit: ${KIT})
+  endif
 endif
+
 ifeq (${KIT_VARIANT},)
-  $(info See help-kits)
   $(call signal_error,The kit variant has not been defined)
 endif
 ifeq (${MOD},)
-  $(info See help-kits)
   $(call signal_error,MOD has not been defined)
 endif
 
@@ -126,6 +123,8 @@ ${_KitSegment}:
 > cd ${KITS_DIR}/${CLONE_DIR}; git checkout ${KIT_VARIANT}
 
 # Clone and load the kit and mod.
-include ${_KitSegment}
+ifndef ErrorMessages
+  include ${_KitSegment}
+endif
 
 endif

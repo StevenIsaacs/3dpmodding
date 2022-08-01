@@ -8,18 +8,18 @@ define GenericFirstrunScript
 # first multiuser run level.
 
 # Load the OS variant initialization.
-if [ -f ${${HUI_OS_VARIANT}_TMP_DIR}/${${HUI_OS_VARIANT}_SCRIPT} ]; then
-  . ${${HUI_OS_VARIANT}_TMP_DIR}/${${HUI_OS_VARIANT}_SCRIPT}
+if [ -f ${${SBC_OS_VARIANT}_TMP_DIR}/${${SBC_OS_VARIANT}_SCRIPT} ]; then
+  . ${${SBC_OS_VARIANT}_TMP_DIR}/${${SBC_OS_VARIANT}_SCRIPT}
 fi
 
 # Load the access level initialization.
-if [ -f ${${HUI_OS_VARIANT}_TMP_DIR}/${${HUI_ACCESS_METHOD}_SCRIPT} ]; then
-  . ${${HUI_OS_VARIANT}_TMP_DIR}/${${HUI_ACCESS_METHOD}_SCRIPT}
+if [ -f ${${SBC_OS_VARIANT}_TMP_DIR}/${${SBC_ACCESS_METHOD}_SCRIPT} ]; then
+  . ${${SBC_OS_VARIANT}_TMP_DIR}/${${SBC_ACCESS_METHOD}_SCRIPT}
 fi
 
 # Load the user interface specific initialization.
-if [ -f ${${HUI_OS_VARIANT}_TMP_DIR}/${HUI_INIT_SCRIPT} ]; then
-  . ${${HUI_OS_VARIANT}_TMP_DIR}/${HUI_INIT_SCRIPT}
+if [ -f ${${SBC_OS_VARIANT}_TMP_DIR}/${SBC_INIT_SCRIPT} ]; then
+  . ${${SBC_OS_VARIANT}_TMP_DIR}/${SBC_INIT_SCRIPT}
 fi
 
 # Disable self.
@@ -55,32 +55,32 @@ cleanup=error-exit
 # Load the configuration.
 . $$ScriptPath/options.conf
 
-echo HUI_OS_ADMIN = $$HUI_OS_ADMIN
-echo HUI_OS_ADMIN_ID = $$HUI_OS_ADMIN_ID
-echo HUI_OS_ADMIN_GID = $$HUI_OS_ADMIN_GID
-echo HUI_OS_USER = $$HUI_OS_USER
-echo HUI_OS_USER_ID = $$HUI_OS_USER_ID
-echo HUI_OS_USER_GID = $$HUI_OS_USER_GID
-echo HUI_INIT = $$HUI_INIT
+echo SBC_OS_ADMIN = $$SBC_OS_ADMIN
+echo SBC_OS_ADMIN_ID = $$SBC_OS_ADMIN_ID
+echo SBC_OS_ADMIN_GID = $$SBC_OS_ADMIN_GID
+echo SBC_OS_USER = $$SBC_OS_USER
+echo SBC_OS_USER_ID = $$SBC_OS_USER_ID
+echo SBC_OS_USER_GID = $$SBC_OS_USER_GID
+echo SBC_INIT = $$SBC_INIT
 
 error-exit () {
     echo Cleaning up after error.
 }
 
 # Create the users and set their default permissions.
-useradd -u ${HUI_USER_ID} -U -m ${HUI_USER}
-usermod -a -G dialout,input,tty ${HUI_USER}
-if [ "${HUI_ADMIN}" != "${HUI_USER}" ]; then
-  useradd -u ${HUI_ADMIN_ID} -U -m ${HUI_ADMIN}
-  usermod -a -G dialout,input,tty ${HUI_ADMIN}
+useradd -u ${SBC_USER_ID} -U -m ${SBC_USER}
+usermod -a -G dialout,input,tty ${SBC_USER}
+if [ "${SBC_ADMIN}" != "${SBC_USER}" ]; then
+  useradd -u ${SBC_ADMIN_ID} -U -m ${SBC_ADMIN}
+  usermod -a -G dialout,input,tty ${SBC_ADMIN}
 fi
 # Make the ADMIN all powerful.
-echo "${HUI_ADMIN} ALL=(ALL) NOPASSWD: ALL" \
-  > /etc/sudoers.d/010_${HUI_ADMIN}
+echo "${SBC_ADMIN} ALL=(ALL) NOPASSWD: ALL" \
+  > /etc/sudoers.d/010_${SBC_ADMIN}
 
 # Setup the firstrun script. This will run the first time the OS is booted
 # on the target board.
-cp $$ScriptPath/${HUI_OS_VARIANT}-firstrun /etc/rc.local
+cp $$ScriptPath/${SBC_OS_VARIANT}-firstrun /etc/rc.local
 chmod +x /etc/rc.local
 
 endef
@@ -92,10 +92,10 @@ export GenericStagingScript
 # are intended to be run once on first boot.
 # Parameters:
 #  1 = Where to store the init scripts.
-define stage_${HUI_OS_VARIANT}
-  printf "%s" "$$GenericFirstrunScript" > $(1)/${HUI_OS_VARIANT}-firstrun; \
-  printf "%s" "$$GenericStagingScript" > $(1)/stage-${HUI_OS_VARIANT}; \
-  chmod +x $(1)/stage-${HUI_OS_VARIANT}
+define stage_${SBC_OS_VARIANT}
+  printf "%s" "$$GenericFirstrunScript" > $(1)/${SBC_OS_VARIANT}-firstrun; \
+  printf "%s" "$$GenericStagingScript" > $(1)/stage-${SBC_OS_VARIANT}; \
+  chmod +x $(1)/stage-${SBC_OS_VARIANT}
 endef
 
 endif # stage-os-image
@@ -104,7 +104,7 @@ endif # stage-os-image
 # Definitions common to MOST OS variants. These can be overridden by a variant.
 #-
 $(call require,\
-${HUI_OS}.mk,\
+${SBC_OS}.mk,\
 LINUX_TMP_DIR \
 LINUX_ETC_DIR \
 LINUX_HOME_DIR \
@@ -114,31 +114,31 @@ LINUX_ADMIN_HOME_DIR \
 LINUX_ADMIN_TMP_DIR \
 )
 
-${HUI_OS_VARIANT}_TMP_DIR = ${LINUX_TMP_DIR}
-${HUI_OS_VARIANT}_ETC_DIR = ${LINUX_ETC_DIR}
-${HUI_OS_VARIANT}_HOME_DIR = ${LINUX_HOME_DIR}
-${HUI_OS_VARIANT}_USER_HOME_DIR = ${LINUX_USER_HOME_DIR}
-${HUI_OS_VARIANT}_USER_TMP_DIR = ${LINUX_USER_TMP_DIR}
-${HUI_OS_VARIANT}_ADMIN_HOME_DIR = ${LINUX_ADMIN_HOME_DIR}
-${HUI_OS_VARIANT}_ADMIN_TMP_DIR = ${LINUX_ADMIN_TMP_DIR}
+${SBC_OS_VARIANT}_TMP_DIR = ${LINUX_TMP_DIR}
+${SBC_OS_VARIANT}_ETC_DIR = ${LINUX_ETC_DIR}
+${SBC_OS_VARIANT}_HOME_DIR = ${LINUX_HOME_DIR}
+${SBC_OS_VARIANT}_USER_HOME_DIR = ${LINUX_USER_HOME_DIR}
+${SBC_OS_VARIANT}_USER_TMP_DIR = ${LINUX_USER_TMP_DIR}
+${SBC_OS_VARIANT}_ADMIN_HOME_DIR = ${LINUX_ADMIN_HOME_DIR}
+${SBC_OS_VARIANT}_ADMIN_TMP_DIR = ${LINUX_ADMIN_TMP_DIR}
 
-ifeq (${MAKECMDGOALS},help-${HUI_OS_VARIANT})
+ifeq (${MAKECMDGOALS},help-${SBC_OS_VARIANT})
 define HelpGenericMsg
 Make segment: generic.mk
 
-Generalizes initialization and first run of an ${HUI_OS_VARIANT} based OS image.
+Generalizes initialization and first run of an ${SBC_OS_VARIANT} based OS image.
 
 Defines:
   See help-linux for more information
-  ${HUI_OS_VARIANT}_TMP_DIR = ${${HUI_OS_VARIANT}_TMP_DIR}
-  ${HUI_OS_VARIANT}_ETC_DIR = ${${HUI_OS_VARIANT}_ETC_DIR}
-  ${HUI_OS_VARIANT}_HOME_DIR = ${${HUI_OS_VARIANT}_HOME_DIR}
-  ${HUI_OS_VARIANT}_USER_HOME_DIR = ${${HUI_OS_VARIANT}_USER_HOME_DIR}
-  ${HUI_OS_VARIANT}_USER_TMP_DIR = ${${HUI_OS_VARIANT}_USER_TMP_DIR}
-  ${HUI_OS_VARIANT}_ADMIN_HOME_DIR = ${${HUI_OS_VARIANT}_ADMIN_HOME_DIR}
-  ${HUI_OS_VARIANT}_ADMIN_TMP_DIR = ${${HUI_OS_VARIANT}_ADMIN_TMP_DIR}
+  ${SBC_OS_VARIANT}_TMP_DIR = ${${SBC_OS_VARIANT}_TMP_DIR}
+  ${SBC_OS_VARIANT}_ETC_DIR = ${${SBC_OS_VARIANT}_ETC_DIR}
+  ${SBC_OS_VARIANT}_HOME_DIR = ${${SBC_OS_VARIANT}_HOME_DIR}
+  ${SBC_OS_VARIANT}_USER_HOME_DIR = ${${SBC_OS_VARIANT}_USER_HOME_DIR}
+  ${SBC_OS_VARIANT}_USER_TMP_DIR = ${${SBC_OS_VARIANT}_USER_TMP_DIR}
+  ${SBC_OS_VARIANT}_ADMIN_HOME_DIR = ${${SBC_OS_VARIANT}_ADMIN_HOME_DIR}
+  ${SBC_OS_VARIANT}_ADMIN_TMP_DIR = ${${SBC_OS_VARIANT}_ADMIN_TMP_DIR}
 
-  stage_${HUI_OS_VARIANT}
+  stage_${SBC_OS_VARIANT}
     This is designed to be called only from the stage-os-image target in
 	loi.mk. This creates users and installs the first-run scripts.
 
@@ -148,9 +148,9 @@ Uses:
 
 endef
 
-export Help${HUI_OS_VARIANT}Msg
-help-${HUI_OS_VARIANT}:
+export Help${SBC_OS_VARIANT}Msg
+help-${SBC_OS_VARIANT}:
 > @echo "$$HelpGenericMsg"
-> @echo "$$Help${HUI_OS_VARIANT}Msg"
+> @echo "$$Help${SBC_OS_VARIANT}Msg"
 
 endif

@@ -18,7 +18,7 @@ this_segment = \
 # Get the included file directory path.
 #
 # Returns:
-#   The segment base name.
+#   The path to the current segment.
 #-
 this_segment_dir = \
   $(basename $(dir $(word $(words ${MAKEFILE_LIST}),${MAKEFILE_LIST})))
@@ -38,7 +38,7 @@ endef
 #-
 ifeq (${MAKECMDGOALS},help)
   define signal_error
-    ErrorMessage += "$(1)$(newline)"
+    $(eval ErrorMessages += $(1)$(newline))
   endef
 else
   define signal_error
@@ -54,7 +54,7 @@ endif
 define _require_this
   $(if ${$(1)},\
     ,\
-    $(eval ErrorMessage += Variable $(1) must be defined in: $(2)$(newline))\
+    $(eval ErrorMessages += Variable $(1) must be defined in: $(2)$(newline))\
   )
 endef
 

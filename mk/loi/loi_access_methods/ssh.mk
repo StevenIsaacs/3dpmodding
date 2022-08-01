@@ -5,10 +5,11 @@
 
 ifeq (${MAKECMDGOALS},help-access-method)
 define HelpAccessMethodMsg
-Make segment: ${HUI_ACCESS_METHOD}.mk
+Make segment: ${SBC_ACCESS_METHOD}.mk
 
 This defines the variables, targets, and functions for configuring an OS for
-ssh access.
+ssh access. This generates a script which is designed to be run as part
+of the first run initialization.
 
 The SSH port can be set in mod.mk to something other than the typical port 22.
 All other ports are closed using a firewall. Port forwarding is possible.
@@ -19,6 +20,6 @@ endef
 
 export HelpAccessMethodMsg
 help-access-method:
-> @echo "$$HelpAccessMethodMsg"
+> @echo "$$HelpAccessMethodMsg" | less
 
 endif # help-access-method

@@ -73,9 +73,9 @@ endif
 
 # What user interface software to use. User interface software is hosted on
 # a single board computer (SBC).
-ifdef HUI_SOFTWARE
+ifdef SBC_SOFTWARE
   ModOsInitScripts = ${HELPER_FUNCTIONS}
-  include ${MK_DIR}/${HUI_SOFTWARE}.mk
+  include ${MK_DIR}/${SBC_SOFTWARE}.mk
 endif
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -108,28 +108,51 @@ A mod can also be the development a new device or system.
 
 ModFW directly supports the following design patterns. This pattern
 is usable in most situations where remote access to devices is needed.
-If necessary mods can either change a pattern or define a new one.
+If necessary mods can either change the pattern or define a new one.
 
 Design patterns:
 
-  Local network.
-  +-PC----------+   +-SBC------------+   +-MCU--------+
-  | Workstation |<->| User Interface |<->| Controller |
-  +-------------+ ^ +----------------+ ^ +------------+
-                  |                    |
-                  SSH                  MCU defined
-                                       (typically serial port)
+  Direct:
+  SBC_ACCESS_METHOD = (undefined)
+  Direct interface to the MCU from the PC workstation.
+  +-PC-----+   +-MCU--------+
+  | Client |<->| Controller |
+  +--------+ ^ +------------+
+             |
+             MCU defined
+             (typically serial port)
+
+  Console:
+  SBC_ACCESS_METHOD = console
+  Similar to direct but the SBC is the console interface.
+  +-SBC----+   +-MCU--------+
+  | Client |<->| Controller |
+  +--------+ ^ +------------+
+             |
+             MCU defined
+             (typically serial port)
+
+  Local network:
+  SBC_ACCESS_METHOD = ssh
+  +-PC-----+   +-SBC----+   +-MCU--------+
+  | Client |<->| Server |<->| Controller |
+  +--------+ ^ +--------+ ^ +------------+
+             |            |
+             SSH          MCU defined
+                          (typically serial port)
 
   Secure brokered remote access using SSH tunnels.
-  +-PC----------+   +-cloud--+   +-SBC------------+   +-MCU--------+
-  | Workstation |<->| Broker |<->| User Interface |<->| Controller |
-  +-------------+ ^ +--------+ ^ +----------------+ ^ +------------+
-                  |            |                    |
-                  SSH tunnel   SSH tunnel           MCU defined
-                                                    (typically serial port)
+  SBC_ACCESS_METHOD = brokered
+  +-PC-----+   +-BKR----+   +-SBC----+   +-MCU--------+
+  | Client |<->| Broker |<->| Server |<->| Controller |
+  +--------+ ^ +-(cloud)+ ^ +--------+ ^ +------------+
+             |            |            |
+             SSH tunnel   SSH tunnel   MCU defined
+                                       (typically serial port)
 
-A git repository is used to maintain one or more kit with each mod
-having its own subdirectory within the git repository.
+A git repository is used to maintain one or more mods with each mod
+having its own subdirectory within the git repository. The repository
+is termed a kit.
 
 This includes firmware for microcontroller boards or MCUs (e.g. Arduino),
 OS images for single board computers or SBCs (e.g. Raspberry Pi), 3D
@@ -185,19 +208,19 @@ Defined in mod.mk:
   Host user interface (HUI) software connects to the firmware running on the
   controller to provide monitoring and access via a GUI, console, or a network.
   The HUI uses devices such as keyboards, displays, and touch screens.
-  HUI_SOFTWARE=${HUI_SOFTWARE}
+  SBC_SOFTWARE=${SBC_SOFTWARE}
     Which user interface software to use. User interface software is typcially
-    hosted on an SBC. If not defined then HUI_OS_VARIANT and HUI_OS_BOARD are
+    hosted on an SBC. If not defined then SBC_OS_VARIANT and SBC_OS_BOARD are
     ignored.
-  HUI_OS_VARIANT=${HUI_OS_VARIANT}
+  SBC_OS_VARIANT=${SBC_OS_VARIANT}
     The variant of the OS to use. This determines in which OS to install the
     initialization scripts. If undefined then an OS image will not be
     initilized.
-  HUI_OS_BOARD=${HUI_OS_BOARD}
+  SBC_OS_BOARD=${SBC_OS_BOARD}
     The board on which the OS will run. This can also trigger the build
     of a 3D printed enclosuer for the board determined by the mod.
 
-  Not defining CAD_TOOL_xxx, FIRMWARE, and HUI_SOFTWARE will disable the
+  Not defining CAD_TOOL_xxx, FIRMWARE, and SBC_SOFTWARE will disable the
   corresponding section of a build.
 
 Command line targets:
@@ -225,14 +248,14 @@ endef
 export ModFwUsage
 .PHONY: help
 help:
-> @if [ -n "${ErrorMessage}" ]; then\
+> @if [ -n '${ErrorMessages}' ]; then\
     echo Errors encountered:;\
-    m="${ErrorMessage}";printf " $${m//nlnl/\\n}";\
+    m='${ErrorMessages}';printf " $${m//nlnl/\\n}";\
     read -p "Press ENTER to continue...";\
   fi
 > @echo "$$ModFwUsage" | less
 else
-  ifdef ErrorMessage
+  ifdef ErrorMessages
     $(error Errors encountered. See make help)
   endif
 endif # help

@@ -42,7 +42,7 @@ KIT_REL_SERVER = https://github.com/StevenIsaacs
 DOWNLOADS_DIR = ${project_dir}/downloads
 
 # For storing sticky options.
-STICKY_DIR = ${project_dir}/.modfw/sticky
+STICKY_DIR = ~/.modfw/sticky
 
 # Where intermediate build files are stored.
 BUILD_DIR = ${project_dir}/build
