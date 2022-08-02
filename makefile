@@ -246,7 +246,7 @@ Defined in mod.mk:
   GW_OS_VARIANT=${GW_OS_VARIANT}
     The variant of the OS to use. This determines in which OS to install the
     initialization scripts. If undefined then an OS image will not be
-    initilized.
+    initialized.
   GW_OS_BOARD=${GW_OS_BOARD}
     The board on which the OS will run. This can also trigger the build
     of a 3D printed enclosuer for the board determined by the mod.
