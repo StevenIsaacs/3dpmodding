@@ -5,7 +5,7 @@
 
 ifeq (${MAKECMDGOALS},help-access-method)
 define HelpAccessMethodMsg
-Make segment: ${SBC_ACCESS_METHOD}.mk
+Make segment: ${GW_ACCESS_METHOD}.mk
 
 This defines the variables, targets, and functions for configuring an OS for
 console access. This is the lowest level of security and is completely open.

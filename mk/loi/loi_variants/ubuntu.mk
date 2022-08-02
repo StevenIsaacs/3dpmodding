@@ -1,7 +1,7 @@
 #+
 # OS Variant definitions for the Ubuntu OS.
 #-
-$(info Using OS variant: ${SBC_OS_VARIANT})
+$(info Using OS variant: ${GW_OS_VARIANT})
 
 ifeq (${MAKECMDGOALS},help-ubuntu)
 define HelpUbuntuMsg

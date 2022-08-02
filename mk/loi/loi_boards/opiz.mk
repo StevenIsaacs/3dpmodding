@@ -1,7 +1,7 @@
-$(info Using OS board: ${SBC_OS_BOARD})
+$(info Using OS board: ${GW_OS_BOARD})
 
 # This is important for emulation.
-SBC_OS_ARCH = arm
+GW_OS_ARCH = arm
 
 # Bullseye is Debian based.
 armbian_LOI_RELEASE = 22.02.1
@@ -47,8 +47,8 @@ debian_LOI_P2_NAME = root
 debian_LOI_BOOT_DIR = ${debian_LOI_P1_NAME}
 debian_LOI_ROOT_DIR = ${debian_LOI_P2_NAME}
 
-ifeq (${MAKECMDGOALS},help-${SBC_OS_BOARD})
-define ${SBC_OS_BOARD}_Help
+ifeq (${MAKECMDGOALS},help-${GW_OS_BOARD})
+define ${GW_OS_BOARD}_Help
 The Orange PI Zero does not have a display interface. To monitor the boot
 process it is necessary to use the serial port. Some instructions can be
 found here: https://www.sigmdel.ca/michel/ha/opi/OPiZ_uart_en.html
@@ -70,8 +70,8 @@ ubuntu      Ubuntu version of the Orange PI OS.
 debian      Debian version of teh Orange PI OS.
 endef
 
-export ${SBC_OS_BOARD}_Help
-.PHONY: help-${SBC_OS_BOARD}
-help-${SBC_OS_BOARD}:
-> @echo "$$${SBC_OS_BOARD}_Help"
+export ${GW_OS_BOARD}_Help
+.PHONY: help-${GW_OS_BOARD}
+help-${GW_OS_BOARD}:
+> @echo "$$${GW_OS_BOARD}_Help"
 endif

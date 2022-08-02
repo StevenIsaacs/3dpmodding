@@ -2,9 +2,9 @@
 # OctoPrint
 #----------------------------------------------------------------------------
 
-$(call require,mod.mk,SBC_OS)
+$(call require,mod.mk,GW_OS)
 
-SBC_INIT_SCRIPT = init-octoprint.sh
+GW_INIT_SCRIPT = init-octoprint.sh
 
 # Limit to stage-os-image only.
 ifeq (${MAKECMDGOALS},stage-os-image)
@@ -18,7 +18,7 @@ define OctoPrintInitScript
 
 apt update
 apt install python3-pip python3-dev python3-setuptools python3-venv
-su - ${SBC_USER}
+su - ${GW_USER}
 mkdir OctoPrint && cd OctoPrint
 python3 -m venv venv
 . venv/bin/activate
@@ -27,7 +27,7 @@ pip install octoprint
 deactivate
 exit
 # Back as root.
-cp ${${SBC_OS_VARIANT}_TMP_DIR}/octoprint.service /etc/systemd/system
+cp ${${GW_OS_VARIANT}_TMP_DIR}/octoprint.service /etc/systemd/system
 systemctl enable octoprint.service
 
 endef
@@ -44,8 +44,8 @@ Wants=network-online.target
 Environment="LC_ALL=C.UTF-8"
 Environment="LANG=C.UTF-8"
 Type=exec
-User=${SBC_USER}
-ExecStart=/home/${SBC_USER}/OctoPrint/venv/bin/octoprint
+User=${GW_USER}
+ExecStart=/home/${GW_USER}/OctoPrint/venv/bin/octoprint
 
 [Install]
 WantedBy=multi-user.target
@@ -57,14 +57,14 @@ export OctoPrintService
 
 # This is called by stage-os-image in loi.mk. It generates the runtime
 # init script along with the systemd service file for OctoPrint.
-define stage_${SBC_SOFTWARE}
-  printf "%s" "$$OctoPrintInitScript" > $(1)/${SBC_INIT_SCRIPT}; \
+define stage_${GW_SOFTWARE}
+  printf "%s" "$$OctoPrintInitScript" > $(1)/${GW_INIT_SCRIPT}; \
   printf "%s" "$$OctoPrintService" > $(1)/octoprint.service
 endef
 
 endif
 
-include ${MK_DIR}/${SBC_OS}.mk
+include ${MK_DIR}/${GW_OS}.mk
 
 ifeq (${MAKECMDGOALS},help-octoprint)
 define HelpOctoPrintMsg
@@ -74,20 +74,20 @@ This segment is used to install the OctoPrint initialization script in
 an OS image for controlling a 3D printer.
 
 Defined in mod.mk:
-  SBC_SOFTWARE = ${SBC_SOFTWARE}
+  GW_SOFTWARE = ${GW_SOFTWARE}
     Must equal octoprint for this segment to be used.
-  SBC_OS = ${SBC_OS}
-    Which OS is installed on the user interface board (SBC_OS_BOARD).
+  GW_OS = ${GW_OS}
+    Which OS is installed on the user interface board (GW_OS_BOARD).
 
 Defined in config.mk:
 
-Defined in ${SBC_OS}.mk or a segment it loads:
+Defined in ${GW_OS}.mk or a segment it loads:
   OsDeps = ${OsDeps}
     A list of dependencies needed in order to mount an OS image for
     modification.
 
 Defines:
-  SBC_INIT_SCRIPT = ${SBC_INIT_SCRIPT}
+  GW_INIT_SCRIPT = ${GW_INIT_SCRIPT}
     Defines the name of the user interface initialization script which is run in
     a QEMU emulation environment.
 

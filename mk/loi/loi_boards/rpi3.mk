@@ -1,6 +1,6 @@
 
 # This is important for emulation.
-SBC_OS_ARCH = arm
+GW_OS_ARCH = arm
 
 # Octopi prebuilt OS running on a Raspberry PI 3 or 4.
 # This used when USE_OCTOPI=YES.

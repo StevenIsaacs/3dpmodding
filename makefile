@@ -73,9 +73,9 @@ endif
 
 # What user interface software to use. User interface software is hosted on
 # a single board computer (SBC).
-ifdef SBC_SOFTWARE
+ifdef GW_SOFTWARE
   ModOsInitScripts = ${HELPER_FUNCTIONS}
-  include ${MK_DIR}/${SBC_SOFTWARE}.mk
+  include ${MK_DIR}/${GW_SOFTWARE}.mk
 endif
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -113,42 +113,51 @@ If necessary mods can either change the pattern or define a new one.
 Design patterns:
 
   Direct:
-  SBC_ACCESS_METHOD = (undefined)
+  GW_ACCESS_METHOD = direct
   Direct interface to the MCU from the PC workstation.
-  +-PC-----+   +-MCU--------+
-  | Client |<->| Controller |
-  +--------+ ^ +------------+
-             |
-             MCU defined
-             (typically serial port)
+  +-PC----------+   +-MCU--------+
+  | Workstation |<->| Controller |
+  +-CLI---------+ ^ +-CTL--------+
+    GW            |
+    UI            MCU defined
+                  (typically serial port)
 
   Console:
-  SBC_ACCESS_METHOD = console
+  GW_ACCESS_METHOD = console
   Similar to direct but the SBC is the console interface.
-  +-SBC----+   +-MCU--------+
-  | Client |<->| Controller |
-  +--------+ ^ +------------+
-             |
-             MCU defined
-             (typically serial port)
+  +-SBC---------+   +-MCU--------+
+  | Wprkstation |->| Controller |
+  +-CLI---------+ ^ +-CTL--------+
+    GW            |
+    UI            MCU defined
+                  (typically serial port)
 
   Local network:
-  SBC_ACCESS_METHOD = ssh
-  +-PC-----+   +-SBC----+   +-MCU--------+
-  | Client |<->| Server |<->| Controller |
-  +--------+ ^ +--------+ ^ +------------+
-             |            |
-             SSH          MCU defined
-                          (typically serial port)
+  GW_ACCESS_METHOD = ssh
+  +-PC----------+   +-SBC-----+   +-MCU--------+
+  | Workstation |<->| Gateway |<->| Controller |
+  +-CLI---------+ ^ +-GW-----=+ ^ +-CTL--------+
+    UI            |   UI        |
+                  SSH           MCU defined
+                                (typically serial port)
 
   Secure brokered remote access using SSH tunnels.
-  SBC_ACCESS_METHOD = brokered
-  +-PC-----+   +-BKR----+   +-SBC----+   +-MCU--------+
-  | Client |<->| Broker |<->| Server |<->| Controller |
-  +--------+ ^ +-(cloud)+ ^ +--------+ ^ +------------+
-             |            |            |
-             SSH tunnel   SSH tunnel   MCU defined
-                                       (typically serial port)
+  GW_ACCESS_METHOD = brokered
+  +-PC----------+   +-(cloud)+   +-SBC-----+   +-MCU--------+
+  | Workstation |<->| Broker |<->| Gateway |<->| Controller |
+  +-CLI---------+ ^ +-BKR----+ ^ +-GW------+ ^ +-CTL--------+
+    UI            |            |   UI        |
+                  SSH tunnel   SSH tunnel    MCU defined
+                                             (typically serial port)
+
+PC  = A personal computer.
+SBC = A single board computer.
+MCU = An embedded microcontroller.
+CLI = Command line interface.
+UI  = User interface either command line or graphical or both.
+BKR = The broker hosted in the cloud.
+GW  = Gateway (protocol conversion) between the CTL and the system.
+CTL = The device controller.
 
 A git repository is used to maintain one or more mods with each mod
 having its own subdirectory within the git repository. The repository
@@ -186,14 +195,36 @@ Command line options:
 
 Defined in mod.mk:
   CAD_TOOL_3DP=${CAD_TOOL_3DP}
-    Which scripted CAD tool to use. If left undefined it is assumed no 3D
-    printed parts are in the mod.
+    Which scripted CAD tool to use for 3D printing. If left undefined it is
+    assumed no 3D printed parts are in the mod.
     A scripted CAD tool is used to generate STLs for 3D printing or CNC
     machines. The STLs can be imported into slice or route software to
     generate gcode.
     Available tools are:
       openscad   OpenSCAD and SolidPython.
   CAD_TOOL_3DP_VARIANT=${CAD_TOOL_3DP_VARIANT}
+    Which branch or release of the CAD tool to use.
+  CAD_TOOL_LASER=${CAD_TOOL_LASER}
+    Future
+    Which scripted CAD tool to use for laser engraving or cutting. If left
+    undefined it is assumed no laser produced parts are used.
+    Available tools are:
+      openscad   OpenSCAD and SolidPython.
+  CAD_TOOL_LASER_VARIANT=${CAD_TOOL_LASER_VARIANT}
+    Which branch or release of the CAD tool to use.
+  CAD_TOOL_CNC=${CAD_TOOL_CNC}
+    Future
+    Which scripted CAD tool to use for CNC machining or engraving. If left
+    undefined it is assumed no CNC parts are produced.
+    Available tools are:
+      openscad   OpenSCAD and SolidPython.
+  CAD_TOOL_CNC_VARIANT=${CAD_TOOL_CNC_VARIANT}
+    Which branch or release of the CAD tool to use.
+  CAD_TOOL_PCB=${CAD_TOOL_PCB}
+    Future
+    Which scripted CAD tool to use for producing PCBs. If left undefined it
+    is assumed no PCBs are produced.
+  CAD_TOOL_PCB_VARIANT=${CAD_TOOL_PCB_VARIANT}
     Which branch or release of the CAD tool to use.
 
   Firmware runs on the device hardware.
@@ -208,19 +239,19 @@ Defined in mod.mk:
   Host user interface (HUI) software connects to the firmware running on the
   controller to provide monitoring and access via a GUI, console, or a network.
   The HUI uses devices such as keyboards, displays, and touch screens.
-  SBC_SOFTWARE=${SBC_SOFTWARE}
+  GW_SOFTWARE=${GW_SOFTWARE}
     Which user interface software to use. User interface software is typcially
-    hosted on an SBC. If not defined then SBC_OS_VARIANT and SBC_OS_BOARD are
+    hosted on an SBC. If not defined then GW_OS_VARIANT and GW_OS_BOARD are
     ignored.
-  SBC_OS_VARIANT=${SBC_OS_VARIANT}
+  GW_OS_VARIANT=${GW_OS_VARIANT}
     The variant of the OS to use. This determines in which OS to install the
     initialization scripts. If undefined then an OS image will not be
     initilized.
-  SBC_OS_BOARD=${SBC_OS_BOARD}
+  GW_OS_BOARD=${GW_OS_BOARD}
     The board on which the OS will run. This can also trigger the build
     of a 3D printed enclosuer for the board determined by the mod.
 
-  Not defining CAD_TOOL_xxx, FIRMWARE, and SBC_SOFTWARE will disable the
+  Not defining CAD_TOOL_xxx, FIRMWARE, and GW_SOFTWARE will disable the
   corresponding section of a build.
 
 Command line targets:

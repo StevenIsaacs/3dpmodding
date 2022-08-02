@@ -10,9 +10,9 @@ LOI_DIR = ${MK_DIR}/loi
 LINUX_TMP_DIR = /tmp
 LINUX_ETC_DIR = /etc
 LINUX_HOME_DIR = /home
-LINUX_USER_HOME_DIR = ${LINUX_HOME_DIR}/${SBC_USER}
+LINUX_USER_HOME_DIR = ${LINUX_HOME_DIR}/${GW_USER}
 LINUX_USER_TMP_DIR = ${LINUX_USER_HOME_DIR}/tmp
-LINUX_ADMIN_HOME_DIR = ${LINUX_HOME_DIR}/${SBC_ADMIN}
+LINUX_ADMIN_HOME_DIR = ${LINUX_HOME_DIR}/${GW_ADMIN}
 LINUX_ADMIN_TMP_DIR = ${LINUX_ADMIN_HOME_DIR}/tmp
 
 include ${LOI_DIR}/loi.mk
@@ -25,9 +25,9 @@ This segment serves as a wrapper for the Linux OS image modding segments. Its
 purpose is to provide a means for overriding the paths to the modding segments.
 
 Defined in mod.mk (required):
-  SBC_OS_VARIANT = ${SBC_OS_VARIANT}
+  GW_OS_VARIANT = ${GW_OS_VARIANT}
     Which variant or branch to use.
-  SBC_OS_BOARD = ${SBC_OS_BOARD}
+  GW_OS_BOARD = ${GW_OS_BOARD}
     Which board the OS will be installed on.
 
 Defines:

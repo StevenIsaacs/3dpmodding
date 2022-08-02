@@ -11,19 +11,19 @@ define BrokerTunnelService
 Description=Keep reverse tunnel to ${BROKER_URL} alive
 After=network-online.target ssh.service
 
-# Esbablish a reverse tunnel with the broker. This reverse tunnel can then
-# be used to transport other protocols between the SBC and a remote client.
+# Create a reverse tunnel with the broker. This reverse tunnel can then
+# be used to transport other protocols between the GW and a remote client.
 [Service]
-User=${SBC_USER}
+User=${GW_USER}
 Restart=always
 RestartSec=3
 StartLimitIntervalSec=0
 ExecStart=/usr/bin/ssh -NT -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \
   -o ExitOnForwardFailure=yes -o StrictHostKeyChecking=no \
-  -i /home/${SBC_USER}/.ssh/${BROKER_USER_KEY} \
-  -R ${BROKER_TUNNEL_PORT}:localhost:${LOCAL_SBC_PORT} \
+  -i /home/${GW_USER}/.ssh/${BROKER_USER_KEY} \
+  -R ${BROKER_TUNNEL_PORT}:localhost:${LOCAL_GW_PORT} \
   -p ${BROKER_SSH_PORT} \
-  ${SBC_BROKER_USER}@${BROKER_URL}
+  ${GW_BROKER_USER}@${BROKER_URL}
 KillMode=process
 
 [Install]
@@ -41,7 +41,7 @@ export BrokerTunnelInitScript
 
 ifeq (${MAKECMDGOALS},help-access-method)
 define HelpAccessMethodMsg
-Make segment: ${SBC_ACCESS_METHOD}.mk
+Make segment: ${GW_ACCESS_METHOD}.mk
 
 This defines the variables, targets, and functions for configuring an OS for
 brokered access.
@@ -59,21 +59,22 @@ In brokered systems all user names and keys are generated. Using generated
 user names serves to enhance system security. A separate package called a
 keyring provides the needed broker credendials. This keyring contains
 credentials for each of the allocated units identified by unit number. For
-security reasons never disclose the contents of a keyring package. Broker
-credentials can be obtained from [tbd].
+security reasons never disclose the contents of a keyring package. The
+broker keyring is downloaded from the broker. This requires having a valid
+broker account to get started.
 
 Scripts are generated to simplify connection to a remote device via the
 broker. Additional scripts are generated to simplify file transfer to and
 from the remote device.
 
 Required sticky command line options:
-  SBC_UNIT_NUMBER = ${SBC_UNIT_NUMBER}
-    This is a unit number assigned to an instance of the SBC. This must be
+  GW_UNIT_NUMBER = ${GW_UNIT_NUMBER}
+    This is a unit number assigned to an instance of the GW. This must be
 	a valid and unique unit number from a previously allocated range.
   BROKER_USER = ${BROKER_USER}
     This is the user name assigned for downloading the keyring package.
   BROKER_KEY = ${BROKER_KEY}
-    This is the key to use for downlo`ading the keyring package.
+    This is the key to use for downloading the keyring package for the GW.
   BROKER_SSH_PORT = ${BROKER_SSH_PORT}
     This is the port number to use for downloading the keyring package.
   BROKER_FQDN = ${BROKER_FQDN}
@@ -88,10 +89,10 @@ Defined in loi.mk (see help-loi):
   LOI_STAGING_DIR = ${LOI_STAGING_DIR}
 
 Defines:
-  BROKERED_SBC_USER = ${BROKERED_SBC_USER}
+  BROKERED_GW_USER = ${BROKERED_GW_USER}
     This is the normal user. The user name is generated based upon the unit
 	number and the broker URL.
-  BROKERED_SBC_ADMIN = ${BROKERED_SBC_ADMIN}
+  BROKERED_GW_ADMIN = ${BROKERED_GW_ADMIN}
     This is the privileged user. The user name is generated based upon the unit
 	number and the broker URL.
 
