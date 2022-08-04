@@ -9,13 +9,20 @@ else
   HELPERS_VARIANT = main
 endif
 
-# This is triggered by the include of the macros in the top level make.
-${HELPERS_DIR}/macros.mk:
-> git clone ${HELPERS_REPO} ${HELPERS_DIR}
-> cd ${HELPERS_DIR}; git checkout ${HELPERS_VARIANT}
+Macros = ${HELPERS_DIR}/macros.mk
+
+# Macros must be loaded almost immediately. Because of this can't rely
+# upon make to trigger cloning at the correct time. Therefore this takes
+# a more direct approach.
+_null := $(shell \
+  if [ ! -f ${Macros} ]; then \
+    git clone ${HELPERS_REPO} ${HELPERS_DIR}; \
+    cd ${HELPERS_DIR}; git checkout ${HELPERS_VARIANT}; \
+  fi \
+)
 
 # Helper macros.
-include ${HELPERS_DIR}/macros.mk
+include ${Macros}
 
 # This is structured so that help-kits can be used to determine which kits
 # are avialable without loading any kit or mod.
