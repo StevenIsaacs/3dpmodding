@@ -14,13 +14,17 @@ ${HELPERS_DIR}/macros.mk:
 > git clone ${HELPERS_REPO} ${HELPERS_DIR}
 > cd ${HELPERS_DIR}; git checkout ${HELPERS_VARIANT}
 
+# Helper macros.
+include ${HELPERS_DIR}/macros.mk
+
 # This is structured so that help-kits can be used to determine which kits
 # are avialable without loading any kit or mod.
 ifeq (${MAKECMDGOALS},help-helpers)
 define HelpHelpersMsg
 Make segment: helpers.mk
 
-Clone the helpers. The clone is triggered by including the macros.
+Clone the helpers. The clone is triggered by including the macros. This must
+be included as early as possible.
 
 Command line options:
   HELPERS_VARIANT = ${HELPERS_VARIANT}

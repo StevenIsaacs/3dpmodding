@@ -30,9 +30,6 @@ include config.mk
 # Get the helpers.
 include ${MK_DIR}/helpers.mk
 
-# Helper macros.
-include ${HELPERS_DIR}/macros.mk
-
 # Load the selected kit and mod.
 # NOTE: Additional custom kits can be described in overrides.mk.
 # This installs and loads the selected kit and mod.

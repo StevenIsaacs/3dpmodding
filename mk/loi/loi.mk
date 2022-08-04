@@ -16,7 +16,7 @@ _loi_Dir := $(call this_segment_dir)
 # Configuration
 LOI_BOARDS_DIR = ${_loi_Dir}/loi_boards
 LOI_VARIANTS_DIR = ${_loi_Dir}/loi_variants
-LOI_ACCESS_METHODS_DIR = ${_loi_Dir}/loi_access_methods
+LOI_ACCESS_METHODS_DIR = ${_loi_Dir}/gw_access_methods
 LOI_INIT_DIR = ${_loi_Dir}/loi_init
 LOI_IMAGE_DIR = ${DOWNLOADS_DIR}/os-images
 LOI_BUILD_DIR = ${MOD_BUILD_DIR}/os-images
