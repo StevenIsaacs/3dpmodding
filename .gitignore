@@ -4,6 +4,7 @@ remove
 .modfw
 overrides.mk
 kits
+helpers
 downloads
 tools
 build
