@@ -27,6 +27,12 @@ include config.mk
 #       e.g. Overrides do not apply to mods.
 -include overrides.mk
 
+# Get the helpers.
+include ${MK_DIR}/helpers.mk
+
+# Helper macros.
+include ${HELPERS_DIR}/macros.mk
+
 # Load the selected kit and mod.
 # NOTE: Additional custom kits can be described in overrides.mk.
 # This installs and loads the selected kit and mod.
@@ -251,7 +257,7 @@ Defined in mod.mk:
     The board on which the OS will run. This can also trigger the build
     of a 3D printed enclosuer for the board determined by the mod.
 
-  Not defining CAD_TOOL_xxx, FIRMWARE, and GW_SOFTWARE will disable the
+  Not defining CAD_TOOL_xxx, FIRMWARE, or GW_SOFTWARE will disable the
   corresponding section of a build.
 
 Command line targets:

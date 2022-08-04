@@ -159,7 +159,7 @@ ${LOI_IMAGE_DIR}/${${GW_OS_VARIANT}_LOI_IMAGE}-p.json: ${LOI_IMAGE_DIR}/${${GW_O
 
 ${LOI_IMAGE_DIR}/${${GW_OS_VARIANT}_LOI_IMAGE}.mk: \
     ${LOI_IMAGE_DIR}/${${GW_OS_VARIANT}_LOI_IMAGE}-p.json
-> python3 ${HELPER_DIR}/os-image-partitions.py $< > $@
+> python3 ${HELPERS_DIR}/os-image-partitions.py $< > $@
 
 # Get the partition information.
 ifneq (${MAKECMDGOALS},help-loi)
@@ -288,7 +288,7 @@ ifneq (${Platform},Microsoft)
 install-os-image: \
   ${LOI_STAGING_DIR}/${${GW_OS_VARIANT}_LOI_IMAGE}.staged
 > cd ${LOI_STAGING_DIR} && \
-  ${HELPER_DIR}/makebootable \
+  ${HELPERS_DIR}/makebootable \
     --os-image ${LOI_STAGING_DIR}/${${GW_OS_VARIANT}_LOI_IMAGE} \
     ${_Device}
 else
@@ -299,7 +299,7 @@ endif
 .PHONY: help-makebootable
 help-makebootable:
 > cd ${LOI_STAGING_DIR} && \
-  ${HELPER_DIR}/makebootable --help
+  ${HELPERS_DIR}/makebootable --help
 
 .PHONY: os-image-shell
 os-image-shell: \

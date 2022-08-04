@@ -292,7 +292,7 @@ _PDeps = \
   . ${SP_VIRTUAL_ENV_DIR}/bin/activate; \
   cd ${MODEL_DIR} && \
   PYTHONPATH=${_SolidPythonPath} \
-  python -B ${HELPER_DIR}/pdeps.py $< > $@ && \
+  python -B ${HELPERS_DIR}/pdeps.py $< > $@ && \
   deactivate
 
 include $(wildcard ${OSC_BUILD_DIR}/*.deps)

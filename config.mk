@@ -17,9 +17,9 @@ endif
 $(info Running on: ${Platform})
 
 # Helper scripts and utilities.
-HELPER_DIR = ${project_dir}/helpers
+HELPERS_DIR = ${project_dir}/helpers
 # These are helper functions for shell scripts (Bash).
-HELPER_FUNCTIONS = ${HELPER_DIR}/modfw-functions.sh
+HELPER_FUNCTIONS = ${HELPERS_DIR}/modfw-functions.sh
 
 # Make segments and related files for specific features.
 MK_DIR = ${project_dir}/mk
@@ -56,8 +56,6 @@ TOOLS_DIR = ${project_dir}/tools
 # Where executables are installed.
 BIN_DIR = ${TOOLS_DIR}/bin
 
-include ${HELPER_DIR}/macros.mk
-
 ifneq ($(findstring help-config,${MAKECMDGOALS}),)
 define HelpConfigMsg
 Make segment: config.mk
@@ -68,7 +66,7 @@ These can be overridden either on the command line or in overrides.mk.
 Using overrides eliminates the need to modify the framework itself.
 
 Defines:
-HELPER_DIR = ${HELPER_DIR}
+HELPERS_DIR = ${HELPERS_DIR}
   Where helper scripts and utilities are maintained.
 MK_DIR = ${MK_DIR}
   Where the included make segments are maintained for different build modules.
