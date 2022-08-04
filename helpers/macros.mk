@@ -84,7 +84,7 @@ endef
 #-
 define sticky
   $(info Sticky variable: ${1})
-  $(eval $(1)=$(shell ${HELPER_DIR}/sticky.sh $(1)=${$(1)} ${STICKY_DIR}))
+  $(eval $(1)=$(shell ${HELPERS_DIR}/sticky.sh $(1)=${$(1)} ${STICKY_DIR}))
 endef
 
 #+
