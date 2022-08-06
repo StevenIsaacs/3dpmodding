@@ -148,7 +148,7 @@ Design patterns:
   GW_ACCESS_METHOD = proxied
   +-PC----------+   +-(cloud)+   +-SBC-----+   +-MCU--------+
   | Workstation |<->| Proxy  |<->| Gateway |<->| Controller |
-  +-CLI---------+ ^ +-BKR----+ ^ +-GW------+ ^ +-CTL--------+
+  +-CLI---------+ ^ +-PRX----+ ^ +-GW------+ ^ +-CTL--------+
     UI            |            |   UI        |
                   SSH tunnel   SSH tunnel    MCU defined
                                              (typically serial port)
@@ -158,7 +158,7 @@ SBC = A single board computer.
 MCU = An embedded microcontroller.
 CLI = Command line interface.
 UI  = User interface either command line or graphical or both.
-BKR = The broker hosted in the cloud.
+PRX = The proxy hosted in the cloud.
 GW  = Gateway (protocol conversion) between the CTL and the system.
 CTL = The device controller.
 

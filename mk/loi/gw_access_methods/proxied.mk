@@ -3,15 +3,15 @@
 # access.
 #-
 
-# This service file establishes a reverse tunnel with the broker.
+# This service file establishes a reverse tunnel with the proxy.
 # This tunnel is used to transport other sessions established from the
-# broker.
+# proxy.
 define ProxyTunnelService
 [Unit]
 Description=Keep reverse tunnel to ${PROXY_URL} alive
 After=network-online.target ssh.service
 
-# Create a reverse tunnel with the broker. This reverse tunnel can then
+# Create a reverse tunnel with the proxy. This reverse tunnel can then
 # be used to transport other protocols between the GW and a remote client.
 [Service]
 User=${GW_USER}
@@ -31,7 +31,7 @@ WantedBy=multi-user.target
 endef
 
 # This script runs as part of the first run initialization and installs
-# the components needed to establish a reverse tunnel with the broker.
+# the components needed to establish a reverse tunnel with the proxy.
 define ProxyTunnelInitScript
 
 endef
@@ -47,24 +47,24 @@ This defines the variables, targets, and functions for configuring an OS for
 proxied access.
 
 A systemd service is created to automatically establish a reverse SSH tunnel
-to the broker. This service runs as the normal user who does not have admin
+to the proxy. This service runs as the normal user who does not have admin
 privileges.
 
 All incoming ports are closed using a firewall. SSH login is not possible
-except by way of the SSH tunnel to the broker. The tunnel to the broker can
+except by way of the SSH tunnel to the proxy. The tunnel to the proxy can
 then be used to transport other protocols. The tunnel can also used for software
 deployment and remote administration.
 
 In proxied systems all user names and keys are generated. Using generated
 user names serves to enhance system security. A separate package called a
-keyring provides the needed broker credendials. This keyring contains
+keyring provides the needed proxy credendials. This keyring contains
 credentials for each of the allocated units identified by unit number. For
 security reasons never disclose the contents of a keyring package. The
-broker keyring is downloaded from the broker. This requires having a valid
-broker account to get started.
+proxy keyring is downloaded from the proxy. This requires having a valid
+proxy account to get started.
 
 Scripts are generated to simplify connection to a remote device via the
-broker. Additional scripts are generated to simplify file transfer to and
+proxy. Additional scripts are generated to simplify file transfer to and
 from the remote device.
 
 Required sticky command line options:
@@ -78,7 +78,7 @@ Required sticky command line options:
   PROXY_SSH_PORT = ${PROXY_SSH_PORT}
     This is the port number to use for downloading the keyring package.
   PROXY_FQDN = ${PROXY_FQDN}
-    This is the fully qualified domain name or IP address of the broker.
+    This is the fully qualified domain name or IP address of the proxy.
 
 Defined in mod.mk:
 
@@ -91,10 +91,10 @@ Defined in loi.mk (see help-loi):
 Defines:
   PROXYED_GW_USER = ${PROXYED_GW_USER}
     This is the normal user. The user name is generated based upon the unit
-	number and the broker URL.
+	number and the proxy URL.
   PROXYED_GW_ADMIN = ${PROXYED_GW_ADMIN}
     This is the privileged user. The user name is generated based upon the unit
-	number and the broker URL.
+	number and the proxy URL.
 
 Command line targets:
   help-access-method        Display this help.
