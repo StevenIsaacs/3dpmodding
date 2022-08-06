@@ -144,10 +144,10 @@ Design patterns:
                   SSH           MCU defined
                                 (typically serial port)
 
-  Secure brokered remote access using SSH tunnels.
-  GW_ACCESS_METHOD = brokered
+  Secure proxied remote access using SSH tunnels.
+  GW_ACCESS_METHOD = proxied
   +-PC----------+   +-(cloud)+   +-SBC-----+   +-MCU--------+
-  | Workstation |<->| Broker |<->| Gateway |<->| Controller |
+  | Workstation |<->| Proxy  |<->| Gateway |<->| Controller |
   +-CLI---------+ ^ +-BKR----+ ^ +-GW------+ ^ +-CTL--------+
     UI            |            |   UI        |
                   SSH tunnel   SSH tunnel    MCU defined
