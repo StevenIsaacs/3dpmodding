@@ -5,7 +5,7 @@
 
 ifeq (${MAKECMDGOALS},help-access-method)
 define HelpAccessMethodMsg
-Make segment: ${GW_ACCESS_METHOD}.mk
+Make segment: ${MCU_ACCESS_METHOD}.mk
 
 This defines the variables, targets, and functions for configuring an OS for
 ssh access. This generates a script which is designed to be run as part

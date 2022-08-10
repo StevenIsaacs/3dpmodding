@@ -35,12 +35,12 @@ GW_ADMIN_GID \
 GW_USER \
 GW_USER_ID \
 GW_USER_GID \
-GW_ACCESS_METHOD \
+MCU_ACCESS_METHOD \
 )
 
 # Ensure using one of the supported access modes.
 _AccessMethods = $(call basenames_in,${LOI_ACCESS_METHODS_DIR}/*.mk)
-$(call must_be_one_of,GW_ACCESS_METHOD,${_AccessMethods})
+$(call must_be_one_of,MCU_ACCESS_METHOD,${_AccessMethods})
 
 $(call require,${GW_SOFTWARE}.mk,GW_INIT_SCRIPT)
 
@@ -51,7 +51,7 @@ LoiInitScripts = ${HELPER_FUNCTIONS}
 
 include ${LOI_BOARDS_DIR}/${GW_OS_BOARD}.mk
 include ${LOI_VARIANTS_DIR}/${GW_OS_VARIANT}.mk
-include ${LOI_ACCESS_METHODS_DIR}/${GW_ACCESS_METHOD}.mk
+include ${LOI_ACCESS_METHODS_DIR}/${MCU_ACCESS_METHOD}.mk
 
 $(call require,\
 ${GW_OS_VARIANT}.mk, \

@@ -1,5 +1,5 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# ModFw - A framework for modifying and developing devices.
+# ModFW - A framework for modifying and developing devices.
 #----------------------------------------------------------------------------
 # Changing the prefix because some editors like vscode don't handle tabs
 # in make files very well. This also slightly improves readability.
@@ -99,67 +99,89 @@ clean: ${Cleaners}
 SHELL = /bin/bash
 
 ifeq (${MAKECMDGOALS},help)
-define ModFwUsage
+define ModFWUsage
 Usage: make [<option>=<value> ...] <target>
 
 This make file and the included make segments define a framework
 for developing and modifying devices or small embedded systems.
 
 The collection of files for a given device or system is termed a mod.
-Semantically, a mod is a modification of an existing device or system.
-A mod can also be the development a new device or system.
+Semantically, a mod is a modification of an existing device or system or
+a mod can be the development a new device or system.
 
-ModFW directly supports the following design patterns. This pattern
-is usable in most situations where remote access to devices is needed.
-If necessary mods can either change the pattern or define a new one.
+ModFW directly supports the following design patterns. If necessary mods
+can either change the patterns or define new ones.
 
 Design patterns:
 
   Direct:
-  GW_ACCESS_METHOD = direct
-  Direct interface to the MCU from the PC workstation.
-  +-PC----------+   +-MCU--------+
-  | Workstation |<->| Controller |
-  +-CLI---------+ ^ +-CTL--------+
-    GW            |
-    UI            MCU defined
-                  (typically serial port)
+  MCU_ACCESS_METHOD = direct
+  Direct interface to the MCU from a PC workstation. In this case there is
+  no gateway and no OS image is staged.
+  +-PC----------+   +-MCU--------+   +-HDW------+
+  | Workstation |<->| Controller |<->| Hardware |
+  +-CLI---------+ ^ +-CTL--------+ ^ +----------+
+    GW            |                |
+    UI            MCU defined      Hardware system bus
+                  (typically a
+                  serial port)
 
   Console:
-  GW_ACCESS_METHOD = console
-  Similar to direct but the SBC is the console interface.
-  +-SBC---------+   +-MCU--------+
-  | Wprkstation |->| Controller |
-  +-CLI---------+ ^ +-CTL--------+
-    GW            |
-    UI            MCU defined
-                  (typically serial port)
+  MCU_ACCESS_METHOD = console
+  Similar to direct but the SBC is the console interface and a corresponding
+  OS image for the SBC is staged.
+  +-SBC---------+   +-MCU--------+   +-HDW------+
+  | Wprkstation |<->| Controller |<->| Hardware |
+  +-CLI---------+ ^ +-CTL--------+ ^ +----------+
+    GW            |                |
+    UI            MCU defined      Hardware system bus
+                  (typically a
+                  serial port)
 
   Local network:
-  GW_ACCESS_METHOD = ssh
-  +-PC----------+   +-SBC-----+   +-MCU--------+
-  | Workstation |<->| Gateway |<->| Controller |
-  +-CLI---------+ ^ +-GW-----=+ ^ +-CTL--------+
-    UI            |   UI        |
-                  SSH           MCU defined
-                                (typically serial port)
+  MCU_ACCESS_METHOD = ssh
+  SSH sessions are used to communicate with the gateway and a corresponding
+  OS image for the SBC is staged.
+  +-PC----------+   +-SBC-----+   +-MCU--------+   +-HDW------+
+  | Workstation |<->| Gateway |<->| Controller |<->| Hardware |
+  +-CLI---------+ ^ +-GW-----=+ ^ +-CTL--------+ ^ +----------+
+    UI            |   UI        |                |
+                  SSH           MCU defined      Hardware system bus
+                                (typically a
+                                serial port)
 
-  Secure proxied remote access using SSH tunnels.
-  GW_ACCESS_METHOD = proxied
-  +-PC----------+   +-(cloud)+   +-SBC-----+   +-MCU--------+
-  | Workstation |<->| Proxy  |<->| Gateway |<->| Controller |
-  +-CLI---------+ ^ +-PRX----+ ^ +-GW------+ ^ +-CTL--------+
-    UI            |            |   UI        |
-                  SSH tunnel   SSH tunnel    MCU defined
-                                             (typically serial port)
+  MCU_ACCESS_METHOD = proxied
+  Secure proxied remote access using SSH tunnels. A valid keyring is required
+  and a corresponding OS image is staged. The keyring is also used to
+  generate scripts for accessing the gateway from the workstation and for
+  accessing the proxy from either the gateway or the workstation.
+  +-PC----------+   +-(cloud)+   +-SBC-----+   +-MCU--------+   +-HDW------+
+  | Workstation |<->| Proxy  |<->| Gateway |<->| Controller |<->| Hardware |
+  +-CLI---------+ ^ +-PRX----+ ^ +-GW------+ ^ +-CTL--------+ ^ +----------+
+    UI            |            |   UI        |                |
+                  SSH tunnel   SSH tunnel    MCU defined      Hardware system
+                                             (typically a     bus
+                                             serial port)
 
+Terms:
+Workstation = A development workstation or a system administration workstation.
+Proxy       = Manages connections between workstations and gateways. This is
+              typically hosted in the cloud.
+Gateway     = Serves as a protocol translator between the Controller and the
+              workstation.
+Controller  = Controls the device hardware.
+
+Hardware platforms:
 PC  = A personal computer.
 SBC = A single board computer.
 MCU = An embedded microcontroller.
+HDW = The device or machine being controlled. For example a 3D printer.
+
+Roles:
 CLI = Command line interface.
 UI  = User interface either command line or graphical or both.
 PRX = The proxy hosted in the cloud.
-GW  = Gateway (protocol conversion) between the CTL and the system.
+GW  = Gateway (protocol translation) between the CTL and the system.
 CTL = The device controller.
 
 A git repository is used to maintain one or more mods with each mod
@@ -279,7 +301,7 @@ Command line targets:
 
 endef
 
-export ModFwUsage
+export ModFWUsage
 .PHONY: help
 help:
 > @if [ -n '${ErrorMessages}' ]; then\
@@ -287,7 +309,7 @@ help:
     m='${ErrorMessages}';printf " $${m//nlnl/\\n}";\
     read -p "Press ENTER to continue...";\
   fi
-> @echo "$$ModFwUsage" | less
+> @echo "$$ModFWUsage" | less
 else
   ifdef ErrorMessages
     $(error Errors encountered. See make help)

@@ -13,8 +13,8 @@ if [ -f ${${GW_OS_VARIANT}_TMP_DIR}/${${GW_OS_VARIANT}_SCRIPT} ]; then
 fi
 
 # Load the access level initialization.
-if [ -f ${${GW_OS_VARIANT}_TMP_DIR}/${${GW_ACCESS_METHOD}_SCRIPT} ]; then
-  . ${${GW_OS_VARIANT}_TMP_DIR}/${${GW_ACCESS_METHOD}_SCRIPT}
+if [ -f ${${GW_OS_VARIANT}_TMP_DIR}/${${MCU_ACCESS_METHOD}_SCRIPT} ]; then
+  . ${${GW_OS_VARIANT}_TMP_DIR}/${${MCU_ACCESS_METHOD}_SCRIPT}
 fi
 
 # Load the user interface specific initialization.
