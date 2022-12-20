@@ -11,7 +11,7 @@
 # point to the corresponding directories.
 #-
 
-_loi_Dir := $(call this_segment_dir)
+_loi_Dir := $(call this-segment-dir)
 
 # Configuration
 LOI_BOARDS_DIR = ${_loi_Dir}/loi_boards
