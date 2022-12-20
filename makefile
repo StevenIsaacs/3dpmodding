@@ -1,34 +1,16 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # ModFW - A framework for modifying and developing devices.
 #----------------------------------------------------------------------------
-# Changing the prefix because some editors like vscode don't handle tabs
-# in make files very well. This also slightly improves readability.
-.RECIPEPREFIX = >
+ProjectDir = $(realpath $(dir $(realpath $(firstword ${MAKEFILE_LIST}))))
+
+include prelude.mk
 
 $(info Goal: ${MAKECMDGOALS})
 ifeq (${MAKECMDGOALS},)
   $(info No target was specified.)
 endif
 
-project_dir = $(realpath $(dir $(realpath $(firstword ${MAKEFILE_LIST}))))
-$(info project_dir: ${project_dir})
-
-.DEFAULT_GOAL := all
-
-# Special target to force another target.
-FORCE:
-
 include config.mk
-# To simplfy the command line common option overrides can be placed in
-# a separate make segment. This file is NOT maintained in source control
-# (i.e. Ignored in .gitignore). It is included if it exists.
-# NOTE: The options can still be overridden on the command line.
-# NOTE: This does not override any of the subsequent make segments.
-#       e.g. Overrides do not apply to mods.
--include overrides.mk
-
-# Get the helpers.
-include ${MK_DIR}/helpers.mk
 
 # Load the selected kit and mod.
 # NOTE: Additional custom kits can be described in overrides.mk.
@@ -40,6 +22,7 @@ include ${MK_DIR}/kits.mk
 #----------------------------------------------------------------------------
 # Firmware
 ifdef FIRMWARE
+  # TODO: Add OpenPLC.
   include ${MK_DIR}/${FIRMWARE}.mk
 endif
 
@@ -87,10 +70,6 @@ endif
 
 all: ${ModFirmware} ${ModDeps} ${AllModelDeps}
 
-# Display the value of any variable.
-show-%:
-> @echo '$*=$($*)'
-
 .PHONY: clean
 clean: ${Cleaners}
 > rm -rf ${BUILD_DIR}
@@ -107,7 +86,28 @@ for developing and modifying devices or small embedded systems.
 
 The collection of files for a given device or system is termed a mod.
 Semantically, a mod is a modification of an existing device or system or
-a mod can be the development a new device or system.
+a mod can also be the development a new device or system.
+
+Terms:
+Workstation = A development workstation or a system administration workstation.
+Proxy       = Manages connections between workstations and gateways. This is
+              typically hosted in the cloud.
+Gateway     = Serves as a protocol translator between the Controller and the
+              workstation.
+Controller  = Controls the device hardware.
+
+Hardware platforms:
+PC  = A personal computer.
+SBC = A single board computer.
+MCU = An embedded microcontroller.
+HDW = The device or machine being controlled. For example a 3D printer.
+
+Roles:
+CLI = Command line interface.
+UI  = User interface either command line or graphical or both.
+PRX = The proxy hosted in the cloud.
+GW  = Gateway (protocol translation) between the CTL and the system.
+CTL = The device controller.
 
 ModFW directly supports the following design patterns. If necessary mods
 can either change the patterns or define new ones.
@@ -151,10 +151,10 @@ Design patterns:
                                 serial port)
 
   MCU_ACCESS_METHOD = proxied
-  Secure proxied remote access using SSH tunnels. A valid keyring is required
-  and a corresponding OS image is staged. The keyring is also used to
-  generate scripts for accessing the gateway from the workstation and for
-  accessing the proxy from either the gateway or the workstation.
+  Secure proxied remote access using SSH tunnels. A valid ModDev package is
+  required and a corresponding OS image is staged. The ModDev package is also
+  used to generate scripts for accessing the gateway from the workstation and
+  for accessing the proxy from either the gateway or the workstation.
   +-PC----------+   +-(cloud)+   +-SBC-----+   +-MCU--------+   +-HDW------+
   | Workstation |<->| Proxy  |<->| Gateway |<->| Controller |<->| Hardware |
   +-CLI---------+ ^ +-PRX----+ ^ +-GW------+ ^ +-CTL--------+ ^ +----------+
@@ -162,27 +162,6 @@ Design patterns:
                   SSH tunnel   SSH tunnel    MCU defined      Hardware system
                                              (typically a     bus
                                              serial port)
-
-Terms:
-Workstation = A development workstation or a system administration workstation.
-Proxy       = Manages connections between workstations and gateways. This is
-              typically hosted in the cloud.
-Gateway     = Serves as a protocol translator between the Controller and the
-              workstation.
-Controller  = Controls the device hardware.
-
-Hardware platforms:
-PC  = A personal computer.
-SBC = A single board computer.
-MCU = An embedded microcontroller.
-HDW = The device or machine being controlled. For example a 3D printer.
-
-Roles:
-CLI = Command line interface.
-UI  = User interface either command line or graphical or both.
-PRX = The proxy hosted in the cloud.
-GW  = Gateway (protocol translation) between the CTL and the system.
-CTL = The device controller.
 
 A git repository is used to maintain one or more mods with each mod
 having its own subdirectory within the git repository. The repository
@@ -206,17 +185,15 @@ generate the corresponding output files. See the individual tool help targets
 for more information.
 
 Command line options:
-  Use help-<segment> to view the segment specific command line options.
+  Use help-<segment> to view the segment specific command line options. Some
+  segments define what are called sticky options.
 
-  Sticky options need to be selected on the command line at least once. After
-  being selected they default to the previous selection. These options are
-  stored in ${STICKY_DIR}.
-  For automated builds it is possible to preset options in:
-    ${STICKY_DIR}.
-
-  MODEL_TARGET=${MODEL_TARGET}
-    An optional target for ed-oscad. This defaults to all.
-  <target>      A single target. This defaults to display this help.
+  STICKY_DIR=${STICKY_DIR}
+    Sticky options need to be selected on the command line at least once. After
+    being selected they default to the previous selection. These options are
+    stored in STICKY_DIR.
+  For automated builds it is possible to preset options in another directory
+  then overriding STICK_DIR either in overrides.mk or on the command line.
 
 Defined in mod.mk:
   CAD_TOOL_3DP=${CAD_TOOL_3DP}

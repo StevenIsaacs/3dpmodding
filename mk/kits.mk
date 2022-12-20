@@ -101,18 +101,18 @@ help-kits:
 else
 
 ifeq (${KIT},)
-  $(call signal_error,The kit has not been defined)
+  $(call signal-error,The kit has not been defined)
 else
   ifndef ActiveKit
-    $(call signal_error,No description for the kit: ${KIT})
+    $(call signal-error,No description for the kit: ${KIT})
   endif
 endif
 
 ifeq (${KIT_VARIANT},)
-  $(call signal_error,The kit variant has not been defined)
+  $(call signal-error,The kit variant has not been defined)
 endif
 ifeq (${MOD},)
-  $(call signal_error,MOD has not been defined)
+  $(call signal-error,MOD has not been defined)
 endif
 
 _KitSegment = ${KIT_DIR}/kit.mk

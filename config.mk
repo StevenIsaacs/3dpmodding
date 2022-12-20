@@ -2,59 +2,50 @@
 # Override these on the make command line or in overrides.mk as needed.
 # Using overrides it should not be necessary to modify the makefiles.
 #-
-
-# Some behavior depends upon which platform.
-ifeq ($(shell grep WSL /proc/version > /dev/null; echo $$?),0)
-  Platform = Microsoft
-else ifeq ($(shell echo $$(expr substr $$(uname -s) 1 5)),Linux)
-  Platform = Linux
-else ifeq ($(shell uname),Darwin)
-# Detecting OS X is untested.
-  Platform = OsX
-else
-  $(call signal_error,Unable to identify platform)
+ifneq (,$(wildcard overrides.mk))
+include ${ProjectDir}/overrides.mk
+$(eval $(call add-to-manifest,CoreDeps,null,overrides.mk))
 endif
-$(info Running on: ${Platform})
 
 # Helper scripts and utilities.
-HELPERS_DIR = ${project_dir}/helpers
+HELPERS_DIR ?= ${ProjectDir}/helpers
 # These are helper functions for shell scripts (Bash).
-HELPER_FUNCTIONS = ${HELPERS_DIR}/modfw-functions.sh
+HELPER_FUNCTIONS ?= ${HELPERS_DIR}/modfw-functions.sh
 
 # Make segments and related files for specific features.
-MK_DIR = ${project_dir}/mk
+MK_DIR ?= ${ProjectDir}/mk
 
 # A kit is a collection of mods.
 # Where kit configurations are located. Override this for custom kits.
-KIT_CONFIGS_DIR = ${project_dir}/kit-configs
+KIT_CONFIGS_DIR ?= ${ProjectDir}/kit-configs
 # Where the mod kits are cloned to.
-KITS_DIR = ${project_dir}/kits
+KITS_DIR ?= ${ProjectDir}/kits
 # The development git server for supported kits.
-KIT_DEV_SERVER = git@github.com:StevenIsaacs
+KIT_DEV_SERVER ?= git@github.com:StevenIsaacs
 # The release git server for supported kits.
-KIT_REL_SERVER = https://github.com/StevenIsaacs
+KIT_REL_SERVER ?= https://github.com/StevenIsaacs
 
 #+
 # NOTE: The following directories are ignored (see .gitignore). These can be
 # deleted by a clean.
 #-
 # For downloaded files.
-DOWNLOADS_DIR = ${project_dir}/downloads
+DOWNLOADS_DIR ?= ${ProjectDir}/downloads
 
 # For storing sticky options.
-STICKY_DIR = ~/.modfw/sticky
+STICKY_DIR ?= ~/.modfw/sticky
 
 # Where intermediate build files are stored.
-BUILD_DIR = ${project_dir}/build
+BUILD_DIR ?= ${ProjectDir}/build
 
 # Where the mod output files are staged.
-STAGING_DIR = ${project_dir}/staging
+STAGING_DIR ?= ${ProjectDir}/staging
 
 # Where various tools are downloaded and installed.
-TOOLS_DIR = ${project_dir}/tools
+TOOLS_DIR ?= ${ProjectDir}/tools
 
 # Where executables are installed.
-BIN_DIR = ${TOOLS_DIR}/bin
+BIN_DIR ?= ${TOOLS_DIR}/bin
 
 ifneq ($(findstring help-config,${MAKECMDGOALS}),)
 define HelpConfigMsg
@@ -96,8 +87,8 @@ DOWNLOADS_DIR = ${DOWNLOADS_DIR}
 STICKY_DIR = ${STICKY_DIR}
   Where sticky options are stored.
 
-Other make segments can define stick options. These are options which become
-defaults once they have been used. Sticky optons can also be preset in the
+Other make segments can define sticky options. These are options which become
+defaults once they have been used. Sticky options can also be preset in the
 stick directory which helps simplify automated builds especially when build
 repeatability is required.
 
@@ -105,12 +96,8 @@ sticky
   A callable macro for setting sticky options. This can be used in a mod
   using a mod specific sticky directory. An option becomes sticky only
   if it hasn't been previously defined. The parameters are:
-  1 = The name of the sticky variable.
-  2 = Optional: Where to store the sticky variable.
-      Defaults to STICKY_DIR
+  1 ?= The name of the sticky variable.
 
-Sticky options are:
-  ${_StickyOptions}
 endef
 
 export HelpConfigMsg

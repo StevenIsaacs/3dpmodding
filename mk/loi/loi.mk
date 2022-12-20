@@ -92,7 +92,7 @@ ifeq (${${GW_OS_VARIANT}_LOI_DOWNLOAD},wget)
 else ifeq (${${GW_OS_VARIANT}_LOI_DOWNLOAD},google)
   $(call require, ${GW_OS_BOARD}.mk,${GW_OS_VARIANT}_LOI_IMAGE_ID)
 else
-  $(call signal_error,Unsupported download method: ${${GW_OS_VARIANT}_LOI_DOWNLOAD})
+  $(call signal-error,Unsupported download method: ${${GW_OS_VARIANT}_LOI_DOWNLOAD})
 endif
 
 $(info Image download method: ${${GW_OS_VARIANT}_LOI_DOWNLOAD})
@@ -116,7 +116,7 @@ ${DOWNLOADS_DIR}/${${GW_OS_VARIANT}_LOI_IMAGE_FILE}:
     ifdef download_${${GW_OS_VARIANT}_LOI_DOWNLOAD}
 >     $(call download_${${GW_OS_VARIANT}_LOI_DOWNLOAD})
     else
-      $(call signal_error,Unsupported download method: ${${GW_OS_VARIANT}_LOI_DOWNLOAD})
+      $(call signal-error,Unsupported download method: ${${GW_OS_VARIANT}_LOI_DOWNLOAD})
     endif
   else
     $(info Image download method not specified)
@@ -148,7 +148,7 @@ ${LOI_IMAGE_DIR}/${${GW_OS_VARIANT}_LOI_IMAGE}: \
     ifdef _loi_unpack_${${GW_OS_VARIANT}_LOI_UNPACK}
 >     $(call _loi_unpack_${${GW_OS_VARIANT}_LOI_UNPACK})
     else
-      $(call signal_error,Unsupported unpack method: ${${GW_OS_VARIANT}_LOI_UNPACK})
+      $(call signal-error,Unsupported unpack method: ${${GW_OS_VARIANT}_LOI_UNPACK})
     endif
   else
     $(info Image unpack method not specified)
@@ -293,7 +293,7 @@ install-os-image: \
     ${_Device}
 else
 install-os-image:
-> $(call signal_error,USB storage device support is not available in WSL2)
+> $(call signal-error,USB storage device support is not available in WSL2)
 endif
 
 .PHONY: help-makebootable

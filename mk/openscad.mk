@@ -10,7 +10,7 @@ endif
 # If the model directory doesn't exist then error or init.
 ifeq ($(realpath ${MODEL_DIR}),)
   ifneq (${MAKECMDGOALS},osc-init)
-    $(call signal_error,The model directory does not exist)
+    $(call signal-error,The model directory does not exist)
   endif
 endif
 $(info MODEL_DIR=${MODEL_DIR})
@@ -224,7 +224,7 @@ osc-gui: ${OPENSCAD_GUI} ${ModelDeps} ${_stl_files} ${_sp_scad_files}
 >  @echo "${OPENSCAD_CLI} started and has process ID: `pidof ${OPENSCAD_CLI}`"
 else
 osc-gui:
-> $(call signal_error,Cannot run the OpenSCAD GUI in a WSL Platform.)
+> $(call signal-error,Cannot run the OpenSCAD GUI in a WSL Platform.)
 endif
 
 osc-docs: ${_SolidPython} ${_sp_doc_files}
