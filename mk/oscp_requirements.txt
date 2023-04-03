@@ -1,0 +1,9 @@
+ptvsd
+flake8
+pdoc3
+configparser
+configobj
+cmd2
+numpy
+solidpython
+muscad

@@ -30,7 +30,7 @@ MOD_STAGING_DIR = ${STAGING_DIR}/${KIT}/${KIT_VARIANT}/${MOD}
 -include ${KIT_CONFIGS_DIR}/${KIT}.mk
 
 # This is structured so that help-kits can be used to determine which kits
-# are avialable without loading any kit or mod.
+# are available without loading any kit or mod.
 ifeq (${MAKECMDGOALS},help-kits)
 define HelpKitsMsg
 Make segment: kits.mk
@@ -39,7 +39,7 @@ A mod kit is a collection of mods.
 
 This segment defines variables based upon the selected mod kit. A number
 of supported kits will be available. Additional custom kits can be defined in
-overrides.mk or, preferably, another make segement included by overrides.mk.
+overrides.mk or, preferably, another make segment included by overrides.mk.
 
 Required sticky command line options:
   KIT=${KIT}

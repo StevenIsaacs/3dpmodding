@@ -22,7 +22,8 @@ include ${MK_DIR}/kits.mk
 #----------------------------------------------------------------------------
 # Firmware
 ifdef FIRMWARE
-  # TODO: Add OpenPLC.
+  # TODO: Add OpenPLC. - https://openplcproject.com/
+  # TODO: Add esphome - https://github.com/esphome/esphome
   include ${MK_DIR}/${FIRMWARE}.mk
 endif
 
@@ -55,6 +56,8 @@ ifdef CAD_TOOL_PCB
 # mentioned in this article:
 # https://hackaday.com/2021/03/30/wires-vs-words-pcb-routing-in-python/
 $(info PCB CAD tools will be supported in the future)
+# TODO: Kicad supports automated builds using kicad-cli. Install Kicad.
+# TODO: Use a Docker image: https://github.com/INTI-CMNB/kicad_auto
 endif
 
 # What user interface software to use. User interface software is hosted on

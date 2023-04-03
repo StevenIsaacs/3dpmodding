@@ -1,6 +1,12 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# Scripted custom parts using OpenSCAD and _SolidPython.
+# Scripted custom parts using OpenSCAD and Python CAD tools.
 #----------------------------------------------------------------------------
+
+#+
+# TODO: Add MuSCAD https://gitlab.com/guillp/muscad
+# TODO: Add AnchorSCAD https://github.com/owebeeone/anchorscad
+#-
+
 # Use MODEL_DIR on the make command line to specify which model to build.
 # e.g. make MODEL_DIR=<model path>
 ifeq (${MODEL_DIR},)
@@ -15,6 +21,8 @@ ifeq ($(realpath ${MODEL_DIR}),)
 endif
 $(info MODEL_DIR=${MODEL_DIR})
 
+OPENSCAD_VARIANT = 2021.01-x86_64
+
 # Where tools are installed.
 OSC_BIN_DIR = ${BIN_DIR}/openscad/${OPENSCAD_VARIANT}
 # Included or imported files.
@@ -25,7 +33,7 @@ OSC_DRAW_DIR = ${MODEL_DIR}/drawings
 OSC_PART_DIR = ${MODEL_DIR}/parts
 # Printable parts.
 OSC_PRINT_DIR = ${MODEL_DIR}/prints
-# Assemblies and subassemblies of printable pars.
+# Assemblies and subassemblies of printable parts.
 OSC_ASM_DIR = ${MODEL_DIR}/assemblies
 # Off the shelf components (downloaded from the net).
 OSC_OTS_DIR = ${MODEL_DIR}/ots
@@ -39,7 +47,6 @@ OSC_PNG_DIR = ${MOD_STAGING_DIR}/png
 # Where common OpenSCAD libraries reside.
 OSC_LIB_DIR = ${MK_DIR}/osc-lib
 
-OPENSCAD_VARIANT = 2021.01-x86_64
 OPENSCAD_APP = OpenSCAD-${OPENSCAD_VARIANT}.AppImage
 ifeq (${Platform},Microsoft)
   OPENSCAD_BIN = squashfs-root/AppRun
@@ -56,133 +63,99 @@ include $(wildcard ${MODEL_DIR}/model.mk)
 ModelDeps = ${MODEL_LIBS} ${MODEL_DEPS}
 
 # OpenSCAD source files.
-_sc_drawing_files = $(wildcard ${OSC_DRAW_DIR}/*.scad)
-_sc_printable_files = $(wildcard ${OSC_PRINT_DIR}/*.scad)
-_sc_assembly_files = $(wildcard ${OSC_ASM_DIR}/${ASM}*.scad)
-_sc_model_files = \
-  ${_sc_drawing_files} ${_sc_printable_files} ${_sc_assembly_files}
+_osc_drawing_files = $(wildcard ${OSC_DRAW_DIR}/*.scad)
+_osc_printable_files = $(wildcard ${OSC_PRINT_DIR}/*.scad)
+_osc_assembly_files = $(wildcard ${OSC_ASM_DIR}/${ASM}*.scad)
+_osc_model_files = \
+  ${_osc_drawing_files} ${_osc_printable_files} ${_osc_assembly_files}
 
-_sc_stl_files = $(foreach file, ${_sc_printable_files}, ${OSC_STL_DIR}/$(basename $(notdir $(file))).stl)
-_sc_png_files = $(foreach file, ${_sc_model_files}, ${OSC_PNG_DIR}/$(basename $(notdir $(file))).png)
+_osc_stl_files = $(foreach file, ${_osc_printable_files}, ${OSC_STL_DIR}/$(basename $(notdir $(file))).stl)
+_osc_png_files = $(foreach file, ${_osc_model_files}, ${OSC_PNG_DIR}/$(basename $(notdir $(file))).png)
 
-_printable_files = ${_sc_printable_files}
-_model_files = ${_sc_model_files}
+_printable_files = ${_osc_printable_files}
+_model_files = ${_osc_model_files}
 
-# _SolidPython source files.
-_sp_parts_files = $(wildcard ${OSC_PART_DIR}/*.py)
-_sp_drawing_files = $(wildcard ${OSC_DRAW_DIR}/*.py)
-_sp_printable_files = $(wildcard ${OSC_PRINT_DIR}/*.py)
-_sp_assembly_files = $(wildcard ${OSC_ASM_DIR}/${ASM}*.py)
-_sp_import_files = $(wildcard ${OSC_INC_DIR}/*.py)
-_sp_model_files = ${_sp_drawing_files} ${_sp_printable_files} ${_sp_assembly_files}
+# Python CAD tools source files.
+_oscp_parts_files = $(wildcard ${OSC_PART_DIR}/*.py)
+_oscp_drawing_files = $(wildcard ${OSC_DRAW_DIR}/*.py)
+_oscp_printable_files = $(wildcard ${OSC_PRINT_DIR}/*.py)
+_oscp_assembly_files = $(wildcard ${OSC_ASM_DIR}/${ASM}*.py)
+_oscp_import_files = $(wildcard ${OSC_INC_DIR}/*.py)
+_oscp_model_files = ${_oscp_drawing_files} ${_oscp_printable_files} ${_oscp_assembly_files}
 
-_sp_dep_files = $(foreach file, ${_sp_model_files}, ${OSC_BUILD_DIR}/$(basename $(notdir $(file))).pdeps)
-_sp_stl_files = $(foreach file, ${_sp_printable_files}, ${OSC_STL_DIR}/$(basename $(notdir $(file))).stl)
+_oscp_dep_files = $(foreach file, ${_oscp_model_files}, ${OSC_BUILD_DIR}/$(basename $(notdir $(file))).pdeps)
+_oscp_stl_files = $(foreach file, ${_oscp_printable_files}, ${OSC_STL_DIR}/$(basename $(notdir $(file))).stl)
 ifneq (${Platform},Microsoft)
-_sp_png_files = $(foreach file, ${_sp_model_files}, ${OSC_PNG_DIR}/$(basename $(notdir $(file))).png)
+_oscp_png_files = $(foreach file, ${_oscp_model_files}, ${OSC_PNG_DIR}/$(basename $(notdir $(file))).png)
 endif
-_sp_scad_files = $(foreach file, ${_sp_stl_files}, ${OSC_BUILD_DIR}/$(notdir $(file)).scad)
-_sp_doc_files = $(foreach file, \
-  ${_sp_model_files} ${_sp_import_files} ${_sp_parts_files}, \
+_oscp_scad_files = $(foreach file, ${_oscp_stl_files}, ${OSC_BUILD_DIR}/$(notdir $(file)).scad)
+_oscp_doc_files = $(foreach file, \
+  ${_oscp_model_files} ${_oscp_import_files} ${_oscp_parts_files}, \
   ${OSC_DOC_DIR}/$(basename $(notdir $(file))).md)
 
-_printable_files += ${_sp_printable_files}
-_model_files += ${_sp_model_files}
+_printable_files += ${_oscp_printable_files}
+_model_files += ${_oscp_model_files}
 
 AllModelDeps = \
   ${OPENSCAD_CLI} \
   ${ModelDeps} \
-  ${_sc_stl_files} \
-  ${_sc_png_files} \
-  ${_sp_stl_files} \
-  ${_sp_png_files} \
-  ${_sp_doc_files}
+  ${_osc_stl_files} \
+  ${_osc_png_files} \
+  ${_oscp_stl_files} \
+  ${_oscp_png_files} \
+  ${_oscp_doc_files}
 
 osc-all: ${AllModelDeps}
 
 # Only the parts files.
-parts: ${_sc_stl_files} ${_sp_stl_files}
+parts: ${_osc_stl_files} ${_oscp_stl_files}
 
 #+
-# If python files are present then assume SolidPython in a virtual Platform
+# If python files are present then assume Python CAD tools in a virtual Platform
 # is needed.
 #-
-$(info Using SolidPython)
+$(info Using Python CAD tools)
 
-_SolidPythonPath = ${MODEL_DIR}:${OSC_LIB_DIR}
+_OscPythonPath = ${MODEL_DIR}:${OSC_LIB_DIR}
 
 #+
 # Python virtual Platform requirements.
 #-
-SP_PYTHON_VARIANT = 3.8
-SP_VIRTUAL_ENV_DIR = ${OSC_BIN_DIR}/_sp_venv
+OSCP_PYTHON_VARIANT = 3.8
+OSCP_VIRTUAL_ENV_DIR = ${OSC_BIN_DIR}/_oscp_venv
 
-_SpPythonEnvFile = ${MODEL_DIR}/.env
+_OscPython = ${OSCP_VIRTUAL_ENV_DIR}/bin/python3
+_OscpRequirements = ${MK_DIR}/oscp_requirements.txt
+_PythonRequirements = ${OSCP_VIRTUAL_ENV_DIR}/requiremets.txt
+_OscPythonEnvFile = ${MODEL_DIR}/.env
 
-_SpVenvPackageDir = ${SP_VIRTUAL_ENV_DIR}/lib/python${SP_PYTHON_VARIANT}/site-packages
+_OscpVenvPackageDir = ${OSCP_VIRTUAL_ENV_DIR}/lib/python${OSCP_PYTHON_VARIANT}/site-packages
 
-_VenvRequirements = \
-  ${_SpVenvPackageDir}/ptvsd/__init__.py \
-  ${_SpVenvPackageDir}/flake8/__init__.py \
-  ${_SpVenvPackageDir}/pdoc/__init__.py \
-  ${_SpVenvPackageDir}/configparser.py \
-  ${_SpVenvPackageDir}/configobj.py \
-  ${_SpVenvPackageDir}/cmd2/cmd2.py \
-  ${_SpVenvPackageDir}/numpy/__init__.py
+${_OscPython}:
+> python3 -m venv --copies ${OSCP_VIRTUAL_ENV_DIR}
 
-${SP_VIRTUAL_ENV_DIR}/bin/python3:
-> python3 -m venv --copies ${SP_VIRTUAL_ENV_DIR}
-
-define _SpInstallPythonPackage =
-$(info ++++++++++++)
-$(info _SpInstallPythonPackage $1)
+${_PythonRequirements}: ${_OscpRequirements} \
+  ${_OscPython}
 > ( \
-    . ${SP_VIRTUAL_ENV_DIR}/bin/activate; \
-    pip3 install $1; \
+    . ${OSCP_VIRTUAL_ENV_DIR}/bin/activate; \
+    pip3 install -r $<; \
+    pip3 freeze -l > $@; \
   )
-endef
 
-${_SpVenvPackageDir}/ptvsd/__init__.py:
-> $(call _SpInstallPythonPackage, ptvsd)
+${_OscPythonEnvFile}: ${_PythonRequirements}
+> echo "PYTHONPATH=${_OscPythonPath}" > ${_OscPythonEnvFile}
 
-${_SpVenvPackageDir}/flake8/__init__.py:
-> $(call _SpInstallPythonPackage, flake8)
-
-${_SpVenvPackageDir}/pdoc/__init__.py:
-> $(call _SpInstallPythonPackage, pdoc3)
-
-${_SpVenvPackageDir}/configparser.py:
-> $(call _SpInstallPythonPackage, configparser)
-
-${_SpVenvPackageDir}/configobj.py:
-> $(call _SpInstallPythonPackage, configobj)
-
-${_SpVenvPackageDir}/cmd2/cmd2.py:
-> $(call _SpInstallPythonPackage, cmd2)
-
-${_SpVenvPackageDir}/numpy/__init__.py:
-> $(call _SpInstallPythonPackage, numpy)
-
-_SolidPython = ${_SpVenvPackageDir}/solid/__init__.py
-${_SolidPython}: \
-  ${SP_VIRTUAL_ENV_DIR}/bin/python3 \
-  ${_VenvRequirements}
-> $(call _SpInstallPythonPackage, solidpython)
-
-${_SpPythonEnvFile}:
-> echo "PYTHONPATH=${_SolidPythonPath}" > ${_SpPythonEnvFile}
-
-solid-python: ${_SolidPython} ${_SpPythonEnvFile}
+osc-python: ${_OscPythonEnvFile}
 > ( \
-  . ${SP_VIRTUAL_ENV_DIR}/bin/activate; \
+  . ${OSCP_VIRTUAL_ENV_DIR}/bin/activate; \
   cd ${MODEL_DIR}; \
   OPENSCADPATH=${OPENSCADPATH} \
-  PYTHONPATH=${_SolidPythonPath} python; \
+  PYTHONPATH=${_OscPythonPath} python; \
   deactivate; \
   )
 
 _PDoc = \
- . ${SP_VIRTUAL_ENV_DIR}/bin/activate; \
+ . ${OSCP_VIRTUAL_ENV_DIR}/bin/activate; \
   cd ${MODEL_DIR}; \
   python -B -m pdoc --force -o $(dir $@) $<; \
   deactivate
@@ -218,16 +191,16 @@ osc-stl: ${OPENSCAD_CLI} ${ModelDeps} ${_stl_files}
 ifneq (${Platform},Microsoft)
 osc-png: ${OPENSCAD_CLI} ${ModelDeps} ${_png_files}
 
-osc-gui: ${OPENSCAD_GUI} ${ModelDeps} ${_stl_files} ${_sp_scad_files}
+osc-gui: ${OPENSCAD_GUI} ${ModelDeps} ${_stl_files} ${_oscp_scad_files}
 >  OPENSCADPATH=${OPENSCADPATH} ${OPENSCAD_CLI} \
->  ${_sc_model_files} ${_sp_scad_files} &
+>  ${_osc_model_files} ${_oscp_scad_files} &
 >  @echo "${OPENSCAD_CLI} started and has process ID: `pidof ${OPENSCAD_CLI}`"
 else
 osc-gui:
 > $(call signal-error,Cannot run the OpenSCAD GUI in a WSL Platform.)
 endif
 
-osc-docs: ${_SolidPython} ${_sp_doc_files}
+osc-docs: ${_OscPython} ${_oscp_doc_files}
 
 ifeq (${MAKECMDGOALS},osc-init)
 $(info Initializing: ${MODEL_DIR})
@@ -267,21 +240,22 @@ OPENSCAD_PNG = OPENSCADPATH=${OPENSCADPATH} \
   ${OPENSCAD_CLI} -m ${MAKE} -o ${OSC_PNG_DIR}/$(notdir $@) \
   -d ${OSC_BUILD_DIR}/$(notdir $@).deps $<
 
-_SolidPython_STL = \
-  . ${SP_VIRTUAL_ENV_DIR}/bin/activate; \
+_OscPython_STL = \
+  . ${OSCP_VIRTUAL_ENV_DIR}/bin/activate; \
   cd ${MODEL_DIR} && \
   OPENSCADPATH=${OPENSCADPATH} \
-  PYTHONPATH=${_SolidPythonPath} \
+  PYTHONPATH=${_OscPythonPath} \
   python -B $< ${OSC_BUILD_DIR}/$(notdir $@).scad && \
   deactivate && \
   ${OPENSCAD_CLI} -m ${MAKE} -o ${OSC_STL_DIR}/$(notdir $@) \
-  -d ${OSC_BUILD_DIR}/$(notdir $@).deps ${OSC_BUILD_DIR}/$(notdir $@).scad
+    -d ${OSC_BUILD_DIR}/$(notdir $@).deps \
+    ${OSC_BUILD_DIR}/$(notdir $@).scad
 
-_SolidPython_PNG = \
-  . ${SP_VIRTUAL_ENV_DIR}/bin/activate; \
+_OscPython_PNG = \
+  . ${OSCP_VIRTUAL_ENV_DIR}/bin/activate; \
   cd ${MODEL_DIR} && \
   OPENSCADPATH=${OPENSCADPATH} \
-  PYTHONPATH=${_SolidPythonPath} \
+  PYTHONPATH=${_OscPythonPath} \
   python -B $< ${OSC_BUILD_DIR}/$(notdir $@).scad && \
   deactivate && \
   ${OPENSCAD_CLI} -m ${MAKE} -o ${OSC_PNG_DIR}/$(notdir $@) \
@@ -289,15 +263,15 @@ _SolidPython_PNG = \
     ${OSC_BUILD_DIR}/$(notdir $@).scad
 
 _PDeps = \
-  . ${SP_VIRTUAL_ENV_DIR}/bin/activate; \
+  . ${OSCP_VIRTUAL_ENV_DIR}/bin/activate; \
   cd ${MODEL_DIR} && \
-  PYTHONPATH=${_SolidPythonPath} \
+  PYTHONPATH=${_OscPythonPath} \
   python -B ${HELPERS_DIR}/pdeps.py $< > $@ && \
   deactivate
 
 include $(wildcard ${OSC_BUILD_DIR}/*.deps)
 # This will cause make to run the utility to generate the dependencies.
--include ${_sp_dep_files}
+-include ${_oscp_dep_files}
 
 # Drawings
 ifneq (${MAKECMDGOALS},clean)
@@ -330,80 +304,80 @@ ${OSC_PNG_DIR}/%.png: ${OSC_ASM_DIR}/%.scad
 > mkdir -p $(dir $@)
 > ${OPENSCAD_PNG}
 
-# For _SolidPython intermediates and docs.
+# For _OscPython intermediates and docs.
 
 # Dependencies
 ${OSC_BUILD_DIR}/%.pdeps: \
-  ${OSC_DRAW_DIR}/%.py ${_SolidPython} ${_SpPythonEnvFile}
+  ${OSC_DRAW_DIR}/%.py ${_OscPythonEnvFile}
 > mkdir -p $(dir $@)
 > ${_PDeps}
 
 ${OSC_BUILD_DIR}/%.pdeps: \
-  ${OSC_PRINT_DIR}/%.py ${_SolidPython} ${_SpPythonEnvFile}
+  ${OSC_PRINT_DIR}/%.py ${_OscPythonEnvFile}
 > mkdir -p $(dir $@)
 > ${_PDeps}
 
 ${OSC_BUILD_DIR}/%.pdeps: \
-  ${OSC_ASM_DIR}/%.py ${_SolidPython} ${_SpPythonEnvFile}
+  ${OSC_ASM_DIR}/%.py ${_OscPythonEnvFile}
 > mkdir -p $(dir $@)
 > ${_PDeps}
 
 # Drawings.
 ${OSC_PNG_DIR}/%.png: \
-  ${OSC_DRAW_DIR}/%.py ${_SolidPython} ${_SpPythonEnvFile}
+  ${OSC_DRAW_DIR}/%.py ${_OscPythonEnvFile}
 > mkdir -p ${OSC_BUILD_DIR}
 > mkdir -p $(dir $@)
-> ${_SolidPython_PNG}
+> ${_OscPython_PNG}
 
 # 3D printables.
 ${OSC_STL_DIR}/%.stl: \
-  ${OSC_PRINT_DIR}/%.py ${_SolidPython} ${_SpPythonEnvFile}
+  ${OSC_PRINT_DIR}/%.py ${_OscPythonEnvFile}
 > mkdir -p ${OSC_BUILD_DIR}
 > mkdir -p $(dir $@)
-> ${_SolidPython_STL}
+> ${_OscPython_STL}
 
 ${OSC_PNG_DIR}/%.png: \
-  ${OSC_PRINT_DIR}/%.py ${_SolidPython} ${_SpPythonEnvFile}
+  ${OSC_PRINT_DIR}/%.py ${_OscPythonEnvFile}
 > mkdir -p ${OSC_BUILD_DIR}
 > mkdir -p $(dir $@)
-> ${_SolidPython_PNG}
+> ${_OscPython_PNG}
 
 # Assemblies.
 ${OSC_STL_DIR}/%.stl: \
-  ${OSC_ASM_DIR}/%.py ${_SolidPython} ${_SpPythonEnvFile}
+  ${OSC_ASM_DIR}/%.py ${_OscPythonEnvFile}
 > mkdir -p ${OSC_BUILD_DIR}
 > mkdir -p $(dir $@)
-> ${_SolidPython_STL}
+> ${_OscPython_STL}
 
 ${OSC_PNG_DIR}/%.png: \
-  ${OSC_ASM_DIR}/%.py ${_SolidPython} ${_SpPythonEnvFile}
+  ${OSC_ASM_DIR}/%.py ${_OscPythonEnvFile}
 > mkdir -p ${OSC_BUILD_DIR}
 > mkdir -p $(dir $@)
-> ${_SolidPython_PNG}
+> ${_OscPython_PNG}
 
 # Generated docs.
 ${OSC_DOC_DIR}/%.md: \
-  ${OSC_INC_DIR}/%.py ${_SolidPython} ${_SpPythonEnvFile}
+  ${OSC_INC_DIR}/%.py ${_OscPythonEnvFile}
 > mkdir -p $(dir $@)
 > ${_PDoc}
 
 ${OSC_DOC_DIR}/%.md: \
-  ${OSC_DRAW_DIR}/%.py ${_SolidPython} ${_SpPythonEnvFile}
+  ${OSC_DRAW_DIR}/%.py ${_OscPythonEnvFile}
 > mkdir -p $(dir $@)
 > ${_PDoc}
 
 ${OSC_DOC_DIR}/%.md: \
-  ${OSC_PART_DIR}/%.py ${_SolidPython} ${_SpPythonEnvFile}
+  ${OSC_PART_DIR}/%.py ${_OscPythonEnvFile}
 > mkdir -p $(dir $@)
 > ${_PDoc}
 
 ${OSC_DOC_DIR}/%.md: \
-  ${OSC_PRINT_DIR}/%.py ${_SolidPython} ${_SpPythonEnvFile}
+  ${OSC_PRINT_DIR}/%.py ${_OscPythonEnvFile}
 > mkdir -p $(dir $@)
 > ${_PDoc}
 
 ${OSC_DOC_DIR}/%.md: \
-  ${OSC_ASM_DIR}/%.py ${_SolidPython} ${_SpPythonEnvFile}
+  ${OSC_ASM_DIR}/%.py ${_OscPythonEnvFile}
 > mkdir -p $(dir $@)
 > ${_PDoc}
 
@@ -414,7 +388,7 @@ ifeq (${MAKECMDGOALS},help-openscad)
 define HelpOpenSCADMsg
 Make segment: openscad.mk
 
-OpenSCAD and _SolidPython are used to generate STL files from scripts which
+OpenSCAD and Python CAD tools are used to generate STL files from scripts which
 describe custom parts for a mod. These can also be used to modify existing
 off the shelf STL files.
 
@@ -431,8 +405,8 @@ Possible targets:
   osc-clean     Remove the dependency files and the output files.
   <asmfile>.stl Use this target to process a single assembly file. NOTE: The
                 ASM command line variable can also be used for this purpose.
-  solid-python  Install _SolidPython an a Python virtual environment and
-                start an interactive python session.
+  osc-python    Install OpenSCAD Python scripting tools in a Python virtual
+                environment and start an interactive Python session.
   help-openscad Display this help message (default).
   help-model    Display the model specific help.
 
@@ -458,8 +432,7 @@ Defined by the model in model.mk:
 
 Defines:
   OSC_BIN_DIR = ${OSC_BIN_DIR}
-    Where the OpenSCAD binaries and the _SolidPython virtual environment are
-    installed.
+    Where the OpenSCAD binaries.
   AllModelDeps = (use show-ModelDeps to display)
     The all model dependencies for the complete make.
 
@@ -479,7 +452,7 @@ Defines:
     Off the shelf parts. These are typically downloaded from the net in STL
     form but can also be scripts.
   OSC_LIB_DIR = ${OSC_LIB_DIR}
-    OpenSCAD or _SolidPython script libraries. Most are from openscad.org.
+    OpenSCAD or Python CAD tools script libraries. Most are from openscad.org.
 
   Output directories;
   OSC_BUILD_DIR = ${OSC_BUILD_DIR}
@@ -510,12 +483,12 @@ Defines:
   OPENSCADPATH = ${OPENSCADPATH}
     This is used on the OpenSCAD command line to set the search paths for
     the model or included libraries.
-  SP_PYTHON_VARIANT = ${SP_PYTHON_VARIANT}
-    The version of Python to use for the _SolidPython virtual environment.
-    This must be Python version 3.8 or later. _SolidPython itself is
+  OSCP_PYTHON_VARIANT = ${OSCP_PYTHON_VARIANT}
+    The version of Python to use for the Python CAD tools virtual environment.
+    This must be Python version 3.8 or later. The Python CAD tools are
     installed using pip3.
-  SP_VIRTUAL_ENV_DIR = ${SP_VIRTUAL_ENV_DIR}
-    Where to setup the Python virtual environemnt for _SolidPython.
+  OSCP_VIRTUAL_ENV_DIR = ${OSCP_VIRTUAL_ENV_DIR}
+    Where to setup the Python virtual environemnt for Python CAD tools.
 
 endef
 export HelpOpenSCADMsg
