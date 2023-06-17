@@ -27,7 +27,7 @@ pip install octoprint
 deactivate
 exit
 # Back as root.
-cp ${${GW_OS_VARIANT}_TMP_DIR}/octoprint.service /etc/systemd/system
+cp ${${GW_OS_VARIANT}_TMP_PATH}/octoprint.service /etc/systemd/system
 systemctl enable octoprint.service
 
 endef
@@ -64,7 +64,7 @@ endef
 
 endif
 
-include ${MK_DIR}/${GW_OS}.mk
+include ${MK_PATH}/${GW_OS}.mk
 
 ifeq (${MAKECMDGOALS},help-octoprint)
 define HelpOctoPrintMsg

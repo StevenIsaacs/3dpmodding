@@ -12,35 +12,35 @@ ifndef PIO_PYTHON_VARIANT
   PIO_PYTHON_VARIANT = 3.8
 endif
 
-PioVirtualEnvDir = ${BIN_DIR}/pio_venv_${PIO_PYTHON_VARIANT}
-_PioPythonBin = ${PioVirtualEnvDir}/bin/python3
+PioVirtualEnvPath = ${BIN_PATH}/pio_venv_${PIO_PYTHON_VARIANT}
+_PioPythonBin = ${PioVirtualEnvPath}/bin/python3
 
 PioVenvRequirements = \
   ${_PioPythonBin} \
-  ${_PioVenvPackageDir}/platformio/__init__.py
+  ${_PioVenvPackagePath}/platformio/__init__.py
 
-_PioVenvPackageDir = \
-  ${PioVirtualEnvDir}/lib/python${PIO_PYTHON_VARIANT}/site-packages
+_PioVenvPackagePath = \
+  ${PioVirtualEnvPath}/lib/python${PIO_PYTHON_VARIANT}/site-packages
 
 ${_PioPythonBin}:
-> python${PIO_PYTHON_VARIANT} -m venv --copies ${PioVirtualEnvDir}
+> python${PIO_PYTHON_VARIANT} -m venv --copies ${PioVirtualEnvPath}
 
 define _PioInstallPythonPackage =
 $(info ++++++++++++)
 $(info _PioInstallPythonPackage $1)
 > ( \
->   . ${PioVirtualEnvDir}/bin/activate; \
+>   . ${PioVirtualEnvPath}/bin/activate; \
 >   pip3 install $1; \
 > )
 endef
 
-${_PioVenvPackageDir}/platformio/__init__.py:
+${_PioVenvPackagePath}/platformio/__init__.py:
 > $(call _PioInstallPythonPackage, platformio)
 
 .PHONY: pio_python
 pio_python: ${PioVenvRequirements}
 > ( \
-> . ${PioVirtualEnvDir}/bin/activate; \
+> . ${PioVirtualEnvPath}/bin/activate; \
 > python; \
 > deactivate; \
 > )
@@ -64,11 +64,11 @@ Defined in mod.mk:
     Which version of Python to use. If undefined then a default is used.
 
 Defined in config.mk:
-  BIN_DIR = ${BIN_DIR}
+  BIN_PATH = ${BIN_PATH}
     Where to install PlatformIO.
 
 Defines:
-  PioVirtualEnvDir = ${PioVirtualEnvDir}
+  PioVirtualEnvPath = ${PioVirtualEnvPath}
     Where the PlatformIO Python virtual environment is installed.
   PioVenvRequirements = ${PioVenvRequirements}
     A list of requirements for installing PlatformIO.

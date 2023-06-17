@@ -2,11 +2,11 @@
 # OS First Time
 #----------------------------------------------------------------------------
 # Not all variants need a specific os-firsttime.mk
--include ${MK_DIR}/${GW_OS_VARIANT}_os-firsttime.mk
+-include ${MK_PATH}/${GW_OS_VARIANT}_os-firsttime.mk
 
 install-os-firsttime:
 > $(call mount-os-image)
-> echo "$$GenFirstTimeScript" > ${FirstTimeDir}
+> echo "$$GenFirstTimeScript" > ${FirstTimePath}
 > $(call unmount-os-image)
 
 ifeq (${MAKECMDGOALS},help-os-firsttime)

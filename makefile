@@ -1,21 +1,19 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # ModFW - A framework for modifying and developing devices.
 #----------------------------------------------------------------------------
-ProjectDir = $(realpath $(dir $(realpath $(firstword ${MAKEFILE_LIST}))))
-
-include prelude.mk
-
 $(info Goal: ${MAKECMDGOALS})
 ifeq (${MAKECMDGOALS},)
   $(info No target was specified.)
+  .DEFAULT_GOAL := help
 endif
 
 include config.mk
+$(info Default goal: $(.DEFAULT_GOAL))
 
 # Load the selected kit and mod.
 # NOTE: Additional custom kits can be described in overrides.mk.
 # This installs and loads the selected kit and mod.
-include ${MK_DIR}/kits.mk
+include ${MK_PATH}/kits.mk
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Supporting components. These are triggered by the mod configuration.
@@ -24,13 +22,13 @@ include ${MK_DIR}/kits.mk
 ifdef FIRMWARE
   # TODO: Add OpenPLC. - https://openplcproject.com/
   # TODO: Add esphome - https://github.com/esphome/esphome
-  include ${MK_DIR}/${FIRMWARE}.mk
+  include ${MK_PATH}/${FIRMWARE}.mk
 endif
 
 # Custom 3d printed parts.
 ifdef CAD_TOOL_3DP
   # This defines AllModelDeps.
-  include ${MK_DIR}/${CAD_TOOL_3DP}.mk
+  include ${MK_PATH}/${CAD_TOOL_3DP}.mk
 endif
 
 # TODO: Slicer software for 3D printing and CNC.
@@ -62,9 +60,10 @@ endif
 
 # What user interface software to use. User interface software is hosted on
 # a single board computer (SBC).
+# TODO: Add DearPyGUI: https://github.com/hoffstadt/DearPyGui
 ifdef GW_SOFTWARE
   ModOsInitScripts = ${HELPER_FUNCTIONS}
-  include ${MK_DIR}/${GW_SOFTWARE}.mk
+  include ${MK_PATH}/${GW_SOFTWARE}.mk
 endif
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -75,14 +74,16 @@ all: ${ModFirmware} ${ModDeps} ${AllModelDeps}
 
 .PHONY: clean
 clean: ${Cleaners}
-> rm -rf ${BUILD_DIR}
-> rm -rf ${STAGING_DIR}
+> rm -rf ${BUILD_PATH}
+> rm -rf ${STAGING_PATH}
 
 SHELL = /bin/bash
 
-ifeq (${MAKECMDGOALS},help)
+ifeq (${MAKECMDGOALS},)
 define ModFWUsage
 Usage: make [<option>=<value> ...] <target>
+
+NOTE: <target> must be specified on the command line.
 
 This make file and the included make segments define a framework
 for developing and modifying devices or small embedded systems.
@@ -191,12 +192,12 @@ Command line options:
   Use help-<segment> to view the segment specific command line options. Some
   segments define what are called sticky options.
 
-  STICKY_DIR=${STICKY_DIR}
+  STICKY_PATH=${STICKY_PATH}
     Sticky options need to be selected on the command line at least once. After
     being selected they default to the previous selection. These options are
-    stored in STICKY_DIR.
+    stored in STICKY_PATH.
   For automated builds it is possible to preset options in another directory
-  then overriding STICK_DIR either in overrides.mk or on the command line.
+  then overriding STICK_PATH either in overrides.mk or on the command line.
 
 Defined in mod.mk:
   CAD_TOOL_3DP=${CAD_TOOL_3DP}

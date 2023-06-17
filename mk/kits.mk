@@ -12,22 +12,27 @@ $(call sticky,${KIT}_VARIANT)
 KIT_VARIANT = ${${KIT}_VARIANT}
 $(call sticky,MOD)
 
-MOD_DIR = ${KIT_DIR}/${MOD}
-
 # Where the kit is cloned to.
 CLONE_DIR = ${KIT}-${${KIT}_VARIANT}
-KIT_DIR = ${KITS_DIR}/${CLONE_DIR}
+KIT_PATH = ${KITS_PATH}/${CLONE_DIR}
+MOD_PATH = ${KIT_PATH}/${MOD}
+# These can be overridden by the mod.
+MODEL_PATH = $(MOD_PATH)/model
+FIRMWARE_PATH = $(MOD_PATH)/firmware
+OS_PATH = $(MOD_PATH)/os
+UI_PATH = $(MOD_PATH)/ui
+PCB_PATH = $(MOD_PATH)/pcb
 
 # Where the mod intermediate files are stored.
-MOD_BUILD_DIR = ${BUILD_DIR}/${KIT}/${KIT_VARIANT}/${MOD}
+MOD_BUILD_PATH = ${BUILD_PATH}/${KIT}/${KIT_VARIANT}/${MOD}
 # Where the mod output files are staged.
-MOD_STAGING_DIR = ${STAGING_DIR}/${KIT}/${KIT_VARIANT}/${MOD}
+MOD_STAGING_PATH = ${STAGING_PATH}/${KIT}/${KIT_VARIANT}/${MOD}
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Supported mod kit descriptions.
 #----------------------------------------------------------------------------
 
--include ${KIT_CONFIGS_DIR}/${KIT}.mk
+-include ${KIT_CONFIGS_PATH}/${KIT}.mk
 
 # This is structured so that help-kits can be used to determine which kits
 # are available without loading any kit or mod.
@@ -60,19 +65,19 @@ Required sticky command line options:
 Defines:
   CLONE_DIR = ${CLONE_DIR}
     The name of the directory for the kit clone.
-  KIT_DIR = ${KIT_DIR}
+  KIT_PATH = ${KIT_PATH}
     Where the kit is cloned to.
-  MOD_BUILD_DIR = ${MOD_BUILD_DIR}
+  MOD_BUILD_PATH = ${MOD_BUILD_PATH}
     Where the mod intermediate files are stored.
-  MOD_STAGING_DIR = ${MOD_STAGING_DIR}
+  MOD_STAGING_PATH = ${MOD_STAGING_PATH}
     Where the mod output files are staged.
 
 Defined in config.mk:
-  KIT_CONFIGS_DIR = ${KIT_CONFIGS_DIR}
+  KIT_CONFIGS_PATH = ${KIT_CONFIGS_PATH}
     Where kit configurations are maintained. Override this for custom kits.
-  KITS_DIR = ${KITS_DIR}
+  KITS_PATH = ${KITS_PATH}
     Where mod kits are installed (cloned from a git repo).
-  STAGING_DIR = ${STAGING_DIR}
+  STAGING_PATH = ${STAGING_PATH}
     The top level staging directory.
 
 A kit config defines:
@@ -115,12 +120,12 @@ ifeq (${MOD},)
   $(call signal-error,MOD has not been defined)
 endif
 
-_KitSegment = ${KIT_DIR}/kit.mk
+_KitSegment = ${KIT_PATH}/kit.mk
 
 ${_KitSegment}:
-> mkdir -p ${KITS_DIR}
-> cd ${KITS_DIR}; git clone ${KIT_REPO} ${CLONE_DIR}
-> cd ${KITS_DIR}/${CLONE_DIR}; git checkout ${KIT_VARIANT}
+> mkdir -p ${KITS_PATH}
+> cd ${KITS_PATH}; git clone ${KIT_REPO} ${CLONE_DIR}
+> cd ${KITS_PATH}/${CLONE_DIR}; git checkout ${KIT_VARIANT}
 
 # Clone and load the kit and mod.
 ifndef ErrorMessages

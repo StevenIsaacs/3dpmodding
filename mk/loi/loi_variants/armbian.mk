@@ -18,4 +18,4 @@ Uses:
 endef
 endif # help-${GW_OS_VARIANT}
 
-include ${LOI_VARIANTS_DIR}/generic.mk
+include ${LOI_VARIANTS_PATH}/generic.mk

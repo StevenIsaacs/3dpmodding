@@ -14,8 +14,8 @@ armbian_LOI_IMAGE_URL = \
 armbian_LOI_DOWNLOAD = wget
 armbian_LOI_UNPACK = xz
 armbian_LOI_P1_NAME = root
-armbian_LOI_BOOT_DIR = ${armbian_LOI_P1_NAME}/boot
-armbian_LOI_ROOT_DIR = ${armbian_LOI_P1_NAME}
+armbian_LOI_BOOT_PATH = ${armbian_LOI_P1_NAME}/boot
+armbian_LOI_ROOT_PATH = ${armbian_LOI_P1_NAME}
 
 # OrangePi_zero_ubuntu_xenial_server_linux5.3.5_v1.0.tar.gz
 ubuntu_LOI_RELEASE = v1.0
@@ -29,8 +29,8 @@ ubuntu_LOI_DOWNLOAD = google
 ubuntu_LOI_UNPACK = tarz
 ubuntu_LOI_P1_NAME = boot
 ubuntu_LOI_P2_NAME = root
-ubuntu_LOI_BOOT_DIR = ${ubuntu_LOI_P1_NAME}
-ubuntu_LOI_ROOT_DIR = ${ubuntu_LOI_P2_NAME}
+ubuntu_LOI_BOOT_PATH = ${ubuntu_LOI_P1_NAME}
+ubuntu_LOI_ROOT_PATH = ${ubuntu_LOI_P2_NAME}
 
 # OrangePi_zero_debian_stretch_server_linux5.3.5_v1.0.tar.gz
 debian_LOI_RELEASE = v1.0
@@ -44,8 +44,8 @@ debian_LOI_DOWNLOAD = google
 debian_LOI_UNPACK = tarz
 debian_LOI_P1_NAME = boot
 debian_LOI_P2_NAME = root
-debian_LOI_BOOT_DIR = ${debian_LOI_P1_NAME}
-debian_LOI_ROOT_DIR = ${debian_LOI_P2_NAME}
+debian_LOI_BOOT_PATH = ${debian_LOI_P1_NAME}
+debian_LOI_ROOT_PATH = ${debian_LOI_P2_NAME}
 
 ifeq (${MAKECMDGOALS},help-${GW_OS_BOARD})
 define ${GW_OS_BOARD}_Help

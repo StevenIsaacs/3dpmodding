@@ -11,8 +11,8 @@ octopi_LOI_IMAGE_URL = https://github.com/OctoPrint/OctoPi-UpToDate/releases/dow
 octopi_LOI_UNPACK = ZIP
 octopi_LOI_P1_NAME = boot
 octopi_LOI_P2_NAME = root
-octopi_LOI_BOOT_DIR = ${octopi_LOI_P1_NAME}
-octopi_LOI_ROOT_DIR = ${octopi_LOI_P2_NAME}
+octopi_LOI_BOOT_PATH = ${octopi_LOI_P1_NAME}
+octopi_LOI_ROOT_PATH = ${octopi_LOI_P2_NAME}
 
 # Raspberry PI OS (formerly Raspbian now Raspios) on a Raspberry PI 3 or 4.
 raspios_LOI_RELEASE = 2022-04-07
@@ -23,8 +23,8 @@ raspios_LOI_IMAGE_URL = https://downloads.raspberrypi.org/raspios_lite_armhf/ima
 raspios_LOI_UNPACK = XZ
 raspios_LOI_P1_NAME = boot
 raspios_LOI_P2_NAME = root
-raspios_LOI_BOOT_DIR = ${raspios_LOI_P1_NAME}
-raspios_LOI_ROOT_DIR = ${raspios_LOI_P2_NAME}
+raspios_LOI_BOOT_PATH = ${raspios_LOI_P1_NAME}
+raspios_LOI_ROOT_PATH = ${raspios_LOI_P2_NAME}
 
 ifeq (${MAKECMDGOALS},list-os-variants)
 define ListOsVariantMsg

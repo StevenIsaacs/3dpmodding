@@ -85,8 +85,8 @@ Defined in mod.mk:
 Defined in config.mk:
 
 Defined in loi.mk (see help-loi):
-  LOI_BUILD_DIR = ${LOI_BUILD_DIR}
-  LOI_STAGING_DIR = ${LOI_STAGING_DIR}
+  LOI_BUILD_PATH = ${LOI_BUILD_PATH}
+  LOI_STAGING_PATH = ${LOI_STAGING_PATH}
 
 Defines:
   PROXYED_GW_USER = ${PROXYED_GW_USER}
