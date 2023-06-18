@@ -10,6 +10,15 @@ endif
 include config.mk
 $(info Default goal: $(.DEFAULT_GOAL))
 
+# Get lists of tools available for each class.
+ModelTools = $(call basenames-in,$(MODEL_MK_PATH)/*.mk)
+FirmwareTools = $(call basenames-in,$(FIRMWARE_MK_PATH)/*.mk)
+PcbTools = $(call basenames-in,$(PCB_MK_PATH)/*.mk)
+GwOsTools = $(call basenames-in,$(GW_OS_MK_PATH)/*.mk)
+GwAppTools = $(call basenames-in,$(GW_APP_MK_PATH)/*.mk)
+
+DevTools = ${ModelTools} ${FirmwareTools} ${PcbTools} ${GwOsTools} ${GwAppTools}
+
 # Load the selected kit and mod.
 # NOTE: Additional custom kits can be described in overrides.mk.
 # This installs and loads the selected kit and mod.
@@ -61,9 +70,9 @@ endif
 # What user interface software to use. User interface software is hosted on
 # a single board computer (SBC).
 # TODO: Add DearPyGUI: https://github.com/hoffstadt/DearPyGui
-ifdef GW_SOFTWARE
+ifdef GW_APP
   ModOsInitScripts = ${HELPER_FUNCTIONS}
-  include ${MK_PATH}/${GW_SOFTWARE}.mk
+  include ${MK_PATH}/${GW_APP}.mk
 endif
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -239,13 +248,13 @@ Defined in mod.mk:
     is included in the mod.
     Available options are:
       marlin    Build marlin firmware.
-  FIRMWARE_VARIANT=${FIRMWARE_VARIANT}
+  marlin_VARIANT=${marlin_VARIANT}
     Which branch or release of the firmware to use.
 
   Host user interface (HUI) software connects to the firmware running on the
   controller to provide monitoring and access via a GUI, console, or a network.
   The HUI uses devices such as keyboards, displays, and touch screens.
-  GW_SOFTWARE=${GW_SOFTWARE}
+  GW_APP=${GW_APP}
     Which user interface software to use. User interface software is typcially
     hosted on an SBC. If not defined then GW_OS_VARIANT and GW_OS_BOARD are
     ignored.
@@ -257,7 +266,7 @@ Defined in mod.mk:
     The board on which the OS will run. This can also trigger the build
     of a 3D printed enclosuer for the board determined by the mod.
 
-  Not defining CAD_TOOL_xxx, FIRMWARE, or GW_SOFTWARE will disable the
+  Not defining CAD_TOOL_xxx, FIRMWARE, or GW_APP will disable the
   corresponding section of a build.
 
 Command line targets:

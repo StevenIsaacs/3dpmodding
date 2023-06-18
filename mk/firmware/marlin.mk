@@ -2,7 +2,7 @@
 # Marlin firmware
 #----------------------------------------------------------------------------
 
-include ${MK_PATH}/platformio.mk
+include ${FIRMWARE_MK_PATH}/platformio.mk
 
 #+
 # Config section.
@@ -12,21 +12,21 @@ include ${MK_PATH}/platformio.mk
 # The Marlin configurations are installed to serve as starting points
 # for new mods or for comparison with existing mods.
 #-
-ifndef FIRMWARE_VARIANT
-  FIRMWARE_VARIANT = bugfix-2.0.x
+ifndef marlin_VARIANT
+  marlin_VARIANT = bugfix-2.0.x
 endif
-ifeq (${FIRMWARE_VARIANT},dev)
-  MARLIN_REPO = git@github.com:StevenIsaacs/Marlin.git
-  MARLIN_VARIANT = dev
-  MARLIN_PATH = ${TOOLS_PATH}/marlin-dev
-  MARLIN_CONFIG_REPO = git@github.com:StevenIsaacs/Configurations.git
-  MARLIN_CONFIG_PATH = ${TOOLS_PATH}/marlin-configs-dev
+ifeq (${marlin_VARIANT},dev)
+  marlin_REPO = git@github.com:StevenIsaacs/Marlin.git
+  marlin_VARIANT = dev
+  marlin_PATH = ${TOOLS_PATH}/marlin-dev
+  marlin_CONFIG_REPO = git@github.com:StevenIsaacs/Configurations.git
+  marlin_CONFIG_PATH = ${TOOLS_PATH}/marlin-configs-dev
 else
-  MARLIN_REPO = https://github.com/MarlinFirmware/Marlin.git
-  MARLIN_VARIANT = ${FIRMWARE_VARIANT}
-  MARLIN_PATH = ${TOOLS_PATH}/marlin
-  MARLIN_CONFIG_REPO = https://github.com/MarlinFirmware/Configurations.git
-  MARLIN_CONFIG_PATH = ${TOOLS_PATH}/marlin-configs
+  marlin_REPO = https://github.com/MarlinFirmware/Marlin.git
+  marlin_VARIANT = ${marlin_VARIANT}
+  marlin_PATH = ${TOOLS_PATH}/marlin
+  marlin_CONFIG_REPO = https://github.com/MarlinFirmware/Configurations.git
+  marlin_CONFIG_PATH = ${TOOLS_PATH}/marlin-configs
 endif
 
 #+
@@ -34,21 +34,21 @@ endif
 #-
 _PlatformIoRequirements = ${PioVenvRequirements}
 
-_MarlinBuildPath = ${MARLIN_PATH}/.pio/build
+_MarlinBuildPath = ${marlin_PATH}/.pio/build
 
-_MarlinInstallFile = ${MARLIN_PATH}/README.md
+_MarlinInstallFile = ${marlin_PATH}/README.md
 
-_MarlinConfigInstallFile = ${MARLIN_CONFIG_PATH}/README.md
+_MarlinConfigInstallFile = ${marlin_CONFIG_PATH}/README.md
 
 ${_MarlinInstallFile}:
-> git clone ${MARLIN_REPO} ${MARLIN_PATH}; \
-> cd ${MARLIN_PATH}; \
-> git checkout ${MARLIN_VARIANT}
+> git clone ${marlin_REPO} ${marlin_PATH}; \
+> cd ${marlin_PATH}; \
+> git checkout ${marlin_VARIANT}
 
 $(_MarlinConfigInstallFile):
-> git clone ${MARLIN_CONFIG_REPO} ${MARLIN_CONFIG_PATH}; \
-> cd ${MARLIN_CONFIG_PATH}; \
-> git checkout ${MARLIN_VARIANT}
+> git clone ${marlin_CONFIG_REPO} ${marlin_CONFIG_PATH}; \
+> cd ${marlin_CONFIG_PATH}; \
+> git checkout ${marlin_VARIANT}
 
 _MarlinDeps = \
   ${_PlatformIoRequirements} \
@@ -62,7 +62,7 @@ marlin: ${_MarlinDeps}
 #-
 _MarlinModFiles = $(shell find ${MOD_PATH}/Marlin -type f)
 
-_MarlinFirmware = ${_MarlinBuildPath}/${MARLIN_MOD_BOARD}/${MARLIN_FIRMWARE}
+_MarlinFirmware = ${_MarlinBuildPath}/${marlin_MOD_BOARD}/${marlin_FIRMWARE}
 
 #+
 # To build Marlin using the mod files.
@@ -70,14 +70,14 @@ _MarlinFirmware = ${_MarlinBuildPath}/${MARLIN_MOD_BOARD}/${MARLIN_FIRMWARE}
 # directory structure.
 #-
 ${_MarlinFirmware}: ${_MarlinDeps} ${_MarlinModFiles}
-> cd ${MARLIN_PATH}; git checkout .; git checkout ${FIRMWARE_VARIANT}
-> cp -r ${MOD_PATH}/Marlin/* ${MARLIN_PATH}/Marlin
+> cd ${marlin_PATH}; git checkout .; git checkout ${marlin_VARIANT}
+> cp -r ${MOD_PATH}/Marlin/* ${marlin_PATH}/Marlin
 > . ${PioVirtualEnvPath}/bin/activate; \
-> cd ${MARLIN_PATH}; \
-> platformio run -e ${MARLIN_MOD_BOARD}; \
+> cd ${marlin_PATH}; \
+> platformio run -e ${marlin_MOD_BOARD}; \
 > deactivate
 
-ModFirmware = ${MOD_STAGING_PATH}/${MARLIN_FIRMWARE}
+ModFirmware = ${MOD_STAGING_PATH}/${marlin_FIRMWARE}
 
 ${ModFirmware}: ${_MarlinFirmware}
 > mkdir -p $(@D)
@@ -101,13 +101,13 @@ be used to modify the Marlin source. A git checkout is used to return the
 Marlin source tree to its original cloned state.
 
 Defined in mod.mk:
-  FIRMWARE_VARIANT = ${FIRMWARE_VARIANT}
+  marlin_VARIANT = ${marlin_VARIANT}
     The release or branch of the Marlin source code to use for the mod.
     If undefined then a default will be used. If using the dev variant
     then valid github credentials are required.
-  MARLIN_MOD_BOARD = ${MARLIN_MOD_BOARD}
+  marlin_MOD_BOARD = ${marlin_MOD_BOARD}
     The CAM controller board.
-  MARLIN_FIRMWARE = ${MARLIN_FIRMWARE}
+  marlin_FIRMWARE = ${marlin_FIRMWARE}
     The name of the file produced by the Marlin build to be installed on
     the CAM controller board.
 
@@ -116,16 +116,16 @@ Defined in kits.mk:
     Where the firmare image is staged.
 
 Defines:
-  MARLIN_REPO = ${MARLIN_REPO}
+  marlin_REPO = ${marlin_REPO}
     The URL of the repo to clone the Marlin source frome.
-  MARLIN_VARIANT = ${MARLIN_VARIANT}
+  marlin_VARIANT = ${marlin_VARIANT}
     The branch to use for building the Marlin firmware.
-  MARLIN_PATH = ${MARLIN_PATH}
+  marlin_PATH = ${marlin_PATH}
     Where to clone the Marlin source to.
-  MARLIN_CONFIG_REPO = ${MARLIN_CONFIG_REPO}
+  marlin_CONFIG_REPO = ${marlin_CONFIG_REPO}
     The existing Marlin configurations which can be used as starting point
     for a new mod.
-  MARLIN_CONFIG_PATH = ${MARLIN_CONFIG_PATH}
+  marlin_CONFIG_PATH = ${marlin_CONFIG_PATH}
     Where to clone the Marlin configurations to.
   ModFirmware = ${ModFirmware}
     The dependencies to build the firmware.

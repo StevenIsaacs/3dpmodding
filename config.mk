@@ -83,7 +83,7 @@ MODEL_CLASS ?= model
 FIRMWARE_CLASS ?= firmware
 PCB_CLASS ?= pcb
 GW_OS_CLASS ?= gw_os
-GW_UI_CLASS ?= gw_ui
+GW_APP_CLASS ?= gw_ui
 
 # Make segments and related files for specific features.
 MK_PATH ?= ${ProjectPath}/mk
@@ -93,8 +93,8 @@ MODEL_MK_PATH ?= ${MK_PATH}/${MODEL_CLASS}
 FIRMWARE_MK_PATH ?= ${MK_PATH}/${FIRMWARE_CLASS}
 PCB_MK_PATH ?= ${MK_PATH}/${PCB_CLASS}
 
-GW_OS_PATH ?= ${MK_PATH}/${GW_OS_CLASS}
-GW_UI_PATH ?= ${MK_PATH}/${GW_UI_CLASS}
+GW_OS_MK_PATH ?= ${MK_PATH}/${GW_OS_CLASS}
+GW_APP_MK_PATH ?= ${MK_PATH}/${GW_APP_CLASS}
 
 # A kit is a collection of mods.
 # Where kit configurations are located. Override this for custom kits.
@@ -127,7 +127,7 @@ PCB_CLASS = ${PCB_CLASS}
 GW_OS_CLASS = ${GW_OS_CLASS}
   To build and/or configure an OS image intended to be run on the Gateway. The
   UI runs in this OS environment.
-GW_UI_CLASS = ${GW_UI_CLASS}
+GW_APP_CLASS = ${GW_APP_CLASS}
   The UI or app which runs on the Gateway.
 
 Make segment paths.
@@ -146,7 +146,7 @@ PCB_MK_PATH = ${PCB_MK_PATH}
 GW_OS_PATH = ${GW_OS_PATH}
   The path to the make segments corresponding to tools used to build the OS
   intended to run on the Gateway.
-GW_UI_PATH = ${GW_UI_PATH}
+GW_APP_PATH = ${GW_APP_PATH}
   The path to the make segments corresponding to tools used to build the UI
   or app for the Gateway.
 

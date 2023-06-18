@@ -57,7 +57,7 @@ export OctoPrintService
 
 # This is called by stage-os-image in loi.mk. It generates the runtime
 # init script along with the systemd service file for OctoPrint.
-define stage_${GW_SOFTWARE}
+define stage_${GW_APP}
   printf "%s" "$$OctoPrintInitScript" > $(1)/${GW_INIT_SCRIPT}; \
   printf "%s" "$$OctoPrintService" > $(1)/octoprint.service
 endef
@@ -74,7 +74,7 @@ This segment is used to install the OctoPrint initialization script in
 an OS image for controlling a 3D printer.
 
 Defined in mod.mk:
-  GW_SOFTWARE = ${GW_SOFTWARE}
+  GW_APP = ${GW_APP}
     Must equal octoprint for this segment to be used.
   GW_OS = ${GW_OS}
     Which OS is installed on the user interface board (GW_OS_BOARD).

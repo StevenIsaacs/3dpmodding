@@ -42,7 +42,7 @@ MCU_ACCESS_METHOD \
 _AccessMethods = $(call basenames_in,${LOI_ACCESS_METHODS_PATH}/*.mk)
 $(call must_be_one_of,MCU_ACCESS_METHOD,${_AccessMethods})
 
-$(call require,${GW_SOFTWARE}.mk,GW_INIT_SCRIPT)
+$(call require,${GW_APP}.mk,GW_INIT_SCRIPT)
 
 # These are a collection of scripts designed to run on the GW during
 # first time initialization. Each make segment can add to this list
@@ -267,7 +267,7 @@ stage-os-image: /usr/bin/proot \
 > printf "%s" "$$LoiInitConfig" > ${_OsImageTmpPath}/options.conf
 > cp ${LoiInitScripts} ${_OsImageTmpPath}
 > $(call stage_${GW_OS_VARIANT},${_OsImageTmpPath})
-> $(call stage_${GW_SOFTWARE},${_OsImageTmpPath})
+> $(call stage_${GW_APP},${_OsImageTmpPath})
 > -${PROOT} ${_OsTmpPath}/stage-${GW_OS_VARIANT}
 > date >${LOI_STAGING_PATH}/${${GW_OS_VARIANT}_LOI_IMAGE}.staged
 > cp ${LOI_STAGING_PATH}/${${GW_OS_VARIANT}_LOI_IMAGE}.staged ${_OsImageTmpPath}

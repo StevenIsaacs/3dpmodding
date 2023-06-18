@@ -17,11 +17,13 @@ CLONE_DIR = ${KIT}-${${KIT}_VARIANT}
 KIT_PATH = ${KITS_PATH}/${CLONE_DIR}
 MOD_PATH = ${KIT_PATH}/${MOD}
 # These can be overridden by the mod.
-MODEL_PATH = $(MOD_PATH)/model
-FIRMWARE_PATH = $(MOD_PATH)/firmware
-OS_PATH = $(MOD_PATH)/os
-UI_PATH = $(MOD_PATH)/ui
-PCB_PATH = $(MOD_PATH)/pcb
+MODEL_PATH = $(MOD_PATH)/${MODEL_CLASS}
+
+FIRMWARE_PATH = $(MOD_PATH)/${FIRMWARE_CLASS}
+PCB_PATH = $(MOD_PATH)/${PCB_CLASS}
+
+GW_OS_PATH = $(MOD_PATH)/${GW_OS_CLASS}
+GW_APP_PATH = $(MOD_PATH)/$(GW_APP_CLASS)
 
 # Where the mod intermediate files are stored.
 MOD_BUILD_PATH = ${BUILD_PATH}/${KIT}/${KIT_VARIANT}/${MOD}
