@@ -46,14 +46,14 @@ STICKY_PATH ?= ${ProjectPath}/.${PROJECT}/sticky
 
 # Which variant of the helpers to use. Once the helpers have been cloned
 # this is ignored.
-HELPERS_VARIANT ?= main
+HELPERS_VERSION ?= main
 
 # Helper scripts and utilities.
 HELPERS_PATH := ${ProjectPath}/helpers
 # These are helper functions for shell scripts (Bash).
 HELPER_FUNCTIONS := ${HELPERS_PATH}/modfw-functions.sh
 
-ifeq (${HELPERS_VARIANT},main)
+ifeq (${HELPERS_VERSION},main)
   HELPERS_REPO := https://github.com/StevenIsaacs/modfw-helpers.git
 else
   HELPERS_REPO := git@github.com:StevenIsaacs/modfw-helpers.git
@@ -70,7 +70,7 @@ _null := $(shell \
   if [ ! -f ${Macros} ]; then \
     git clone ${HELPERS_REPO} ${HELPERS_PATH}; \
     cd ${HELPERS_PATH}; \
-    git checkout ${HELPERS_VARIANT}; \
+    git checkout ${HELPERS_VERSION}; \
     git config pull.rebase true; \
   fi \
 )
@@ -78,12 +78,23 @@ _null := $(shell \
 # Helper macros.
 include ${Macros}
 
-# Toolset classes. These are used to build paths among other things.
-MODEL_CLASS ?= model
-FIRMWARE_CLASS ?= firmware
-PCB_CLASS ?= pcb
-GW_OS_CLASS ?= gw_os
-GW_APP_CLASS ?= gw_ui
+# Toolset classes. These are used to construct paths among other things.
+MODEL_CLASS := model
+FIRMWARE_CLASS := firmware
+PCB_CLASS := pcb
+GW_OS_CLASS := gw_os
+GW_UI_CLASS := gw_ui
+WS_OS_CLASS := ws_os
+WS_UI_CLASS := ws_ui
+
+TOOLSET_CLASSES := \
+  ${MODEL_CLASS} \
+  ${FIRMWARE_CLASS} \
+  ${PCB_CLASS} \
+  ${GW_OS_CLASS} \
+  ${GW_UI_CLASS} \
+  ${WS_OS_CLASS} \
+  ${WS_UI_CLASS}
 
 # Make segments and related files for specific features.
 MK_PATH ?= ${ProjectPath}/mk
@@ -94,17 +105,17 @@ FIRMWARE_MK_PATH ?= ${MK_PATH}/${FIRMWARE_CLASS}
 PCB_MK_PATH ?= ${MK_PATH}/${PCB_CLASS}
 
 GW_OS_MK_PATH ?= ${MK_PATH}/${GW_OS_CLASS}
-GW_APP_MK_PATH ?= ${MK_PATH}/${GW_APP_CLASS}
+GW_APP_MK_PATH ?= ${MK_PATH}/${GW_UI_CLASS}
 
 # A kit is a collection of mods.
 # Where kit configurations are located. Override this for custom kits.
-KIT_CONFIGS_PATH ?= ${ProjectPath}/kit-configs
+DEFAULT_KIT_CONFIGS_PATH ?= ${ProjectPath}/kit-configs
 # Where the mod kits are cloned to.
-KITS_PATH ?= ${ProjectPath}/kits
+DEFAULT_KITS_PATH ?= ${ProjectPath}/kits
 # The development git server for supported kits.
-KIT_DEV_SERVER ?= git@github.com:StevenIsaacs
+DEFAULT_KIT_DEV_SERVER ?= git@github.com:StevenIsaacs
 # The release git server for supported kits.
-KIT_REL_SERVER ?= https://github.com/StevenIsaacs
+DEFAULT_KIT_REL_SERVER ?= https://github.com/StevenIsaacs
 
 ifneq ($(findstring help-config,${MAKECMDGOALS}),)
 define HelpConfigMsg
@@ -126,9 +137,14 @@ PCB_CLASS = ${PCB_CLASS}
   The PCB for which the Firmware is designed to control.
 GW_OS_CLASS = ${GW_OS_CLASS}
   To build and/or configure an OS image intended to be run on the Gateway. The
-  UI runs in this OS environment.
-GW_APP_CLASS = ${GW_APP_CLASS}
-  The UI or app which runs on the Gateway.
+  Gateway UI runs in this OS environment.
+GW_UI_CLASS = ${GW_UI_CLASS}
+  The primary toolset used to build the UI for the Gateway.
+WS_OS_CLASS = ${WS_OS_CLASS}
+  To build and/or configure an OS image intended to be run on the Workstation.
+  The Workstation UI runs in this OS environment.
+WS_UI_CLASS = ${WS_UI_CLASS}
+  The primary toolset used to build the UI for the Workstation.
 
 Make segment paths.
 MK_PATH = ${MK_PATH}
@@ -143,10 +159,10 @@ PCB_MK_PATH = ${PCB_MK_PATH}
   The path to the make segments corresponding to tools used to create PCBs for
   the firmware.
 
-GW_OS_PATH = ${GW_OS_PATH}
+MOD_GW_OS_PATH = ${MOD_GW_OS_PATH}
   The path to the make segments corresponding to tools used to build the OS
   intended to run on the Gateway.
-GW_APP_PATH = ${GW_APP_PATH}
+MOD_GW_APP_PATH = ${MOD_GW_APP_PATH}
   The path to the make segments corresponding to tools used to build the UI
   or app for the Gateway.
 
