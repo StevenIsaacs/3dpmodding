@@ -1,113 +1,118 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # ModFW - A framework for modifying and developing devices.
 #----------------------------------------------------------------------------
-$(info Goal: ${MAKECMDGOALS})
-ifeq (${MAKECMDGOALS},)
-  $(info No target was specified.)
-  .DEFAULT_GOAL := help
+# Which branch of the helpers to use. Once the helpers have been cloned
+# this is ignored.
+HELPERS_BRANCH ?= main
+
+# Helper scripts and utilities.
+HELPERS_PATH := helpers
+ifeq (${HELPERS_BRANCH},main)
+  HELPERS_REPO := https://github.com/StevenIsaacs/modfw-helpers.git
+else
+  HELPERS_REPO := git@github.com:StevenIsaacs/modfw-helpers.git
 endif
 
-include config.mk
-$(info Default goal: $(.DEFAULT_GOAL))
+_helpers := ${HELPERS_PATH}/helpers.mk
 
-# Get lists of tools available for each class.
-ModelTools = $(call basenames-in,$(MODEL_MK_PATH)/*.mk)
-FirmwareTools = $(call basenames-in,$(FIRMWARE_MK_PATH)/*.mk)
-PcbTools = $(call basenames-in,$(PCB_MK_PATH)/*.mk)
-GwOsTools = $(call basenames-in,$(GW_OS_MK_PATH)/*.mk)
-GwAppTools = $(call basenames-in,$(GW_APP_MK_PATH)/*.mk)
+# _helpers must be loaded almost immediately and defines some key variables
+# such as .RECIPEPREFIX. Because of this can't rely upon make to trigger
+# cloning at the correct time. Therefore, this takes a more direct approach.
+_null := $(shell \
+  if [ ! -f ${_helpers} ]; then \
+    git clone ${HELPERS_REPO} ${HELPERS_PATH}; \
+    cd ${HELPERS_PATH}; \
+    git checkout ${HELPERS_BRANCH}; \
+    git config pull.rebase true; \
+  fi \
+)
 
-DevTools = ${ModelTools} ${FirmwareTools} ${PcbTools} ${GwOsTools} ${GwAppTools}
+# Helper macros.
+include ${_helpers}
 
-# Load the selected kit and mod.
-# NOTE: Additional custom kits can be described in overrides.mk.
-# This installs and loads the selected kit and mod.
-include ${MK_PATH}/kits.mk
-
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# Supporting components. These are triggered by the mod configuration.
-#----------------------------------------------------------------------------
-# Firmware
-ifdef FIRMWARE
-  # TODO: Add OpenPLC. - https://openplcproject.com/
-  # TODO: Add esphome - https://github.com/esphome/esphome
-  include ${MK_PATH}/${FIRMWARE}.mk
+# Using a conditional here because of needing to add a dependency on the
+# overrides.mk only if it exists.
+ifneq ($(wildcard overrides.mk),)
+$(call Use-Segment,overrides)
 endif
 
-# Custom 3d printed parts.
-ifdef CAD_TOOL_3DP
-  # This defines AllModelDeps.
-  include ${MK_PATH}/${CAD_TOOL_3DP}.mk
-endif
+$(call Use-Segment,config)
 
-# TODO: Slicer software for 3D printing and CNC.
+# Search path for loading segments. This can be extended by kits and mods.
+$(call Add-Segment-Path,$(MK_PATH))
 
-# Custom laser cut/engraved parts.
-ifdef CAD_TOOL_LASER
-  # TODO: Add CAD for laser.
-  # Future possible is laserweb4.mk.
-  #   https://github.com/LaserWeb/LaserWeb4
-  $(info Laser cutting/engraving will be supported in the future)
-  $(info OpenSCAD 2D mode can be used for laser cutting)
-endif
-
-# Custom CNC'd parts.
-ifdef CAD_TOOL_CNC
-  # TODO: Add CAD for CNC.
-  $(info CNC tools will be supported in the future)
-  $(info In the meantime OpenSCAD can be used for CNC modeling)
-endif
-
-ifdef CAD_TOOL_PCB
-# TODO: Scripted schematic capture and PCB layout using tools like those
-# mentioned in this article:
-# https://hackaday.com/2021/03/30/wires-vs-words-pcb-routing-in-python/
-$(info PCB CAD tools will be supported in the future)
-# TODO: Kicad supports automated builds using kicad-cli. Install Kicad.
-# TODO: Use a Docker image: https://github.com/INTI-CMNB/kicad_auto
-endif
-
-# What user interface software to use. User interface software is hosted on
-# a single board computer (SBC).
-# TODO: Add DearPyGUI: https://github.com/hoffstadt/DearPyGui
-ifdef GW_APP
-  ModOsInitScripts = ${HELPER_FUNCTIONS}
-  include ${MK_PATH}/${GW_APP}.mk
-endif
+# This installs kits and uses a mod within a kit. A kit and mod extends the
+# seg_paths variable as needed.
+$(call Use-Segment,kits)
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # The entire project.
 #----------------------------------------------------------------------------
 
-all: ${ModFirmware} ${ModDeps} ${AllModelDeps}
+# mod_deps is defined by the mod.
+all: ${MAKEFILE_LIST} ${mod_deps}
 
+# cleaners is defined by the kit and the mod.
 .PHONY: clean
-clean: ${Cleaners}
+clean: ${cleaners}
 > rm -rf ${BUILD_PATH}
 > rm -rf ${STAGING_PATH}
 
 SHELL = /bin/bash
 
-ifeq (${MAKECMDGOALS},)
-define ModFWUsage
-Usage: make [<option>=<value> ...] <target>
+ifneq ($(filter help,$(Goals)),)
+define _mod_fw_usage
+Usage: make [<option>=<value> ...] [<goal>]
 
-NOTE: <target> must be specified on the command line.
+NOTE: This help is displayed if no goal is specified.
 
-This make file and the included make segments define a framework
-for developing and modifying devices or small embedded systems.
+This make file and the included make segments define a framework for
+developing new projects or modifying existing projects. A project can
+consist of both software and hardware. A system is defined as all of the
+software components needed by the project. A device is defined as all of
+the hardware components needed by the project. All of the tools and existing
+components needed to build the project are automatically downloaded,
+configured and built if necessary.
 
 The collection of files for a given device or system is termed a mod.
 Semantically, a mod is a modification of an existing device or system or
 a mod can also be the development a new device or system.
 
+In the following <seg> indicates a makefile segment (included file) where
+<seg> is derived using the name of the makefile segment. Changing the name of
+the file changes the name of the associated variables, macros and, goals.
+
+Naming conventions:
+<seg>.mk        The name of a makefile segment. A makefile segment is designed
+                to be included from another file. These should be formatted to
+                contain a preamble and postamble. See help-helpers for more
+                information.
+GLOBAL_VARIABLE Can be overridden on the command line. Sticky variables should
+                have this form. See help-helpers for more information about
+                sticky variables.
+global_variable Available to all segments but should not be overridden on the
+                command line. Attempts to override can have unpredictable
+                results.
+<seg>_VARIABLE  A global variable prefixed with the name of the segment defining
+                the variable. These can be overridden on the command line.
+<seg>_variable  A global variable prefixed with the name of the segment
+                defining the variable. These should not be overridden.
+_private_variable Make segment specific. Should not be used by other segments
+                since these can be changed without concern for other segments.
+GlobalVariable  Camel case is used to identify variables defined by the
+                helpers. This is mostly helpers.mk.
+Callable-Macro  The name of a helper defined callable macro.
+callable-macro  The name of a callable macro available to all segments.
+_private-macro  A private macro specific to a segment.
+
 Terms:
-Workstation = A development workstation or a system administration workstation.
-Proxy       = Manages connections between workstations and gateways. This is
-              typically hosted in the cloud.
-Gateway     = Serves as a protocol translator between the Controller and the
-              workstation.
-Controller  = Controls the device hardware.
+Workstation     A development workstation or a system administration
+                workstation.
+Proxy           Manages connections between workstations and gateways. This is
+                typically hosted in the cloud.
+Gateway         Serves as a protocol translator between the Controller and the
+                workstation.
+Controller      Controls the device hardware.
 
 Hardware platforms:
 PC  = A personal computer.
@@ -116,7 +121,7 @@ MCU = An embedded microcontroller.
 HDW = The device or machine being controlled. For example a 3D printer.
 
 Roles:
-CLI = Command line interface.
+WS  = Development or administration workstation.
 UI  = User interface either command line or graphical or both.
 PRX = The proxy hosted in the cloud.
 GW  = Gateway (protocol translation) between the CTL and the system.
@@ -133,31 +138,32 @@ Design patterns:
   no gateway and no OS image is staged.
   +-PC----------+   +-MCU--------+   +-HDW------+
   | Workstation |<->| Controller |<->| Hardware |
-  +-CLI---------+ ^ +-CTL--------+ ^ +----------+
+  +-WS----------+ ^ +-CTL--------+ ^ +----------+
     GW            |                |
     UI            MCU defined      Hardware system bus
                   (typically a
                   serial port)
 
   Console:
-  MCU_ACCESS_METHOD = console
-  Similar to direct but the SBC is the console interface and a corresponding
-  OS image for the SBC is staged.
-  +-SBC---------+   +-MCU--------+   +-HDW------+
-  | Wprkstation |<->| Controller |<->| Hardware |
-  +-CLI---------+ ^ +-CTL--------+ ^ +----------+
-    GW            |                |
-    UI            MCU defined      Hardware system bus
-                  (typically a
-                  serial port)
+  MCU_ACCESS_METHOD = standalone
+  Similar to direct but the SBC is the user interface and a corresponding
+  OS image for the SBC is staged. In this case there is no network interface.
+  Software updates in this case must be performed manually at the Gateway.
+  +-SBC-----+   +-MCU--------+   +-HDW------+
+  | Gateway |<->| Controller |<->| Hardware |
+  +-GW------+ ^ +-CTL--------+ ^ +----------+
+    UI        |                |
+              MCU defined      Hardware system bus
+              (typically a
+              serial port)
 
   Local network:
-  MCU_ACCESS_METHOD = ssh
-  SSH sessions are used to communicate with the gateway and a corresponding
-  OS image for the SBC is staged.
+  MCU_ACCESS_METHOD = headless
+  SSH sessions are used to communicate with the Gateway and a corresponding
+  OS image for the SBC is staged. The Gateway has no keyboard or display.
   +-PC----------+   +-SBC-----+   +-MCU--------+   +-HDW------+
   | Workstation |<->| Gateway |<->| Controller |<->| Hardware |
-  +-CLI---------+ ^ +-GW-----=+ ^ +-CTL--------+ ^ +----------+
+  +-WS----------+ ^ +-GW-----=+ ^ +-CTL--------+ ^ +----------+
     UI            |   UI        |                |
                   SSH           MCU defined      Hardware system bus
                                 (typically a
@@ -170,15 +176,15 @@ Design patterns:
   for accessing the proxy from either the gateway or the workstation.
   +-PC----------+   +-(cloud)+   +-SBC-----+   +-MCU--------+   +-HDW------+
   | Workstation |<->| Proxy  |<->| Gateway |<->| Controller |<->| Hardware |
-  +-CLI---------+ ^ +-PRX----+ ^ +-GW------+ ^ +-CTL--------+ ^ +----------+
+  +-WS----------+ ^ +-PRX----+ ^ +-GW------+ ^ +-CTL--------+ ^ +----------+
     UI            |            |   UI        |                |
                   SSH tunnel   SSH tunnel    MCU defined      Hardware system
                                              (typically a     bus
                                              serial port)
 
-A git repository is used to maintain one or more mods with each mod
-having its own subdirectory within the git repository. The repository
-is termed a kit.
+A separate git repository is used to maintain one or more mods with each mod
+having its own subdirectory within the git repository. A repository
+containing a collection of mods is termed a kit.
 
 This includes firmware for microcontroller boards or MCUs (e.g. Arduino),
 OS images for single board computers or SBCs (e.g. Raspberry Pi), 3D
@@ -194,13 +200,10 @@ conflicts between versions.
 All of the CAD models are either downloaded as STLs from various websites or
 are scripted using a corresponding scripting tool (e.g. 3D models using
 OpenSCAD) which are then processed using the corresponding tool to
-generate the corresponding output files. See the individual tool help targets
+generate the corresponding output files. See the individual tool help goals
 for more information.
 
 Command line options:
-  Use help-<segment> to view the segment specific command line options. Some
-  segments define what are called sticky options.
-
   STICKY_PATH=${STICKY_PATH}
     Sticky options need to be selected on the command line at least once. After
     being selected they default to the previous selection. These options are
@@ -208,70 +211,20 @@ Command line options:
   For automated builds it is possible to preset options in another directory
   then overriding STICK_PATH either in overrides.mk or on the command line.
 
-Defined in mod.mk:
-  CAD_TOOL_3DP=${CAD_TOOL_3DP}
-    Which scripted CAD tool to use for 3D printing. If left undefined it is
-    assumed no 3D printed parts are in the mod.
-    A scripted CAD tool is used to generate STLs for 3D printing or CNC
-    machines. The STLs can be imported into slice or route software to
-    generate gcode.
-    Available tools are:
-      openscad   OpenSCAD and SolidPython.
-  CAD_TOOL_3DP_VARIANT=${CAD_TOOL_3DP_VARIANT}
-    Which branch or release of the CAD tool to use.
-  CAD_TOOL_LASER=${CAD_TOOL_LASER}
-    Future
-    Which scripted CAD tool to use for laser engraving or cutting. If left
-    undefined it is assumed no laser produced parts are used.
-    Available tools are:
-      openscad   OpenSCAD and SolidPython.
-  CAD_TOOL_LASER_VARIANT=${CAD_TOOL_LASER_VARIANT}
-    Which branch or release of the CAD tool to use.
-  CAD_TOOL_CNC=${CAD_TOOL_CNC}
-    Future
-    Which scripted CAD tool to use for CNC machining or engraving. If left
-    undefined it is assumed no CNC parts are produced.
-    Available tools are:
-      openscad   OpenSCAD and SolidPython.
-  CAD_TOOL_CNC_VARIANT=${CAD_TOOL_CNC_VARIANT}
-    Which branch or release of the CAD tool to use.
-  CAD_TOOL_PCB=${CAD_TOOL_PCB}
-    Future
-    Which scripted CAD tool to use for producing PCBs. If left undefined it
-    is assumed no PCBs are produced.
-  CAD_TOOL_PCB_VARIANT=${CAD_TOOL_PCB_VARIANT}
-    Which branch or release of the CAD tool to use.
+Defines:
+  seg_paths
+    A list of paths to be searched when using additional make segments.
+    NOTE: Kits and mods can extend this list (using +=). This list is then
+    passed to the Use-Segment macro (see help-helpers).
 
-  Firmware runs on the device hardware.
-  FIRMWARE=${FIRMWARE}
-    Which firmware to build. If left undefined it is assumed no firmware
-    is included in the mod.
-    Available options are:
-      marlin    Build marlin firmware.
-  marlin_VARIANT=${marlin_VARIANT}
-    Which branch or release of the firmware to use.
-
-  Host user interface (HUI) software connects to the firmware running on the
-  controller to provide monitoring and access via a GUI, console, or a network.
-  The HUI uses devices such as keyboards, displays, and touch screens.
-  GW_APP=${GW_APP}
-    Which user interface software to use. User interface software is typcially
-    hosted on an SBC. If not defined then GW_OS_VARIANT and GW_OS_BOARD are
-    ignored.
-  GW_OS_VARIANT=${GW_OS_VARIANT}
-    The variant of the OS to use. This determines in which OS to install the
-    initialization scripts. If undefined then an OS image will not be
-    initialized.
-  GW_OS_BOARD=${GW_OS_BOARD}
-    The board on which the OS will run. This can also trigger the build
-    of a 3D printed enclosuer for the board determined by the mod.
-
-  Not defining CAD_TOOL_xxx, FIRMWARE, or GW_APP will disable the
-  corresponding section of a build.
-
-Command line targets:
+Command line goals:
   all             The firmware is built and all assembly files are processed
-                  to generate the 3D printable parts.
+                  to generate the 3D printable parts. Use show-mod_deps for
+                  a list of goals.
+  clean           Remove all of the build artifacts. This removes the build
+                  and staging directories.
+
+  Defined by a kit and mod:
   firmware        Build the mod firmware only.
   parts           3D printable parts only.
   os              Build the SBC OS only.
@@ -279,29 +232,23 @@ Command line targets:
   reset-sticky    Resets all sticky variables to they have to be defined on
                   the command line again. This does not reset mod specific
                   sticky variables. For mods use the mod defined reset.
-  clean-<segment> Cleans a make segment output. See segment specific help
+  clean-<seg>     Cleans a make segment output. See segment specific help
                   for more information.
-  reset-<segment>-sticky
+  reset-<seg>-sticky
                   Reset segment specific variables. See segment specific
                   help for more information.
+
+  Help and debug:
   help            Display this help message (default).
-  show-<variable> This is a special target which can be used to display
+  show-mod_deps   Display the list of goals a mod is dependent upon.
+  show-<variable> This is a special goal which can be used to display
                   any makefile variable and exit.
-  help-<segment>  Display a make segment specific help.
+  help-<seg>      Display a make segment specific help.
 
 endef
 
-export ModFWUsage
+export _mod_fw_usage
 .PHONY: help
-help:
-> @if [ -n '${ErrorMessages}' ]; then\
-    echo Errors encountered:;\
-    m='${ErrorMessages}';printf " $${m//nlnl/\\n}";\
-    read -p "Press ENTER to continue...";\
-  fi
-> @echo "$$ModFWUsage" | less
-else
-  ifdef ErrorMessages
-    $(error Errors encountered. See make help)
-  endif
+help: display-errors display-messages
+> @echo "$$_mod_fw_usage" | less
 endif # help

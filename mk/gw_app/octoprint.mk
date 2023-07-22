@@ -1,8 +1,14 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # OctoPrint
 #----------------------------------------------------------------------------
+# The prefix aocp must be unique for all files.
+# +++++
+# Preamble
+ifndef aocpSegId
+$(call Enter-Segment,aocp)
+# -----
 
-$(call require,mod.mk,GW_OS)
+$(call Require,${MOD}.mk,GW_OS GW_OS_VARIANT GW_USER GW_APP)
 
 GW_INIT_SCRIPT = init-octoprint.sh
 
@@ -13,7 +19,7 @@ define OctoPrintInitScript
 # This is designed to be sourced (included) by the first run script. The
 # first run script has already sourced the options.sh script.
 # This runs as root. OctoPrint is installed as the unprivileged user.
-# Following the intstructions found at:
+# Following the instructions found at:
 #  https://community.octoprint.org/t/setting-up-octoprint-on-a-raspberry-pi-running-raspberry-pi-os-debian/2337
 
 apt update
@@ -64,11 +70,13 @@ endef
 
 endif
 
-include ${MK_PATH}/${GW_OS}.mk
+$(call Use-Segment,gw_os/${GW_OS})
 
-ifeq (${MAKECMDGOALS},help-octoprint)
-define HelpOctoPrintMsg
-Make segment: octoprint.mk
+# +++++
+# Postamble
+ifneq ($(call Is-Goal,help-${aocpSeg}),)
+define help_${aocpSegN}_msg
+Make segment: ${aocpSeg}.mk
 
 This segment is used to install the OctoPrint initialization script in
 an OS image for controlling a 3D printer.
@@ -91,12 +99,13 @@ Defines:
     Defines the name of the user interface initialization script which is run in
     a QEMU emulation environment.
 
-Command line targets:
-  help-octoprint        Display this help.
-
+Command line goals:
+  help-${aocpSeg}   Display this help.
 endef
+endif # help goal message.
 
-export HelpOctoPrintMsg
-help-octoprint:
-> @echo "$$HelpOctoPrintMsg" | less
-endif
+$(call Exit-Segment,aocp)
+else # aocpSegId exists
+$(call Check-Segment-Conflicts,aocp)
+endif # aocpSegId
+# -----

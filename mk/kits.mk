@@ -1,142 +1,156 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# A list of available mod kits.
+# Install kits and load the kit and the mod.
 #----------------------------------------------------------------------------
-# Select a kit using KIT=<kit> on the make command line. The selection is
-# sticky so once defined defaults to the previously selected kit.
-# Additional kits can be defined in overrides.mk. Use the format similar
-# to that used here.
-#+
+# The prefix kits must be unique for all files.
+# +++++
+# Preamble
+ifndef kitsSegId
+$(call Enter-Segment,kits)
+# -----
 
-$(call sticky,KIT_CONFIGS_PATH,DEFAULT_KIT_CONFIGS_PATH)
-$(call sticky,KITS_PATH,DEFAULT_KITS_PATH)
-$(call sticky,KIT_DEV_SERVER,DEFAULT_KIT_DEV_SERVER)
-$(call sticky,KIT_REL_SERVER,DEFAULT_KIT_REL_SERVER)
-
-$(call sticky,KIT)
-$(call sticky,${KIT}_VERSION)
-KIT_VERSION = ${${KIT}_VERSION}
-$(call sticky,MOD)
+$(call Sticky,KITS_PATH,${DEFAULT_KITS_PATH})
+$(call Sticky,KIT)
+ifdef KIT_REPO
+${KIT}_REPO = ${KIT_REPO}
+endif
+$(call Sticky,${KIT}_REPO)
+ifdef KIT_BRANCH
+${KIT}_BRANCH = ${KIT_BRANCH}
+endif
+$(call Sticky,${KIT}_BRANCH)
+$(call Sticky,MOD)
 
 # Where the kit is cloned to.
-CLONE_DIR = ${KIT}-${${KIT}_VERSION}
-KIT_PATH = ${KITS_PATH}/${CLONE_DIR}
-MOD_PATH = ${KIT_PATH}/${MOD}
-# These can be overridden by the mod.
-MOD_MODEL_PATH = $(MOD_PATH)/${MODEL_CLASS}
+kit_clone_dir = ${KIT}-${${KIT}_BRANCH}
+kit_path = ${KITS_PATH}/${kit_clone_dir}
+kit_mk = ${kit_path}/${KIT}.mk
 
-MOD_FIRMWARE_PATH = $(MOD_PATH)/${FIRMWARE_CLASS}
-MOD_PCB_PATH = $(MOD_PATH)/${PCB_CLASS}
+kits = $(call Directories-In,${KITS_PATH})
+mods = $(call Directories-In,${kit_path})
 
-MOD_GW_OS_PATH = $(MOD_PATH)/${GW_OS_CLASS}
-MOD_GW_APP_PATH = $(MOD_PATH)/$(GW_UI_CLASS)
+mod_path = ${kit_path}/${MOD}
+
+$(call Add-Segment-Path,${kit_path} ${mod_path})
 
 # Where the mod intermediate files are stored.
-MOD_BUILD_PATH = ${BUILD_PATH}/${KIT}/${KIT_VERSION}/${MOD}
+mod_build_path = ${BUILD_PATH}/${KIT}/${${KIT}_BRANCH}/${MOD}
 # Where the mod output files are staged.
-MOD_STAGING_PATH = ${STAGING_PATH}/${KIT}/${KIT_VERSION}/${MOD}
+mod_staging_path = ${STAGING_PATH}/${KIT}/${${KIT}_BRANCH}/${MOD}
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Supported mod kit descriptions.
 #----------------------------------------------------------------------------
 
--include ${KIT_CONFIGS_PATH}/${KIT}.mk
+ifeq (${KIT},)
+  $(call Signal-Error,The kit has not been defined)
+endif
 
-# This is structured so that help-kits can be used to determine which kits
-# are available without loading any kit or mod.
-ifeq (${MAKECMDGOALS},help-kits)
-define HelpKitsMsg
-Make segment: kits.mk
+ifeq (${${KIT}_BRANCH},)
+  $(call Signal-Error,The kit branch has not been defined)
+endif
 
+ifeq (${MOD},)
+  $(call Signal-Error,MOD has not been defined)
+endif
+
+ifneq ($(call Is-Goal,kit-branches),)
+kit-branches:
+> git ls-remote -h $(KIT_REPO)
+else ifeq (${Errors},)
+${kit_mk}:
+> mkdir -p ${KITS_PATH}
+> cd ${KITS_PATH} && git clone ${KIT_REPO} ${kit_clone_dir}
+> cd ${KITS_PATH}/${kit_clone_dir} && git checkout ${${KIT}_BRANCH}
+
+# Clone the kit and load the mod using the kit. The kit then defines kit
+# specific variables and goals.
+# NOTE: Using the .mk extension causes a direct include which in turn
+# triggers the clone if the kit doesn't exist.
+$(call Use-Segment,${kit_mk})
+$(call Use-Segment,${MOD})
+
+else
+  $(call Signal-Error,A kit has not been properly defined.)
+endif
+
+# Switch to a different kit branch.
+change-kit-branch:
+> cd ${kit_path} && git checkout ${${KIT}_BRANCH}
+
+# +++++
+# Postamble
+ifneq ($(call Is-Goal,help-${kitsSeg}),)
+$(info Help message variable: help_${kitsSegN}_msg)
+define help_${kitsSegN}_msg
+Make segment: ${kitsSeg}.mk
+
+<make segment help messages>
 A mod kit is a collection of mods.
 
 This segment defines variables based upon the selected mod kit. A number
 of supported kits will be available. Additional custom kits can be defined in
 overrides.mk or, preferably, another make segment included by overrides.mk.
 
-Required sticky command line options:
+Required sticky command line variables:
   KIT=${KIT}
     Selects which kit of mods to use.
     This is required when no kit has been selected. Once selected this
     becomes optional.
-  ${KIT}_VERSION = ${${KIT}_VERSION}
-    Which variant of the kit to use. This determines which repo URL to use
-    to clone the kit and which branch to checkout once cloned. KIT_VERSION
-    is equal to this.
-    Valid options are:
-      rel = Use the current release branch.
-      dev = Use the development branch.
-      Otherwise the variant is assumed to be a valid branch.
+  ${KIT}_REPO = ${${KIT}_REPO}
+    Synonym = KIT_REPO
+    The GIT repo to clone to download the kit.
+  ${KIT}_BRANCH = ${${KIT}_BRANCH}
+    Synonym = KIT_BRANCH
+    Which version of the kit to use. This determines which branch to checkout
+    once cloned.
   MOD=${MOD}
     Which mod to load.
 
-Defines:
-  CLONE_DIR = ${CLONE_DIR}
-    The name of the directory for the kit clone.
-  KIT_PATH = ${KIT_PATH}
-    Where the kit is cloned to.
-  MOD_BUILD_PATH = ${MOD_BUILD_PATH}
-    Where the mod intermediate files are stored.
-  MOD_STAGING_PATH = ${MOD_STAGING_PATH}
-    Where the mod output files are staged.
-
 Defined in config.mk:
-  KIT_CONFIGS_PATH = ${KIT_CONFIGS_PATH}
-    Where kit configurations are maintained. Override this for custom kits.
   KITS_PATH = ${KITS_PATH}
     Where mod kits are installed (cloned from a git repo).
   STAGING_PATH = ${STAGING_PATH}
     The top level staging directory.
 
-A kit config defines:
-  ActiveKit = ${ActiveKit}
-    When defined indicates the selected kit has been defined. If not defined
-> as a result of specifying a non-existant kit an error is reported.
-  KIT_REPO = ${KIT_REPO}
-    The git URL used to clone the kit.
-  KIT_VERSION = ${KIT_VERSION}
-    Which variant or branch to checkout after cloning.
+Defines:
+  kit_clone_dir = ${kit_clone_dir}
+    The name of the directory the ${KIT} is cloned to.
+  kit_path = ${kit_path}
+    Where the kit is cloned to.
+  kit_mk = ${kit_mk}
+    The makefile segment defining the kit.
+  mods = ${mods}
+    A list of mods contained within the kit.
+  mod_path = ${mod_path}
+    The path to the currently selected mod.
+  mod_build_path = ${mod_build_path}
+    Where the mod intermediate files are stored.
+  mod_staging_path = ${mod_staging_path}
+    Where the mod output files are staged.
 
-Command line targets:
-  help-kits        Display this help.
+Command line goals:
+  help-${kitsSeg}
+    Display this help.
+  show-kits
+    Display a list of kits installed in ${kit_clone_dir}.
+  show-mods
+    Display a list of mods contained within the kit.
+  kit-branches
+    List the available branches in a kit. This displays the branches in the
+    remote repository without installing the kit.
+  change-kit-branch
+    Switch to a different branch (${KIT}_BRANCH) for the kit.
 
 See also:
-  help-${KIT}      For kit specific help.
-
-Supported kits:
-  3dpmods   For developing or modding 3D printers.
+  help-${KIT}
+    For kit specific help.
+  help-${MOD}
+    For mod specific help.
 endef
+endif # help goal message.
 
-export HelpKitsMsg
-help-kits:
-> @echo "$$HelpKitsMsg" | less
-
-else
-
-ifeq (${KIT},)
-  $(call signal-error,The kit has not been defined)
-else
-  ifndef ActiveKit
-    $(call signal-error,No description for the kit: ${KIT})
-  endif
-endif
-
-ifeq (${KIT_VERSION},)
-  $(call signal-error,The kit variant has not been defined)
-endif
-ifeq (${MOD},)
-  $(call signal-error,MOD has not been defined)
-endif
-
-_KitSegment = ${KIT_PATH}/kit.mk
-
-${_KitSegment}:
-> mkdir -p ${KITS_PATH}
-> cd ${KITS_PATH}; git clone ${KIT_REPO} ${CLONE_DIR}
-> cd ${KITS_PATH}/${CLONE_DIR}; git checkout ${KIT_VERSION}
-
-# Clone and load the kit and mod.
-ifndef ErrorMessages
-  include ${_KitSegment}
-endif
-
-endif
+$(call Exit-Segment,kits)
+else # kitsSegId exists
+$(call Check-Segment-Conflicts,kits)
+endif # kitsSegId
+# -----

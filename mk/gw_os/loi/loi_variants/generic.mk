@@ -1,10 +1,19 @@
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Generalizes initialization and first run of a Linux based OS image.
+#----------------------------------------------------------------------------
+# The prefix lgen must be unique for all files.
+# +++++
+# Preamble
+ifndef lgenSegId
+$(call Enter-Segment,lgen)
+# -----
 # Restrict to command line target only.
-ifeq (${MAKECMDGOALS},stage-os-image)
+ifneq ($(call Is-Goal,stage-os-image),)
 
-define GenericFirstrunScript
+define ${lgenSegN}_firstrun_script
 #!/bin/bash
-# NOTE: This is normally /etc/rc.local. Systemd checks for the existance of
-# this script and that it is execuable and if so executes it at the end of the
+# NOTE: This is normally /etc/rc.local. Systemd checks for the existence of
+# this script and that it is executable and if so executes it at the end of the
 # first multiuser run level.
 
 # Load the OS variant initialization.
@@ -31,7 +40,7 @@ reboot
 
 endef
 
-define GenericStagingScript
+define ${lgenSegN}_staging_script
 #!/bin/bash
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # This script is designed to run in an emulation environment using QEMU.
@@ -85,16 +94,16 @@ chmod +x /etc/rc.local
 
 endef
 
-export GenericFirstrunScript
-export GenericStagingScript
+export ${lgenSegN}_firstrun_script
+export ${lgenSegN}_staging_script
 # This is called by stage-os-image in loi.mk and cannot be used stand-alone.
 # The OS image has been mounted. This installs scripts and other files which
 # are intended to be run once on first boot.
 # Parameters:
 #  1 = Where to store the init scripts.
-define stage_${GW_OS_VARIANT}
-  printf "%s" "$$GenericFirstrunScript" > $(1)/${GW_OS_VARIANT}-firstrun; \
-  printf "%s" "$$GenericStagingScript" > $(1)/stage-${GW_OS_VARIANT}; \
+define stage-${GW_OS_VARIANT}
+  printf "%s" "$$${lgenSegN}_firstrun_script" > $(1)/${GW_OS_VARIANT}-firstrun; \
+  printf "%s" "$$${lgenSegN}_staging_script" > $(1)/stage-${GW_OS_VARIANT}; \
   chmod +x $(1)/stage-${GW_OS_VARIANT}
 endef
 
@@ -103,7 +112,7 @@ endif # stage-os-image
 #+
 # Definitions common to MOST OS variants. These can be overridden by a variant.
 #-
-$(call require,\
+$(call Require,\
 ${GW_OS}.mk,\
 LINUX_TMP_PATH \
 LINUX_ETC_PATH \
@@ -122,9 +131,12 @@ ${GW_OS_VARIANT}_USER_TMP_PATH = ${LINUX_USER_TMP_PATH}
 ${GW_OS_VARIANT}_ADMIN_HOME_PATH = ${LINUX_ADMIN_HOME_PATH}
 ${GW_OS_VARIANT}_ADMIN_TMP_PATH = ${LINUX_ADMIN_TMP_PATH}
 
-ifeq (${MAKECMDGOALS},help-${GW_OS_VARIANT})
-define HelpGenericMsg
-Make segment: generic.mk
+# +++++
+# Postamble
+ifneq ($(call Is-Goal,help-${lgenSeg}),)
+$(info Help message variable: help_${lgenSegN}_msg)
+define help_${lgenSegN}_msg
+Make segment: ${lgenSeg}.mk
 
 Generalizes initialization and first run of an ${GW_OS_VARIANT} based OS image.
 
@@ -138,19 +150,17 @@ Defines:
   ${GW_OS_VARIANT}_ADMIN_HOME_PATH = ${${GW_OS_VARIANT}_ADMIN_HOME_PATH}
   ${GW_OS_VARIANT}_ADMIN_TMP_PATH = ${${GW_OS_VARIANT}_ADMIN_TMP_PATH}
 
-  stage_${GW_OS_VARIANT}
-    This is designed to be called only from the stage-os-image target in
+  stage-${GW_OS_VARIANT}
+    This is designed to be called only from the stage-os-image goal in
 	loi.mk. This creates users and installs the first-run scripts.
 
-Command line targets:
-
-Uses:
-
+Command line goals:
+  help-${lgenSeg}   Display this help.
 endef
+endif # help goal message.
 
-export Help${GW_OS_VARIANT}Msg
-help-${GW_OS_VARIANT}:
-> @echo "$$HelpGenericMsg"
-> @echo "$$Help${GW_OS_VARIANT}Msg"
-
-endif
+$(call Exit-Segment,lgen)
+else # lgenSegId exists
+$(call Check-Segment-Conflicts,lgen)
+endif # lgenSegId
+# -----

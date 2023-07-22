@@ -1,6 +1,7 @@
 remove
 .vscode
 *workspace
+*.mm
 .modfw
 overrides.mk
 kits

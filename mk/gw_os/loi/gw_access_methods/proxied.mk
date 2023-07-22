@@ -1,8 +1,13 @@
-#+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Defines variables, targets, and functions for configuring an OS for proxied
 # access.
-#-
-
+#----------------------------------------------------------------------------
+# The prefix pacm must be unique for all files.
+# +++++
+# Preamble
+ifndef pacmSegId
+$(call Enter-Segment,pacm)
+# -----
 # This service file establishes a reverse tunnel with the proxy.
 # This tunnel is used to transport other sessions established from the
 # proxy.
@@ -39,9 +44,11 @@ endef
 export ProxyTunnelService
 export ProxyTunnelInitScript
 
-ifeq (${MAKECMDGOALS},help-access-method)
-define HelpAccessMethodMsg
-Make segment: ${MCU_ACCESS_METHOD}.mk
+# +++++
+# Postamble
+ifneq ($(call Is-Goal,help-${pacmSeg}),)
+define help_${pacmSegN}_msg
+Make segment: ${pacmSeg}.mk
 
 This defines the variables, targets, and functions for configuring an OS for
 proxied access.
@@ -96,17 +103,20 @@ Defines:
     This is the privileged user. The user name is generated based upon the unit
 	number and the proxy URL.
 
-Command line targets:
-  help-access-method        Display this help.
-  gen-proxied              Generate the necessary keys and support scrits.
-  stage-proxied            Install the keys, service file, and scripts into
-                            the OS image.
-  clean-proxied            Remove the generated keys and scripts.
-
+Command line goals:
+  help-${pacmSeg}
+    Display this help.
+  gen-proxied
+    Generate the necessary keys and support scrits.
+  stage-proxied
+    Install the keys, service file, and scripts into the OS image.
+  clean-proxied
+    Remove the generated keys and scripts.
 endef
+endif # help goal message.
 
-export HelpAccessMethodMsg
-help-access-method:
-> @echo "$$HelpAccessMethodMsg" | less
-
-endif # help-access-method
+$(call Exit-Segment,pacm)
+else # pacmSegId exists
+$(call Check-Segment-Conflicts,pacm)
+endif # pacmSegId
+# -----

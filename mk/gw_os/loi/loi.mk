@@ -1,6 +1,12 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Linux OS Image (LOI_) modding.
 #----------------------------------------------------------------------------
+# The prefix loi must be unique for all files.
+# +++++
+# Preamble
+ifndef loiSegId
+$(call Enter-Segment,loi)
+# -----
 
 #+
 # Download, unpack, mount, modify, and unmount OS image files.
@@ -11,22 +17,23 @@
 # point to the corresponding directories.
 #-
 
-_loi_Path := $(call this-segment-dir)
+_loi_Path := $(call This-Segment-Path)
 
 # Configuration
 LOI_BOARDS_PATH = ${_loi_Path}/loi_boards
 LOI_VARIANTS_PATH = ${_loi_Path}/loi_variants
 LOI_ACCESS_METHODS_PATH = ${_loi_Path}/gw_access_methods
+
 LOI_INIT_PATH = ${_loi_Path}/loi_init
 LOI_IMAGE_PATH = ${DOWNLOADS_PATH}/os-images
 LOI_BUILD_PATH = ${MOD_BUILD_PATH}/os-images
 LOI_STAGING_PATH = ${MOD_STAGING_PATH}/os-images
 LOI_IMAGE_MNT_PATH = ${LOI_STAGING_PATH}/mnt
 
-$(call require,config.mk, HELPER_FUNCTIONS)
+$(call Require,config.mk, HELPER_FUNCTIONS)
 
-$(call require,\
-mod.mk, \
+$(call Require,\
+${MOD}.mk, \
 GW_OS_VARIANT \
 GW_OS_BOARD \
 GW_ADMIN \
@@ -39,21 +46,21 @@ MCU_ACCESS_METHOD \
 )
 
 # Ensure using one of the supported access modes.
-_AccessMethods = $(call basenames_in,${LOI_ACCESS_METHODS_PATH}/*.mk)
-$(call must_be_one_of,MCU_ACCESS_METHOD,${_AccessMethods})
+_AccessMethods = $(call Basenames-In,${LOI_ACCESS_METHODS_PATH}/*.mk)
+$(call Must-Be-One-Of,MCU_ACCESS_METHOD,${_AccessMethods})
 
-$(call require,${GW_APP}.mk,GW_INIT_SCRIPT)
+$(call Require,${GW_APP}.mk,GW_INIT_SCRIPT)
 
 # These are a collection of scripts designed to run on the GW during
 # first time initialization. Each make segment can add to this list
 # to define dependencies for staging.
 LoiInitScripts = ${HELPER_FUNCTIONS}
 
-include ${LOI_BOARDS_PATH}/${GW_OS_BOARD}.mk
-include ${LOI_VARIANTS_PATH}/${GW_OS_VARIANT}.mk
-include ${LOI_ACCESS_METHODS_PATH}/${MCU_ACCESS_METHOD}.mk
+$(call Use-Segment,loi_boards/${GW_OS_BOARD})
+$(call Use-Segment,loi_variants/${GW_OS_VARIANT})
+$(call Use-Segment,gw_access_methods/${MCU_ACCESS_METHOD})
 
-$(call require,\
+$(call Require,\
 ${GW_OS_VARIANT}.mk, \
 ${GW_OS_VARIANT}_TMP_PATH \
 )
@@ -62,11 +69,11 @@ ${GW_OS_VARIANT}_TMP_PATH \
 _OsTmpPath = ${${GW_OS_VARIANT}_TMP_PATH}
 _OsImageTmpPath = ${LOI_IMAGE_MNT_PATH}/${${GW_OS_VARIANT}_LOI_ROOT_PATH}/${_OsTmpPath}
 
-$(call require,\
+$(call Require,\
 ${GW_OS_BOARD}.mk,\
 GW_OS_ARCH \
 ${GW_OS_VARIANT}_LOI_RELEASE \
-${GW_OS_VARIANT}_LOI_VERSION \
+${GW_OS_VARIANT}_LOI_VARIANT \
 ${GW_OS_VARIANT}_LOI_IMAGE \
 ${GW_OS_VARIANT}_LOI_IMAGE_FILE \
 ${GW_OS_VARIANT}_LOI_DOWNLOAD \
@@ -76,7 +83,7 @@ ${GW_OS_VARIANT}_LOI_BOOT_PATH \
 ${GW_OS_VARIANT}_LOI_ROOT_PATH \
 )
 
-$(call require,\
+$(call Require,\
 ${GW_OS_VARIANT}.mk,\
 ${GW_OS_VARIANT}_TMP_PATH \
 ${GW_OS_VARIANT}_ETC_PATH \
@@ -88,11 +95,11 @@ ${GW_OS_VARIANT}_ADMIN_TMP_PATH \
 )
 
 ifeq (${${GW_OS_VARIANT}_LOI_DOWNLOAD},wget)
-  $(call require, ${GW_OS_BOARD}.mk,${GW_OS_VARIANT}_LOI_IMAGE_URL)
+  $(call Require, ${GW_OS_BOARD}.mk,${GW_OS_VARIANT}_LOI_IMAGE_URL)
 else ifeq (${${GW_OS_VARIANT}_LOI_DOWNLOAD},google)
-  $(call require, ${GW_OS_BOARD}.mk,${GW_OS_VARIANT}_LOI_IMAGE_ID)
+  $(call Require, ${GW_OS_BOARD}.mk,${GW_OS_VARIANT}_LOI_IMAGE_ID)
 else
-  $(call signal-error,Unsupported download method: ${${GW_OS_VARIANT}_LOI_DOWNLOAD})
+  $(call Signal-Error,Unsupported download method: ${${GW_OS_VARIANT}_LOI_DOWNLOAD})
 endif
 
 $(info Image download method: ${${GW_OS_VARIANT}_LOI_DOWNLOAD})
@@ -116,7 +123,7 @@ ${DOWNLOADS_PATH}/${${GW_OS_VARIANT}_LOI_IMAGE_FILE}:
     ifdef download_${${GW_OS_VARIANT}_LOI_DOWNLOAD}
 >     $(call download_${${GW_OS_VARIANT}_LOI_DOWNLOAD})
     else
-      $(call signal-error,Unsupported download method: ${${GW_OS_VARIANT}_LOI_DOWNLOAD})
+      $(call Signal-Error,Unsupported download method: ${${GW_OS_VARIANT}_LOI_DOWNLOAD})
     endif
   else
     $(info Image download method not specified)
@@ -148,7 +155,8 @@ ${LOI_IMAGE_PATH}/${${GW_OS_VARIANT}_LOI_IMAGE}: \
     ifdef _loi_unpack_${${GW_OS_VARIANT}_LOI_UNPACK}
 >     $(call _loi_unpack_${${GW_OS_VARIANT}_LOI_UNPACK})
     else
-      $(call signal-error,Unsupported unpack method: ${${GW_OS_VARIANT}_LOI_UNPACK})
+      $(call Signal-Error,\
+        Unsupported unpack method: ${${GW_OS_VARIANT}_LOI_UNPACK})
     endif
   else
     $(info Image unpack method not specified)
@@ -293,7 +301,7 @@ install-os-image: \
     ${_Device}
 else
 install-os-image:
-> $(call signal-error,USB storage device support is not available in WSL2)
+> $(call Signal-Error,USB storage device support is not available in WSL2)
 endif
 
 .PHONY: help-makebootable
@@ -313,8 +321,12 @@ os-image-shell: \
 clean-os-image:
 > rm ${LOI_STAGING_PATH}/${${GW_OS_VARIANT}_LOI_IMAGE}
 
-ifeq (${MAKECMDGOALS},help-loi)
-define HelpLoiMsg
+# +++++
+# Postamble
+ifneq ($(call Is-Goal,help-${loiSeg}),)
+define help_${loiSegN}_msg
+Make segment: ${loiSeg}.mk
+
 Using the mount feature other segments can modify the contents of os image
 as if it were part of the file system. Typically these modules install a
 first time script which runs the first time the OS is booted. The actual
@@ -335,7 +347,7 @@ Defined in kits.mk:
   MOD_STAGING_PATH = ${MOD_STAGING_PATH}
     Where the mod build output is stored.
 
-Defined in mod.mk:
+Defined in ${MOD}.mk:
   GW_OS_BOARD=${GW_OS_BOARD}
     Which board to use (show-os-boards for more info).
   GW_OS_VARIANT=${GW_OS_VARIANT}
@@ -396,7 +408,7 @@ Defines:
                         Other make segments can call this macro to unmount
                         partitions.
 
-Command line targets:
+Command line goals:
   help-loi              Display this help.
   list-os-boards        Display a list of available boards on which an OS
                         can be installed.
@@ -437,9 +449,13 @@ Command line variables:
 Uses:
   stage_${GW_OS_VARIANT} defined in ${GW_OS_VARIANT}.mk
 
+Command line goals:
+  help-${loiSeg}   Display this help.
 endef
+endif # help goal message.
 
-export HelpLoiMsg
-help-loi:
-> @echo "$$HelpLoiMsg" | less
-endif
+$(call Exit-Segment,loi)
+else # loiSegId exists
+$(call Check-Segment-Conflicts,loi)
+endif # loiSegId
+# -----

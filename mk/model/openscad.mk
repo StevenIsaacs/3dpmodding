@@ -1,42 +1,48 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Scripted custom parts using OpenSCAD and Python CAD tools.
 #----------------------------------------------------------------------------
+# The prefix osc must be unique for all files.
+# +++++
+# Preamble
+ifndef oscSegId
+$(call Enter-Segment,osc)
+# -----
 
 #+
 # TODO: Add MuSCAD https://gitlab.com/guillp/muscad
 # TODO: Add AnchorSCAD https://github.com/owebeeone/anchorscad
 #-
 
-OPENSCAD_VARIANT = 2021.01-x86_64
+OPENSCAD_VERSION = 2021.01-x86_64
 
-# Use OSC_MODEL_PATH on the make command line to specify which model to build.
-# e.g. make OSC_MODEL_PATH=<model path>
-ifeq (${OSC_MODEL_PATH},)
+# Use OSC_MOD_MODEL_PATH on the make command line to specify which model to build.
+# e.g. make OSC_MOD_MODEL_PATH=<model path>
+ifeq (${OSC_MOD_MODEL_PATH},)
   # Where the CAD model resides.
-  OSC_MODEL_PATH = ${MODEL_PATH}/openscad
+  OSC_MOD_MODEL_PATH = ${MOD_MODEL_PATH}/openscad
 endif
 # If the model directory doesn't exist then error or init.
-ifeq ($(realpath ${OSC_MODEL_PATH}),)
-  ifneq (${MAKECMDGOALS},osc-init)
-    $(call signal-error,The model directory does not exist)
+ifeq ($(realpath ${OSC_MOD_MODEL_PATH}),)
+  ifneq ($(call Is-Goal,${oscSeg}-init),)
+    $(call Signal-Error,The model directory does not exist)
   endif
 endif
-$(info OSC_MODEL_PATH=${OSC_MODEL_PATH})
+$(call Add-Message,OSC_MOD_MODEL_PATH=${OSC_MOD_MODEL_PATH})
 
 # Where tools are installed.
-OSC_BIN_PATH = ${BIN_PATH}/openscad/${OPENSCAD_VARIANT}
+OSC_BIN_PATH = ${BIN_PATH}/openscad/${OPENSCAD_VERSION}
 # Included or imported files.
-OSC_INC_PATH = ${OSC_MODEL_PATH}/inc
+OSC_INC_PATH = ${OSC_MOD_MODEL_PATH}/inc
 # 2D sketches.
-OSC_DRAW_PATH = ${OSC_MODEL_PATH}/drawings
+OSC_DRAW_PATH = ${OSC_MOD_MODEL_PATH}/drawings
 # Parts.
-OSC_PART_PATH = ${OSC_MODEL_PATH}/parts
+OSC_PART_PATH = ${OSC_MOD_MODEL_PATH}/parts
 # Printable parts.
-OSC_PRINT_PATH = ${OSC_MODEL_PATH}/prints
+OSC_PRINT_PATH = ${OSC_MOD_MODEL_PATH}/prints
 # Assemblies and subassemblies of printable parts.
-OSC_ASM_PATH = ${OSC_MODEL_PATH}/assemblies
+OSC_ASM_PATH = ${OSC_MOD_MODEL_PATH}/assemblies
 # Off the shelf components (downloaded from the net).
-OSC_OTS_PATH = ${OSC_MODEL_PATH}/ots
+OSC_OTS_PATH = ${OSC_MOD_MODEL_PATH}/ots
 
 # Output directories.
 OSC_BUILD_PATH = ${MOD_BUILD_PATH}/model
@@ -45,9 +51,9 @@ OSC_STL_PATH = ${MOD_STAGING_PATH}/stl
 OSC_PNG_PATH = ${MOD_STAGING_PATH}/png
 
 # Where common OpenSCAD libraries reside.
-OSC_LIB_PATH = ${MK_PATH}/osc-lib
+OSC_LIB_PATH = ${MK_PATH}/${oscSeg}-lib
 
-OPENSCAD_APP = OpenSCAD-${OPENSCAD_VARIANT}.AppImage
+OPENSCAD_APP = OpenSCAD-${OPENSCAD_VERSION}.AppImage
 ifeq (${Platform},Microsoft)
   OPENSCAD_BIN = squashfs-root/AppRun
 else
@@ -56,11 +62,11 @@ endif
 OPENSCAD_URL = https://files.openscad.org/${OPENSCAD_APP}
 OPENSCAD_GUI = ${OSC_BIN_PATH}/${OPENSCAD_APP}
 OPENSCAD_CLI = ${OSC_BIN_PATH}/${OPENSCAD_BIN}
-OPENSCADPATH = ${OSC_MODEL_PATH}:${OSC_LIB_PATH}
+OPENSCADPATH = ${OSC_MOD_MODEL_PATH}:${OSC_LIB_PATH}
 
 # MODEL_LIBS and MODEL_DEPS are optionally defined in model.mk.
-include $(wildcard ${OSC_MODEL_PATH}/model.mk)
-ModelDeps = ${MODEL_LIBS} ${MODEL_DEPS}
+include $(wildcard ${OSC_MOD_MODEL_PATH}/model.mk)
+_osc_model_deps = ${MODEL_LIBS} ${MODEL_DEPS}
 
 # OpenSCAD source files.
 _osc_drawing_files = $(wildcard ${OSC_DRAW_PATH}/*.scad)
@@ -96,67 +102,67 @@ _oscp_doc_files = $(foreach file, \
 _printable_files += ${_oscp_printable_files}
 _model_files += ${_oscp_model_files}
 
-AllModelDeps = \
+all_model_deps = \
   ${OPENSCAD_CLI} \
-  ${ModelDeps} \
+  ${_osc_model_deps} \
   ${_osc_stl_files} \
   ${_osc_png_files} \
   ${_oscp_stl_files} \
   ${_oscp_png_files} \
   ${_oscp_doc_files}
 
-osc-all: ${AllModelDeps}
+${oscSeg}-all: ${all_model_deps}
 
 # Only the parts files.
 parts: ${_osc_stl_files} ${_oscp_stl_files}
 
 #+
-# If python files are present then assume Python CAD tools in a virtual Platform
-# is needed.
+# If python files are present then assume Python CAD tools in a virtual Python
+# environment is needed.
 #-
-$(info Using Python CAD tools)
+$(call Add-Message,Using Python CAD tools)
 
-_OscPythonPath = ${OSC_MODEL_PATH}:${OSC_LIB_PATH}
+_osc_python_path = ${OSC_MOD_MODEL_PATH}:${OSC_LIB_PATH}
 
 #+
 # Python virtual Platform requirements.
 #-
-OSCP_PYTHON_VARIANT = 3.8
+OSCP_PYTHON_VERSION = 3.8
 OSCP_VIRTUAL_ENV_PATH = ${OSC_BIN_PATH}/_oscp_venv
 
-_OscPython = ${OSCP_VIRTUAL_ENV_PATH}/bin/python3
-_OscpRequirements = ${MK_PATH}/oscp_requirements.txt
-_PythonRequirements = ${OSCP_VIRTUAL_ENV_PATH}/requiremets.txt
-_OscPythonEnvFile = ${OSC_MODEL_PATH}/.env
+_osc_python = ${OSCP_VIRTUAL_ENV_PATH}/bin/python3
+_osc_requirements = ${MK_PATH}/oscp_requirements.txt
+_osc_python_requirements = ${OSCP_VIRTUAL_ENV_PATH}/requiremets.txt
+_osc_python_env_file = ${OSC_MOD_MODEL_PATH}/.env
 
-_OscpVenvPackagePath = ${OSCP_VIRTUAL_ENV_PATH}/lib/python${OSCP_PYTHON_VARIANT}/site-packages
+_oscp_venv_package_path = ${OSCP_VIRTUAL_ENV_PATH}/lib/python${OSCP_PYTHON_VERSION}/site-packages
 
-${_OscPython}:
+${_osc_python}:
 > python3 -m venv --copies ${OSCP_VIRTUAL_ENV_PATH}
 
-${_PythonRequirements}: ${_OscpRequirements} \
-  ${_OscPython}
+${_osc_python_requirements}: ${_osc_requirements} \
+  ${_osc_python}
 > ( \
     . ${OSCP_VIRTUAL_ENV_PATH}/bin/activate; \
     pip3 install -r $<; \
     pip3 freeze -l > $@; \
   )
 
-${_OscPythonEnvFile}: ${_PythonRequirements}
-> echo "PYTHONPATH=${_OscPythonPath}" > ${_OscPythonEnvFile}
+${_osc_python_env_file}: ${_osc_python_requirements}
+> echo "PYTHONPATH=${_osc_python_path}" > ${_osc_python_env_file}
 
-osc-python: ${_OscPythonEnvFile}
+${oscSeg}-python: ${_osc_python_env_file}
 > ( \
   . ${OSCP_VIRTUAL_ENV_PATH}/bin/activate; \
-  cd ${OSC_MODEL_PATH}; \
+  cd ${OSC_MOD_MODEL_PATH}; \
   OPENSCADPATH=${OPENSCADPATH} \
-  PYTHONPATH=${_OscPythonPath} python; \
+  PYTHONPATH=${_osc_python_path} python; \
   deactivate; \
   )
 
-_PDoc = \
+_osc_pdoc = \
  . ${OSCP_VIRTUAL_ENV_PATH}/bin/activate; \
-  cd ${OSC_MODEL_PATH}; \
+  cd ${OSC_MOD_MODEL_PATH}; \
   python -B -m pdoc --force -o $(dir $@) $<; \
   deactivate
 
@@ -167,8 +173,8 @@ _png_files = $(foreach file, ${_model_files}, \
   ${OSC_PNG_PATH}/$(basename $(notdir $(file))).png)
 endif
 
-$(info OpenSCAD libraries:)
-$(info $(wildcard ${OSC_LIB_PATH}/*.mk))
+$(call Add-Message,OpenSCAD libraries:)
+$(call Add-Message,$(wildcard ${OSC_LIB_PATH}/*.mk))
 
 include $(wildcard ${OSC_LIB_PATH}/*.mk)
 
@@ -184,28 +190,28 @@ ${OPENSCAD_CLI}: ${OPENSCAD_GUI}
 > ${OPENSCAD_GUI} --appimage-extract
 endif
 
-osc-stl: ${OPENSCAD_CLI} ${ModelDeps} ${_stl_files}
+${oscSeg}-stl: ${OPENSCAD_CLI} ${_osc_model_deps} ${_stl_files}
 
 # See if running in WSL. If so The OpenSCAD GUI can't be started without
 # an X server running which is outside the scope of this project.
 ifneq (${Platform},Microsoft)
-osc-png: ${OPENSCAD_CLI} ${ModelDeps} ${_png_files}
+${oscSeg}-png: ${OPENSCAD_CLI} ${_osc_model_deps} ${_png_files}
 
-osc-gui: ${OPENSCAD_GUI} ${ModelDeps} ${_stl_files} ${_oscp_scad_files}
+${oscSeg}-gui: ${OPENSCAD_GUI} ${_osc_model_deps} ${_stl_files} ${_oscp_scad_files}
 >  OPENSCADPATH=${OPENSCADPATH} ${OPENSCAD_CLI} \
 >  ${_osc_model_files} ${_oscp_scad_files} &
 >  @echo "${OPENSCAD_CLI} started and has process ID: `pidof ${OPENSCAD_CLI}`"
 else
-osc-gui:
-> $(call signal-error,Cannot run the OpenSCAD GUI in a WSL Platform.)
+${oscSeg}-gui:
+> $(call Signal-Error,Cannot run the OpenSCAD GUI in a WSL Platform.)
 endif
 
-osc-docs: ${_OscPython} ${_oscp_doc_files}
+${oscSeg}-docs: ${_osc_python} ${_oscp_doc_files}
 
-ifeq (${MAKECMDGOALS},osc-init)
-$(info Initializing: ${OSC_MODEL_PATH})
+ifeq (${MAKECMDGOALS},${oscSeg}-init)
+$(call Add-Message,Initializing: ${OSC_MOD_MODEL_PATH})
 
-define ModelReadMe
+define _model_readme
 # Describe the model here.
 
 Model...
@@ -222,14 +228,14 @@ Model...
 endef
 
 # This will fail if the model already exists.
-export ModelReadMe
-osc-init:
-> mkdir ${OSC_MODEL_PATH}
-> @echo "# Model dependencies." > ${OSC_MODEL_PATH}/model.mk
-> @echo "$$ModelReadMe" > ${OSC_MODEL_PATH}/README.md
+export _model_readme
+${oscSeg}-init:
+> mkdir ${OSC_MOD_MODEL_PATH}
+> @echo "# Model dependencies." > ${OSC_MOD_MODEL_PATH}/model.mk
+> @echo "$$_model_readme" > ${OSC_MOD_MODEL_PATH}/README.md
 endif
 
-osc-clean:
+${oscSeg}-clean:
 > rm -rf ${OSC_BUILD_PATH}
 
 OPENSCAD_STL = OPENSCADPATH=${OPENSCADPATH} \
@@ -240,32 +246,32 @@ OPENSCAD_PNG = OPENSCADPATH=${OPENSCADPATH} \
   ${OPENSCAD_CLI} -m ${MAKE} -o ${OSC_PNG_PATH}/$(notdir $@) \
   -d ${OSC_BUILD_PATH}/$(notdir $@).deps $<
 
-_OscPython_STL = \
+_osc_python_STL = \
   . ${OSCP_VIRTUAL_ENV_PATH}/bin/activate; \
-  cd ${OSC_MODEL_PATH} && \
+  cd ${OSC_MOD_MODEL_PATH} && \
   OPENSCADPATH=${OPENSCADPATH} \
-  PYTHONPATH=${_OscPythonPath} \
+  PYTHONPATH=${_osc_python_path} \
   python -B $< ${OSC_BUILD_PATH}/$(notdir $@).scad && \
   deactivate && \
   ${OPENSCAD_CLI} -m ${MAKE} -o ${OSC_STL_PATH}/$(notdir $@) \
     -d ${OSC_BUILD_PATH}/$(notdir $@).deps \
     ${OSC_BUILD_PATH}/$(notdir $@).scad
 
-_OscPython_PNG = \
+_osc_python_PNG = \
   . ${OSCP_VIRTUAL_ENV_PATH}/bin/activate; \
-  cd ${OSC_MODEL_PATH} && \
+  cd ${OSC_MOD_MODEL_PATH} && \
   OPENSCADPATH=${OPENSCADPATH} \
-  PYTHONPATH=${_OscPythonPath} \
+  PYTHONPATH=${_osc_python_path} \
   python -B $< ${OSC_BUILD_PATH}/$(notdir $@).scad && \
   deactivate && \
   ${OPENSCAD_CLI} -m ${MAKE} -o ${OSC_PNG_PATH}/$(notdir $@) \
     -d ${OSC_BUILD_PATH}/$(notdir $@).deps \
     ${OSC_BUILD_PATH}/$(notdir $@).scad
 
-_PDeps = \
+_osc_pdeps = \
   . ${OSCP_VIRTUAL_ENV_PATH}/bin/activate; \
-  cd ${OSC_MODEL_PATH} && \
-  PYTHONPATH=${_OscPythonPath} \
+  cd ${OSC_MOD_MODEL_PATH} && \
+  PYTHONPATH=${_osc_python_path} \
   python -B ${HELPERS_PATH}/pdeps.py $< > $@ && \
   deactivate
 
@@ -274,9 +280,9 @@ include $(wildcard ${OSC_BUILD_PATH}/*.deps)
 -include ${_oscp_dep_files}
 
 # Drawings
-ifneq (${MAKECMDGOALS},clean)
-ifneq (${MAKECMDGOALS},help)
-$(info Defining pattern rules)
+ifneq ($(call Is-Goal,clean),)
+ifneq ($(call Is-Goal,help-${oscSeg},)
+$(call Add-Message,Defining pattern rules)
 ${OSC_PNG_PATH}/%.png: ${OSC_DRAW_PATH}/%.scad
 > mkdir -p ${OSC_BUILD_PATH}
 > mkdir -p $(dir $@)
@@ -304,114 +310,99 @@ ${OSC_PNG_PATH}/%.png: ${OSC_ASM_PATH}/%.scad
 > mkdir -p $(dir $@)
 > ${OPENSCAD_PNG}
 
-# For _OscPython intermediates and docs.
+# For _osc_python intermediates and docs.
 
 # Dependencies
 ${OSC_BUILD_PATH}/%.pdeps: \
-  ${OSC_DRAW_PATH}/%.py ${_OscPythonEnvFile}
+  ${OSC_DRAW_PATH}/%.py ${_osc_python_env_file}
 > mkdir -p $(dir $@)
-> ${_PDeps}
+> ${_osc_pdeps}
 
 ${OSC_BUILD_PATH}/%.pdeps: \
-  ${OSC_PRINT_PATH}/%.py ${_OscPythonEnvFile}
+  ${OSC_PRINT_PATH}/%.py ${_osc_python_env_file}
 > mkdir -p $(dir $@)
-> ${_PDeps}
+> ${_osc_pdeps}
 
 ${OSC_BUILD_PATH}/%.pdeps: \
-  ${OSC_ASM_PATH}/%.py ${_OscPythonEnvFile}
+  ${OSC_ASM_PATH}/%.py ${_osc_python_env_file}
 > mkdir -p $(dir $@)
-> ${_PDeps}
+> ${_osc_pdeps}
 
 # Drawings.
 ${OSC_PNG_PATH}/%.png: \
-  ${OSC_DRAW_PATH}/%.py ${_OscPythonEnvFile}
+  ${OSC_DRAW_PATH}/%.py ${_osc_python_env_file}
 > mkdir -p ${OSC_BUILD_PATH}
 > mkdir -p $(dir $@)
-> ${_OscPython_PNG}
+> ${_osc_python_PNG}
 
 # 3D printables.
 ${OSC_STL_PATH}/%.stl: \
-  ${OSC_PRINT_PATH}/%.py ${_OscPythonEnvFile}
+  ${OSC_PRINT_PATH}/%.py ${_osc_python_env_file}
 > mkdir -p ${OSC_BUILD_PATH}
 > mkdir -p $(dir $@)
-> ${_OscPython_STL}
+> ${_osc_python_STL}
 
 ${OSC_PNG_PATH}/%.png: \
-  ${OSC_PRINT_PATH}/%.py ${_OscPythonEnvFile}
+  ${OSC_PRINT_PATH}/%.py ${_osc_python_env_file}
 > mkdir -p ${OSC_BUILD_PATH}
 > mkdir -p $(dir $@)
-> ${_OscPython_PNG}
+> ${_osc_python_PNG}
 
 # Assemblies.
 ${OSC_STL_PATH}/%.stl: \
-  ${OSC_ASM_PATH}/%.py ${_OscPythonEnvFile}
+  ${OSC_ASM_PATH}/%.py ${_osc_python_env_file}
 > mkdir -p ${OSC_BUILD_PATH}
 > mkdir -p $(dir $@)
-> ${_OscPython_STL}
+> ${_osc_python_STL}
 
 ${OSC_PNG_PATH}/%.png: \
-  ${OSC_ASM_PATH}/%.py ${_OscPythonEnvFile}
+  ${OSC_ASM_PATH}/%.py ${_osc_python_env_file}
 > mkdir -p ${OSC_BUILD_PATH}
 > mkdir -p $(dir $@)
-> ${_OscPython_PNG}
+> ${_osc_python_PNG}
 
 # Generated docs.
 ${OSC_DOC_PATH}/%.md: \
-  ${OSC_INC_PATH}/%.py ${_OscPythonEnvFile}
+  ${OSC_INC_PATH}/%.py ${_osc_python_env_file}
 > mkdir -p $(dir $@)
-> ${_PDoc}
+> ${_osc_pdoc}
 
 ${OSC_DOC_PATH}/%.md: \
-  ${OSC_DRAW_PATH}/%.py ${_OscPythonEnvFile}
+  ${OSC_DRAW_PATH}/%.py ${_osc_python_env_file}
 > mkdir -p $(dir $@)
-> ${_PDoc}
+> ${_osc_pdoc}
 
 ${OSC_DOC_PATH}/%.md: \
-  ${OSC_PART_PATH}/%.py ${_OscPythonEnvFile}
+  ${OSC_PART_PATH}/%.py ${_osc_python_env_file}
 > mkdir -p $(dir $@)
-> ${_PDoc}
+> ${_osc_pdoc}
 
 ${OSC_DOC_PATH}/%.md: \
-  ${OSC_PRINT_PATH}/%.py ${_OscPythonEnvFile}
+  ${OSC_PRINT_PATH}/%.py ${_osc_python_env_file}
 > mkdir -p $(dir $@)
-> ${_PDoc}
+> ${_osc_pdoc}
 
 ${OSC_DOC_PATH}/%.md: \
-  ${OSC_ASM_PATH}/%.py ${_OscPythonEnvFile}
+  ${OSC_ASM_PATH}/%.py ${_osc_python_env_file}
 > mkdir -p $(dir $@)
-> ${_PDoc}
+> ${_osc_pdoc}
 
 endif
 endif
 
-ifeq (${MAKECMDGOALS},help-openscad)
-define HelpOpenSCADMsg
-Make segment: openscad.mk
+# +++++
+# Postamble
+ifneq ($(call Is-Goal,help-${oscSeg}),)
+$(call Add-Message,Help message variable: help_${oscSegN}_msg)
+define help_${oscSegN}_msg
+Make segment: ${oscSeg}.mk
 
 OpenSCAD and Python CAD tools are used to generate STL files from scripts which
 describe custom parts for a mod. These can also be used to modify existing
 off the shelf STL files.
 
-Possible targets:
-  osc-all       All assembly files are processed and .stl and .png files
-                produced.
-  osc-stl       Only the stl files are generated.
-  osc-png       Only the png files are generated. Not available in WSL.
-  osc-gui       Run the OpenSCAD GUI for each of the assembly files.
-                Not available in WSL.
-  osc-init      Initialize a new model directory. This creates a git
-                repository in the models directory.
-  osc-docs      Generate documentation from model files.
-  osc-clean     Remove the dependency files and the output files.
-  <asmfile>.stl Use this target to process a single assembly file. NOTE: The
-                ASM command line variable can also be used for this purpose.
-  osc-python    Install OpenSCAD Python scripting tools in a Python virtual
-                environment and start an interactive Python session.
-  help-openscad Display this help message (default).
-  help-model    Display the model specific help.
-
 Optionally defined in mod.mk or on the command line:
-  OSC_MODEL_PATH = ${OSC_MODEL_PATH}
+  OSC_MOD_MODEL_PATH = ${OSC_MOD_MODEL_PATH}
     The directory where the model is located.
     This defaults to:
       ${MOD_PATH}/model
@@ -433,7 +424,7 @@ Defined by the model in model.mk:
 Defines:
   OSC_BIN_PATH = ${OSC_BIN_PATH}
     Where the OpenSCAD binaries.
-  AllModelDeps = (use show-ModelDeps to display)
+  all_model_deps = (use show-_osc_model_deps to display)
     The all model dependencies for the complete make.
 
   Standard model directories:
@@ -467,7 +458,7 @@ Defines:
     and web sites.
 
   Configuration:
-  OPENSCAD_VARIANT = ${OPENSCAD_VARIANT}
+  OPENSCAD_VERSION = ${OPENSCAD_VERSION}
     The version or variant of OpenSCAD to install.
   OPENSCAD_APP = ${OPENSCAD_APP}
     The executable binary. This is typically an AppImage.
@@ -483,15 +474,43 @@ Defines:
   OPENSCADPATH = ${OPENSCADPATH}
     This is used on the OpenSCAD command line to set the search paths for
     the model or included libraries.
-  OSCP_PYTHON_VARIANT = ${OSCP_PYTHON_VARIANT}
+  OSCP_PYTHON_VERSION = ${OSCP_PYTHON_VERSION}
     The version of Python to use for the Python CAD tools virtual environment.
     This must be Python version 3.8 or later. The Python CAD tools are
     installed using pip3.
   OSCP_VIRTUAL_ENV_PATH = ${OSCP_VIRTUAL_ENV_PATH}
-    Where to setup the Python virtual environemnt for Python CAD tools.
+    Where to setup the Python virtual environment for Python CAD tools.
 
+Command line goals:
+  ${oscSeg}-all
+    All assembly files are processed and .stl and .png files produced.
+  ${oscSeg}-stl
+    Only the stl files are generated.
+  ${oscSeg}-png
+    Only the png files are generated. Not available in WSL.
+  ${oscSeg}-gui
+    Run the OpenSCAD GUI for each of the assembly files. Not available in WSL.
+  ${oscSeg}-init
+    Initialize a new model directory. This creates a git repository in the
+    models directory.
+  ${oscSeg}-docs
+    Generate documentation from model files.
+  ${oscSeg}-clean
+    Remove the dependency files and the output files. <asmfile>.stl Use this
+    target to process a single assembly file. NOTE: The ASM command line
+    variable can also be used for this purpose.
+  ${oscSeg}-python
+    Install OpenSCAD Python scripting tools in a Python virtual environment
+    and start an interactive Python session.
+  help-model
+    Display the model specific help.
+  help-${oscSeg}
+    Display this help.
 endef
-export HelpOpenSCADMsg
-help-openscad:
-> @echo "$$HelpOpenSCADMsg" | less
-endif
+endif # help goal message.
+
+$(call Exit-Segment,osc)
+else # oscSegId exists
+$(call Check-Segment-Conflicts,osc)
+endif # oscSegId
+# -----

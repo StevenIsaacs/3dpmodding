@@ -1,21 +1,32 @@
-#+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # OS Variant definitions for the Armbian OS.
-#-
+#----------------------------------------------------------------------------
+# The prefix armb must be unique for all files.
+# +++++
+# Preamble
+ifndef armbSegId
+$(call Enter-Segment,armb)
+# -----
 $(info Using OS variant: ${GW_OS_VARIANT})
 
-ifeq (${MAKECMDGOALS},help-${GW_OS_VARIANT})
-define Help${GW_OS_VARIANT}Msg
-Make segment: ${GW_OS_VARIANT}.mk
+$(call Use-Segment,generic)
+# +++++
+# Postamble
+ifneq ($(call Is-Goal,help-${armbSeg}),)
+$(info Help message variable: help_${armbSegN}_msg)
+define help_${armbSegN}_msg
+Make segment: ${armbSeg}.mk
 
 OS variant specific initialization and first run of an ${GW_OS_VARIANT} based
 OS image.
 
-Defines:
-Command line targets:
-
-Uses:
-
+Command line goals:
+  help-${armbSeg}   Display this help.
 endef
-endif # help-${GW_OS_VARIANT}
+endif # help goal message.
 
-include ${LOI_VARIANTS_PATH}/generic.mk
+$(call Exit-Segment,armb)
+else # armbSegId exists
+$(call Check-Segment-Conflicts,armb)
+endif # armbSegId
+# -----

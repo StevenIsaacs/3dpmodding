@@ -1,24 +1,32 @@
-#+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # OS Variant definitions for the Debian OS.
-#-
+#----------------------------------------------------------------------------
+# The prefix deb must be unique for all files.
+# +++++
+# Preamble
+ifndef debSegId
+$(call Enter-Segment,deb)
+# -----
 $(info Using OS variant: ${GW_OS_VARIANT})
 
-ifeq (${MAKECMDGOALS},help-debian)
-define HelpDebianMsg
-Make segment: debian.mk
+$(call Use-Segment,generic)
+# +++++
+# Postamble
+ifneq ($(call Is-Goal,help-${debSeg}),)
+$(info Help message variable: help_${debSegN}_msg)
+define help_${debSegN}_msg
+Make segment: ${debSeg}.mk
 
-Generalizes access to an Debian based OS image.
+OS variant specific initialization and first run of an ${GW_OS_VARIANT} based
+OS image.
 
-Defines:
-
-Command line targets:
-
-Uses:
-
+Command line goals:
+  help-${debSeg}   Display this help.
 endef
+endif # help goal message.
 
-export HelpDebianMsg
-help-options:
-> @echo "$$HelpDebianMsg"
-
-endif
+$(call Exit-Segment,deb)
+else # debSegId exists
+$(call Check-Segment-Conflicts,deb)
+endif # debSegId
+# -----

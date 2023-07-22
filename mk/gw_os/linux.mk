@@ -1,8 +1,12 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Modding a Linux OS image (LOI).
 #----------------------------------------------------------------------------
-
-LOI_PATH = ${MK_PATH}/loi
+# The prefix linux must be unique for all files.
+# +++++
+# Preamble
+ifndef linuxSegId
+$(call Enter-Segment,linux)
+# -----
 
 # Common Linux paths.
 # Relative to the mounted OS image and running in QEMU/proot or on the
@@ -15,11 +19,26 @@ LINUX_USER_TMP_PATH = ${LINUX_USER_HOME_PATH}/tmp
 LINUX_ADMIN_HOME_PATH = ${LINUX_HOME_PATH}/${GW_ADMIN}
 LINUX_ADMIN_TMP_PATH = ${LINUX_ADMIN_HOME_PATH}/tmp
 
-include ${LOI_PATH}/loi.mk
+$(call Use-Segment,loi/loi)
 
 ifeq (${MAKECMDGOALS},help-linux)
 define HelpLinuxMsg
 Make segment: linux.mk
+
+Command line goals:
+  help-linux  Display this help.
+
+endef
+
+export HelpLinuxMsg
+help-linux:
+> @echo "$$HelpLinuxMsg" | less
+endif
+# +++++
+# Postamble
+ifneq ($(call Is-Goal,help-${linuxSeg}),)
+define help_${linuxSegN}_msg
+Make segment: ${linuxSeg}.mk
 
 This segment serves as a wrapper for the Linux OS image modding segments. Its
 purpose is to provide a means for overriding the paths to the modding segments.
@@ -31,9 +50,6 @@ Defined in mod.mk (required):
     Which board the OS will be installed on.
 
 Defines:
-  LOI_PATH = ${LOI_PATH}
-    Where the Linux OS Image modding segments are maintained. This is provided
-    in case a custom LOI is used.
   LINUX_TMP_PATH = ${LINUX_TMP_PATH}
     Where temporary files are stored.
   LINUX_ETC_PATH = ${LINUX_ETC_PATH}
@@ -49,12 +65,13 @@ Defines:
   LINUX_ADMIN_TMP_PATH = ${LINUX_ADMIN_TMP_PATH}
     Where to store temporary files for the priviledged user (system admin).
 
-Command line targets:
-  help-linux  Display this help.
-
+Command line goals:
+  help-${linuxSeg}   Display this help.
 endef
+endif # help goal message.
 
-export HelpLinuxMsg
-help-linux:
-> @echo "$$HelpLinuxMsg" | less
-endif
+$(call Exit-Segment,linux)
+else # linuxSegId exists
+$(call Check-Segment-Conflicts,linux)
+endif # linuxSegId
+# -----

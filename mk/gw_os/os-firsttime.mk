@@ -1,6 +1,12 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # OS First Time
 #----------------------------------------------------------------------------
+# The prefix oft must be unique for all files.
+# +++++
+# Preamble
+ifndef oftSegId
+$(call Enter-Segment,oft)
+# -----
 # Not all variants need a specific os-firsttime.mk
 -include ${MK_PATH}/${GW_OS_VARIANT}_os-firsttime.mk
 
@@ -9,9 +15,12 @@ install-os-firsttime:
 > echo "$$GenFirstTimeScript" > ${FirstTimePath}
 > $(call unmount-os-image)
 
-ifeq (${MAKECMDGOALS},help-os-firsttime)
-define FirstTimeHelp
-Make segment: os-firsttime.mk
+# +++++
+# Postamble
+ifneq ($(call Is-Goal,help-${oftSeg}),)
+$(info Help message variable: help_${oftSegN}_msg)
+define help_${oftSegN}_msg
+Make segment: ${oftSeg}.mk
 
 This segment installs a first time script into an OS image. To do so it
 uses os_image to mount the image. Each GW_OS_VARIANT requires its own version
@@ -19,7 +28,7 @@ of the first time script.
 
 NOTE: The targets are intended to be used explicitly on the command line.
       No other targets should be dependent of any of the targets described
->   in this make segment.
+      in this make segment.
 
 Defined in mod.mk:
   See os_image.mk.
@@ -34,19 +43,18 @@ Defined in config.mk:
 
 Defines:
 
-Command line targets:
-  help-os-firsttime    Display this help.
-  install-os-firsttime Mount the OS image, install the first time script and then
-                    unmount the OS image.
+Command line goals:
+  help-${oftSeg}
+    Display this help.
+  install-os-firsttime
+    Mount the OS image, install the first time script and then unmount the
+    OS image.
 
-Uses:
-  ${GW_OS_VARIANT}_os-firsttime.mk
-  mount-os-image in os_image.mk
-  unmount-os-image in os_image.mk
 endef
+endif # help goal message.
 
-export FirstTimeHelp
-help-os-firsttime:
-> @echo "$$FirstTimeHelp" | less
-
-endif
+$(call Exit-Segment,oft)
+else # oftSegId exists
+$(call Check-Segment-Conflicts,oft)
+endif # oftSegId
+# -----
