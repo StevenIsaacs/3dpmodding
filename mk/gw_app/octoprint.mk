@@ -15,7 +15,7 @@ GW_INIT_SCRIPT = init-octoprint.sh
 # Limit to stage-os-image only.
 ifeq (${MAKECMDGOALS},stage-os-image)
 
-define OctoPrintInitScript
+define octoprint_init_script
 # This is designed to be sourced (included) by the first run script. The
 # first run script has already sourced the options.sh script.
 # This runs as root. OctoPrint is installed as the unprivileged user.
@@ -40,7 +40,7 @@ endef
 
 # This was downloaded from:
 # https://github.com/OctoPrint/OctoPrint/raw/master/scripts/octoprint.service
-define OctoPrintService
+define octoprint_service
 [Unit]
 Description=The snappy web interface for your 3D printer
 After=network-online.target
@@ -58,14 +58,14 @@ WantedBy=multi-user.target
 
 endef
 
-export OctoPrintInitScript
-export OctoPrintService
+export octoprint_init_script
+export octoprint_service
 
 # This is called by stage-os-image in loi.mk. It generates the runtime
 # init script along with the systemd service file for OctoPrint.
 define stage_${GW_APP}
-  printf "%s" "$$OctoPrintInitScript" > $(1)/${GW_INIT_SCRIPT}; \
-  printf "%s" "$$OctoPrintService" > $(1)/octoprint.service
+  printf "%s" "$$octoprint_init_script" > $(1)/${GW_INIT_SCRIPT}; \
+  printf "%s" "$$octoprint_service" > $(1)/octoprint.service
 endef
 
 endif

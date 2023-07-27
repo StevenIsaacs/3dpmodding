@@ -36,7 +36,17 @@ ifneq ($(wildcard overrides.mk),)
 $(call Use-Segment,overrides)
 endif
 
+$(call Debug,STICKY_PATH = ${STICKY_PATH})
+# This variable is in the default sticky directory.
+$(call Sticky,PROJECT)
+ifeq (${PROJECT},)
+$(call Signal-Error,The sticky variable PROJECT must be defined.)
+endif
+
+# Config will change the sticky directory to be PROJECT specific.
 $(call Use-Segment,config)
+
+$(call Debug,${PROJECT} STICKY_PATH = ${STICKY_PATH})
 
 # Search path for loading segments. This can be extended by kits and mods.
 $(call Add-Segment-Path,$(MK_PATH))
@@ -78,9 +88,16 @@ The collection of files for a given device or system is termed a mod.
 Semantically, a mod is a modification of an existing device or system or
 a mod can also be the development a new device or system.
 
-In the following <seg> indicates a makefile segment (included file) where
+In the following, <seg> indicates a makefile segment (included file) where
 <seg> is derived using the name of the makefile segment. Changing the name of
 the file changes the name of the associated variables, macros and, goals.
+
+An overrides file, overrides.mk, is supported where the developer can preset
+variables rather than having to define them on the command line. This file is
+intended to be temporary and is not maintained as part of the repository (i.e.
+ignored in .gitignore). Additional kit and mod specific overrides can be
+declared and maintained in an independent repository. See help-kits for more
+information.
 
 Naming conventions:
 <seg>.mk        The name of a makefile segment. A makefile segment is designed
@@ -120,7 +137,7 @@ SBC = A single board computer.
 MCU = An embedded microcontroller.
 HDW = The device or machine being controlled. For example a 3D printer.
 
-Roles:
+Hardware roles:
 WS  = Development or administration workstation.
 UI  = User interface either command line or graphical or both.
 PRX = The proxy hosted in the cloud.
@@ -186,7 +203,7 @@ A separate git repository is used to maintain one or more mods with each mod
 having its own subdirectory within the git repository. A repository
 containing a collection of mods is termed a kit.
 
-This includes firmware for microcontroller boards or MCUs (e.g. Arduino),
+This includes (but is not limited to) firmware for microcontroller boards or MCUs (e.g. Arduino),
 OS images for single board computers or SBCs (e.g. Raspberry Pi), 3D
 modeling and printing of cases and enclosures as well as the machines
 they control.
@@ -197,19 +214,17 @@ automatically installed within the context of the project directory so
 that different projects can use different versions of tools without
 conflicts between versions.
 
-All of the CAD models are either downloaded as STLs from various websites or
-are scripted using a corresponding scripting tool (e.g. 3D models using
-OpenSCAD) which are then processed using the corresponding tool to
-generate the corresponding output files. See the individual tool help goals
-for more information.
-
 Command line options:
-  STICKY_PATH=${STICKY_PATH}
-    Sticky options need to be selected on the command line at least once. After
-    being selected they default to the previous selection. These options are
-    stored in STICKY_PATH.
+  Required sticky options:
+  PROJECT = ${PROJECT}
+    Sticky option for the project name. This is stored in the helpers defined
+    default sticky directory. Then the sticky path is changed to be project
+    specific so that all subsequent sticky options are stored in the project
+    specific directory.
+    See help-kits for additional required sticky options.
+
   For automated builds it is possible to preset options in another directory
-  then overriding STICK_PATH either in overrides.mk or on the command line.
+  then overriding STICKY_PATH either in overrides.mk or on the command line.
 
 Defines:
   seg_paths
@@ -229,7 +244,7 @@ Command line goals:
   parts           3D printable parts only.
   os              Build the SBC OS only.
   clean           Remove the dependency files and the output files.
-  reset-sticky    Resets all sticky variables to they have to be defined on
+  reset-sticky    Resets ALL sticky variables so they have to be defined on
                   the command line again. This does not reset mod specific
                   sticky variables. For mods use the mod defined reset.
   clean-<seg>     Cleans a make segment output. See segment specific help

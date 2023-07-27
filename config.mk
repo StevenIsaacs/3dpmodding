@@ -9,41 +9,42 @@ ifndef configSegId
 $(call Enter-Segment,config)
 # -----
 
+# For storing sticky options.
+STICKY_PATH := ${WorkingPath}/.${WorkingName}/${PROJECT}/sticky
+
 #+
 # Override these on the make command line or in overrides.mk as needed.
 # Using overrides it should not be necessary to modify the makefiles.
 #-
 
-# For storing sticky options.
-STICKY_PATH := ${ProjectPath}/.${PROJECT}/sticky
-# The name of the project. Can be overridden on the command line.
-PROJECT := ${ProjectName}
-
 # Make segments and related files for specific features.
-MK_PATH ?= ${ProjectPath}/mk
+$(call Overridable,MK_PATH,${WorkingPath}/mk)
 
 # A kit is a collection of mods.
 # Where the mod kits are cloned to.
-DEFAULT_KITS_PATH ?= ${ProjectPath}/kits
+$(call Overridable,DEFAULT_KITS_PATH,${WorkingPath}/kits)
+
+# Where kit and mod override files are stored.
+$(call Overridable,DEFAULT_OVERRIDES_PATH,${DEFAULT_KITS_PATH}/overrides)
 
 #+
 # NOTE: The following directories are ignored (see .gitignore). These can be
 # deleted by a clean.
 #-
 # For downloaded files.
-DOWNLOADS_PATH ?= ${ProjectPath}/downloads
+$(call Overridable,DOWNLOADS_PATH,${WorkingPath}/downloads)
 
 # Where intermediate build files are stored.
-BUILD_PATH ?= ${ProjectPath}/build
+$(call Overridable,BUILD_PATH,${WorkingPath}/build)
 
 # Where the mod output files are staged.
-STAGING_PATH ?= ${ProjectPath}/staging
+$(call Overridable,STAGING_PATH,${WorkingPath}/staging)
 
 # Where various tools are downloaded and installed.
-TOOLS_PATH ?= ${ProjectPath}/tools
+$(call Overridable,TOOLS_PATH,${WorkingPath}/tools)
 
 # Where executables are installed.
-BIN_PATH ?= ${TOOLS_PATH}/bin
+$(call Overridable,BIN_PATH,${TOOLS_PATH}/bin)
 
 # +++++
 # Postamble
@@ -58,6 +59,11 @@ These can be overridden either on the command line or in overrides.mk.
 Using overrides eliminates the need to modify the framework itself.
 
 Defines:
+WorkingPath = ${WorkingPath}
+  The path to the directory containing the top level makefile.
+WorkingName = ${WorkingName}
+  The name associated with the top level makefile derived from the
+  WorkingPath.
 
 Make segment paths.
 MK_PATH = ${MK_PATH}
@@ -80,6 +86,8 @@ DEFAULT_KIT_DEV_SERVER = ${DEFAULT_KIT_DEV_SERVER}
 DEFAULT_KIT_REL_SERVER = ${DEFAULT_KIT_REL_SERVER}
   The git server from which released versions of supported kits are cloned.
   Credentials are not required.
+DEFAULT_OVERRIDES_PATH = ${DEFAULT_OVERRIDES_PATH}
+  Where generated overrides files are stored.
 
 These may be deleted as part of a clean.
 STAGING_PATH = ${STAGING_PATH}
@@ -95,8 +103,10 @@ DOWNLOADS_PATH = ${DOWNLOADS_PATH}
 
 Other make segments can define sticky options. These are options which become
 defaults once they have been used. Sticky options can also be preset in the
-stick directory which helps simplify automated builds especially when build
-repeatability is required.
+sticky directory which helps simplify automated builds especially when build
+repeatability is required. Each sticky option has its own file in the sticky
+directory making it possible to have dependencies on the individual sticky
+files to detect when the options have changed.
 STICKY_PATH = ${STICKY_PATH}
   Where sticky options are stored.
 
