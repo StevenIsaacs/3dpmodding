@@ -46,10 +46,15 @@ endif
 # Config will change the sticky directory to be PROJECT specific.
 $(call Use-Segment,config)
 
-$(call Debug,${PROJECT} STICKY_PATH = ${STICKY_PATH})
-
 # Search path for loading segments. This can be extended by kits and mods.
 $(call Add-Segment-Path,$(MK_PATH))
+
+# Setup PROJECT specific configs. A project changes the STICKY_PATH to point
+# to the project repo. This way sticky options are also under revision
+# control.
+$(call Use-Segment,projects)
+
+$(call Debug,${PROJECT} STICKY_PATH = ${STICKY_PATH})
 
 # This installs kits and uses a mod within a kit. A kit and mod extends the
 # seg_paths variable as needed.
@@ -220,7 +225,8 @@ Command line options:
     Sticky option for the project name. This is stored in the helpers defined
     default sticky directory. Then the sticky path is changed to be project
     specific so that all subsequent sticky options are stored in the project
-    specific directory.
+    specific directory. This allows quickly changing context from one project
+    to another.
     See help-kits for additional required sticky options.
 
   For automated builds it is possible to preset options in another directory

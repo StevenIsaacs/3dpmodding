@@ -9,23 +9,34 @@ ifndef configSegId
 $(call Enter-Segment,config)
 # -----
 
-# For storing sticky options.
-STICKY_PATH := ${WorkingPath}/.${WorkingName}/${PROJECT}/sticky
+# For storing sticky options in a known location.
+DEFAULT_STICKY_PATH := ${WorkingPath}/.${WorkingName}/sticky
 
-#+
-# Override these on the make command line or in overrides.mk as needed.
-# Using overrides it should not be necessary to modify the makefiles.
-#-
+# NOTE: This is changed on the fly by projects.mk to point to a project
+# specific sticky directory.
+STICKY_PATH := ${DEFAULT_STICKY_PATH}
 
 # Make segments and related files for specific features.
 $(call Overridable,MK_PATH,${WorkingPath}/mk)
 
-# A kit is a collection of mods.
+# A kit is a collection of mods. Each kit is a separate git repo.
+# The directory containing the kit repos.
+$(call Overridable,DEFAULT_KITS_DIR,kits)
 # Where the mod kits are cloned to.
-$(call Overridable,DEFAULT_KITS_PATH,${WorkingPath}/kits)
+# NOTE: This is ignored in .gitignore.
+$(call Overridable,DEFAULT_KITS_PATH,${WorkingPath}/${DEFAULT_KITS_DIR})
 
-# Where kit and mod override files are stored.
-$(call Overridable,DEFAULT_OVERRIDES_PATH,${DEFAULT_KITS_PATH}/overrides)
+# The directory containing the projects repo.
+# NOTE: This is ignored in .gitignore.
+$(call Overridable,DEFAULT_PROJECTS_DIR,projects)
+# Where project specific kit and mod configuration repo is maintained.
+$(call Overridable,DEFAULT_PROJECTS_PATH,${WorkingPath}/${DEFAULT_PROJECTS_DIR})
+# If this is not equal to "local" then a remote repo is cloned to create
+# the project specific configurations. Otherwise, a new git repository is
+# created and initialized.
+$(call Overridable,DEFAULT_PROJECTS_REPO,local)
+# The branch used by the active project.
+$(call Overridable,DEFAULT_PROJECTS_BRANCH,main)
 
 #+
 # NOTE: The following directories are ignored (see .gitignore). These can be
@@ -86,8 +97,8 @@ DEFAULT_KIT_DEV_SERVER = ${DEFAULT_KIT_DEV_SERVER}
 DEFAULT_KIT_REL_SERVER = ${DEFAULT_KIT_REL_SERVER}
   The git server from which released versions of supported kits are cloned.
   Credentials are not required.
-DEFAULT_OVERRIDES_PATH = ${DEFAULT_OVERRIDES_PATH}
-  Where generated overrides files are stored.
+DEFAULT_KIT_CONFIGS_PATH = ${DEFAULT_KIT_CONFIGS_PATH}
+  Where generated config files are stored.
 
 These may be deleted as part of a clean.
 STAGING_PATH = ${STAGING_PATH}

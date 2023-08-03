@@ -22,10 +22,6 @@ ifneq (${KIT},)
   $(call Sticky,MOD)
 endif
 
-$(call Sticky,OVERRIDES_PATH,${DEFAULT_OVERRIDES_PATH})
-
-kit_override_mk = ${OVERRIDES_PATH}/${KIT}-o.mk
-
 # Where the kit is cloned to.
 kit_clone_dir = ${KIT}
 kit_path = ${KITS_PATH}/${kit_clone_dir}
@@ -60,8 +56,8 @@ ifneq (${KIT},)
   endif
 endif
 
-kits = $(call Directories-In,${KITS_PATH})
-mods = $(call Directories-In,${kit_path})
+kits = $(filter-out .git,$(call Directories-In,${KITS_PATH}))
+mods = $(filter-out .git,$(call Directories-In,${kit_path}))
 
 # Be sure a kit and mod are specified before allowing a build.
 ifneq ($(and ${KIT},${${KIT}_REPO},${${KIT}_BRANCH},${MOD}),)
@@ -77,58 +73,6 @@ mod_staging_path = ${STAGING_PATH}/${KIT}/${${KIT}_BRANCH}/${MOD}
 # Supported mod kit descriptions.
 #----------------------------------------------------------------------------
 
-# To generate the override file for a kit.
-define ${KIT}_override_seg
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# Kit specific overrides for kit: ${KIT}
-#----------------------------------------------------------------------------
-# The prefix ${KIT}_o_ must be unique for all files.
-# The format of all the ${KIT}_o_ based names is required.
-# +++++
-# Preamble
-$.ifndef ${KIT}_o_SegId
-$$(call Enter-Segment,${KIT}_o_)
-# -----
-
-# Uncomment these to override the REPO and BRANCH for the kit.
-# ${KTI}_REPO := ${${KIT}_REPO}
-# ${KTI}_BRANCH := ${${KIT}_BRANCH}
-
-# Add overrides here.
-
-# +++++
-# Postamble
-# Define help only if needed.
-$.ifneq ($$(call Is-Goal,help-${${KIT}_o_Seg}),)
-$.define help_$${${KIT}_o_SegN}_msg
-Make segment: $${${KIT}_o_Seg}.mk
-
-Kit overrides for the kit: ${KIT}
-
-# Add help messages here.
-
-Defines:
-  # Describe each override.
-
-Command line goals:
-  # Describe additional goals provided by the override.
-  help-$${${KIT}_o_Seg}
-    Display this help.
-$.endef
-$.endif # help goal message.
-
-$$(call Exit-Segment,${KIT}_o_)
-$.else # ${KIT}_o_SegId exists
-$$(call Check-Segment-Conflicts,${KIT}_o_)
-$.endif # ${KIT}_o_SegId
-# -----
-endef
-
-export ${KIT}_override_seg
-${kit_override_mk}:
-> mkdir -p $(@D)
-> printf "%s" "$$${KIT}_override_seg" > $(1)/${GW_INIT_SCRIPT}
-
 ifneq ($(call Is-Goal,kit-branches),)
 kit-branches:
 > git ls-remote -h $(${KIT}_REPO)
@@ -138,9 +82,9 @@ ${kit_mk}:
 > cd ${KITS_PATH} && git clone ${${KIT}_REPO} ${kit_clone_dir}
 > cd ${KITS_PATH}/${kit_clone_dir} && git checkout ${${KIT}_BRANCH}
 
-# Apply overrides before loading the kit and mod segments. NOTE: This will
-# trigger generation of the override file if it doesn't already exist.
-$(call Use-Segment.${kit_override_mk})
+# Apply configs before loading the kit and mod segments. NOTE: This will
+# trigger generation of the config file if it doesn't already exist.
+$(call Use-Segment,${kit_config_mk})
 
 # Clone the kit and load the mod using the kit. The kit then defines kit
 # specific variables and goals.
@@ -155,7 +99,7 @@ endif
 
 # Switch to a different kit branch.
 change-kit-branch:
-> cd ${kit_path} && git checkout ${${KIT}_BRANCH}
+> cd ${kit_path} && git branch -m ${${KIT}_BRANCH}
 
 else
   $(call Signal-Error,Incomplete kit and mod specification.)
@@ -189,14 +133,22 @@ separate git repository.
 This segment defines variables based upon the selected mod kit. A number
 of supported kits will be available.
 
-A kit specific override file (${kit_override_mk}) is generated if one
-does not exist. This override file can then be used to override kit or mod
+A kit specific config file (${kit_config_mk}) is generated if one
+does not exist. This config file can then be used to config kit or mod
 specific variables instead of using sticky variables. NOTE: In order for
-overrides to work as expected they should be declared in the kit or mod using
+configs to work as expected they should be declared in the kit or mod using
 Overridable macro.
-ModFW does NOT expect override files to be maintained as part of a repository.
-However, the developer can create a project specific repository and use the
-OVERRIDES_PATH sticky variable to use it.
+
+ModFW does expects config files to be maintained as part of a repository.
+If a repository does not exist in the KIT_CONFIGS_PATH then one is initialized.
+All generated config files are automatically added to this repository.
+
+NOTE: ModFW automatically creates and selects branches in this repository
+using PROJECT as the branch name.
+
+The developer can optionally create a project specific repository and use the
+KIT_CONFIGS_PATH sticky variable to use it. The repository is automatically
+initialized if it doesn't exist.
 
 Required sticky command line variables:
   KIT=${KIT}
@@ -213,13 +165,13 @@ Optional sticky variables:
   repository or one that was cloned manually.
   ${KIT}_REPO = ${${KIT}_REPO}
     Synonym = KIT_REPO
-    The GIT repo to clone to download the kit.
+    The git repo to clone to download the kit.
   ${KIT}_BRANCH = ${${KIT}_BRANCH}
     Synonym = KIT_BRANCH
     Which version of the kit to use. This determines which branch to checkout
     once cloned.
-  OVERRIDES_PATH = ${OVERRIDES_PATH}
-    Where generated override files are maintained. This can be a path to a
+  KIT_CONFIGS_PATH = ${KIT_CONFIGS_PATH}
+    Where generated config files are maintained. This can be a path to a
     repository maintained by the developer.
 
 Defined in config.mk:
@@ -235,8 +187,8 @@ Defines:
     Where the kit is cloned to.
   kit_mk = ${kit_mk}
     The makefile segment defining the kit.
-  kit_override_mk = ${kit_override_mk}
-    The kit and mod specific overrides file. This file is generated if it
+  kit_config_mk = ${kit_config_mk}
+    The kit and mod specific configs file. This file is generated if it
     does not exist.
   mod_path = ${mod_path}
     The path to the currently selected mod.

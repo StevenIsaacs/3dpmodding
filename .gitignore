@@ -4,6 +4,7 @@ remove
 ModFW.mm
 .modfw
 overrides.mk
+projects
 kits
 helpers
 downloads
