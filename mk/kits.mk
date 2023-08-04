@@ -15,8 +15,8 @@ ifneq (${KIT},)
     ${KIT}_REPO := ${KIT_REPO}
   endif
   $(call Sticky,${KIT}_REPO)
-  ifneq (KIT_BRANCH,)
-    ${KIT}_BRANCH := KIT_BRANCH
+  ifneq (${KIT_BRANCH},)
+    ${KIT}_BRANCH := ${KIT_BRANCH}
   endif
   $(call Sticky,${KIT}_BRANCH)
   $(call Sticky,MOD)
