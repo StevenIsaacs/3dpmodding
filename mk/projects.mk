@@ -95,6 +95,7 @@ else # Project config does not exist.
 $(call Signal-Error,The project ${PROJECT} does not exist. See help-${SegN}.)
   else # Not create-project
     ifneq ($(call Confirm,Create new project ${PROJECT}?,y),)
+      ifndef SEED_PROJECT
 $(call Add-Message,Creating project: ${PROJECT})
 export ${project_name}_config_seg
 ${project_config_mk}: ${PROJECTS_PATH}/.git
@@ -105,6 +106,19 @@ ${project_config_mk}: ${PROJECTS_PATH}/.git
 create-project: ${project_config_mk}
 > @echo Project ${PROJECT} has been created.
 
+      else # Use existing project.
+$(call Add-Message,Creating project: ${PROJECT} using ${SEED_PROJECT})
+seed_config_path := ${projects_repo_path}/${SEED_PROJECT}
+seed_segment := ${SEED_PROJECT}-cfg
+seed_config_mk := ${seed_config_path}/${seed_segment}.mk
+seed_name := $(call To-Name,${SEED_PROJECT})
+
+# The seed project config file is retained in the new project for reference.
+create-project: ${seed_config_mk}
+> cp -r ${seed_config_path} ${project_config_path}
+> sed 's/${seed_name}/${project_name}/g' \
+    ${seed_config_mk} > ${project_config_mk}
+      endif
     else
 $(call Signal-Error,${PROJECT} does not exist.)
 create-project:
@@ -141,6 +155,13 @@ project to have unique values for sticky variables. This segment change
 STICKY_PATH to point to the project specific sticky variables which are also
 maintained in the repo.
 
+A new project can be based upon an existing project by specifying the
+existing project using the SEED_PROJECT command line option. In this case
+the existing project files are copied to the new project. The project
+specific segment is renamed for the new project and all project references
+in the new project are changed to reference the new project. For reference
+the seed project config file is copied to the new project.
+
 Required sticky command line variables:
   PROJECT = ${PROJECT}
     The name of the project. This is used to create or switch to the
@@ -166,6 +187,12 @@ Optional sticky variables:
 Changes:
   STICKY_PATH = ${STICKY_PATH}
   Changed to point to the project directory in the projects repo.
+
+Command line options:
+  SEED_PROJECT = ${SEED_PROJECT}
+  When defined and creating a new project using create-project the new
+  project is initialized by copying files from the seed project to the new
+  project. e.g. make SEED_PROJECT=<existing> create-project
 
 Command line goals:
   help-${prjSeg}
