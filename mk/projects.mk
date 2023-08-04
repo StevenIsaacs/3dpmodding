@@ -45,7 +45,7 @@ $$(call Enter-Segment,${project_name}_c_)
 # +++++
 # Postamble
 # Define help only if needed.
-$.ifneq ($$(call Is-Goal,help-${${project_name}_c_Seg}),)
+$.ifneq ($$(call Is-Goal,help-$${${project_name}_c_Seg}),)
 $.define help_$${${project_name}_c_SegN}_msg
 Make segment: $${${project_name}_c_Seg}.mk
 
