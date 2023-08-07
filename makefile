@@ -56,10 +56,6 @@ $(call Use-Segment,projects)
 
 $(call Debug,${PROJECT} STICKY_PATH = ${STICKY_PATH})
 
-# This installs kits and uses a mod within a kit. A kit and mod extends the
-# seg_paths variable as needed.
-$(call Use-Segment,kits)
-
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # The entire project.
 #----------------------------------------------------------------------------
@@ -121,11 +117,18 @@ global_variable Available to all segments but should not be overridden on the
                 defining the variable. These should not be overridden.
 _private_variable Make segment specific. Should not be used by other segments
                 since these can be changed without concern for other segments.
+callable-macro  The name of a callable macro available to all segments.
+_private-macro  A private macro specific to a segment.
 GlobalVariable  Camel case is used to identify variables defined by the
                 helpers. This is mostly helpers.mk.
 Callable-Macro  The name of a helper defined callable macro.
-callable-macro  The name of a callable macro available to all segments.
-_private-macro  A private macro specific to a segment.
+
+WARNING: Even though make allows variable names to begin with a numeric
+character this must be avoided for all variable names since they may be
+exported to the environment to be passed to bash. If a numeric character is
+used as the first character of a variable name unpredictable behavior can
+occur. This is particularly important for PROJECT, KIT, MOD and, segment
+names.
 
 Terms:
 Workstation     A development workstation or a system administration
@@ -227,6 +230,7 @@ Command line options:
     specific so that all subsequent sticky options are stored in the project
     specific directory. This allows quickly changing context from one project
     to another.
+    To help avoid naming conflicts use the prefix prj- when naming projects.
     See help-kits for additional required sticky options.
 
   For automated builds it is possible to preset options in another directory

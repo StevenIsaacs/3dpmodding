@@ -66,15 +66,9 @@ Make segment: ${configSeg}.mk
 
 Defines the options shared by all modules.
 
-These can be overridden either on the command line or in overrides.mk.
-Using overrides eliminates the need to modify the framework itself.
-
-Defines:
-WorkingPath = ${WorkingPath}
-  The path to the directory containing the top level makefile.
-WorkingName = ${WorkingName}
-  The name associated with the top level makefile derived from the
-  WorkingPath.
+Unless otherwise noted these can be overridden either on the command line or in
+overrides.mk. Using overrides eliminates the need to modify the framework
+itself.
 
 Make segment paths.
 MK_PATH = ${MK_PATH}

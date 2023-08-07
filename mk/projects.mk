@@ -15,10 +15,12 @@ $(call Sticky,PROJECTS_PATH,${DEFAULT_PROJECTS_PATH})
 $(call Sticky,PROJECTS_BRANCH,${DEFAULT_PROJECTS_BRANCH})
 
 projects_repo_path := ${PROJECTS_PATH}
-project_config_path := ${projects_repo_path}/${PROJECT}
-project_segment := ${PROJECT}-cfg
-project_config_mk := ${project_config_path}/${project_segment}.mk
-project_name := $(call To-Name,${PROJECT})
+
+project_dir := ${PROJECT}
+project_path := ${projects_repo_path}/${project_dir}
+project_name := $(call To-Name,${project_dir})
+project_segment := ${PROJECT}
+project_mk := ${project_path}/${project_segment}.mk
 
 projects = $(filter-out .git,$(call Directories-In,${projects_repo_path}))
 
@@ -28,16 +30,16 @@ projects = $(filter-out .git,$(call Directories-In,${projects_repo_path}))
 # make goals. Instead, immediate shell commands are used.
 #-
 
-define ${project_name}_config_seg
+define _${project_name}_seg
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Project specific configs for project: ${PROJECT}
 #----------------------------------------------------------------------------
-# The prefix ${project_name}_c_ must be unique for all files.
-# The format of all the ${project_name}_c_ based names is required.
+# The prefix ${project_name} must be unique for all files.
+# The format of all the ${project_name} based names is required.
 # +++++
 # Preamble
-$.ifndef ${project_name}_c_SegId
-$$(call Enter-Segment,${project_name}_c_)
+$.ifndef ${project_name}SegId
+$$(call Enter-Segment,${project_name})
 # -----
 
 # Add configs here.
@@ -45,9 +47,9 @@ $$(call Enter-Segment,${project_name}_c_)
 # +++++
 # Postamble
 # Define help only if needed.
-$.ifneq ($$(call Is-Goal,help-$${${project_name}_c_Seg}),)
-$.define help_$${${project_name}_c_SegN}_msg
-Make segment: $${${project_name}_c_Seg}.mk
+$.ifneq ($$(call Is-Goal,help-$${${project_name}Seg}),)
+$.define help_$${${project_name}SegN}_msg
+Make segment: $${${project_name}Seg}.mk
 
 Project specific configs for the project: ${PROJECT}
 
@@ -58,16 +60,17 @@ Defines:
 
 Command line goals:
   # Describe additional goals provided by the config.
-  help-$${${project_name}_c_Seg}
+  help-$${${project_name}Seg}
     Display this help.
 $.endef
 $.endif # help goal message.
 
-$$(call Exit-Segment,${project_name}_c_)
-$.else # ${project_name}_c_SegId exists
-$$(call Check-Segment-Conflicts,${project_name}_c_)
-$.endif # ${project_name}_c_SegId
+$$(call Exit-Segment,${project_name})
+$.else # ${project_name}SegId exists
+$$(call Check-Segment-Conflicts,${project_name})
+$.endif # ${project_name}SegId
 # -----
+
 endef
 
 ${PROJECTS_PATH}/.git:
@@ -80,50 +83,65 @@ else
     git config pull.rebase true
 endif
 
-ifneq ($(wildcard ${project_config_mk}),)
-$(call Verbose,Using ${PROJECT})
 # Redirect the sticky variables to the project config directory.
-STICKY_PATH := ${project_config_path}
+STICKY_PATH := ${project_path}
 
-$(call Add-Segment-Path,$(project_config_path))
-$(call Use-Segment,${project_segment})
+ifneq ($(wildcard ${project_path}),)
+
+  # Project exists
+  $(call Verbose,Using ${PROJECT})
+
+  $(call Add-Segment-Path,$(project_path))
+  $(call Use-Segment,${project_segment})
+  # This installs kits and uses a mod within a kit. A kit and mod extends the
+  # seg_paths variable as needed.
+  $(call Use-Segment,kits)
 
 create-project:
 
 else # Project config does not exist.
+
   ifeq ($(call Is-Goal,create-project),)
-$(call Signal-Error,The project ${PROJECT} does not exist. See help-${SegN}.)
-  else # Not create-project
+  # Project does not exist and is not being created.
+    $(call Signal-Error,The project ${PROJECT} does not exist. See help-${SegN}.)
+  else # Create a new project
     ifneq ($(call Confirm,Create new project ${PROJECT}?,y),)
+      # Yes, create a new project.
       ifndef SEED_PROJECT
-$(call Add-Message,Creating project: ${PROJECT})
-export ${project_name}_config_seg
-${project_config_mk}: ${PROJECTS_PATH}/.git
-> mkdir $(@D) && printf "%s" "$$${project_name}_config_seg" > $@
+      # Not using a SEED_PROJECT
+        $(call Add-Message,Creating project: ${PROJECT})
+        export _${project_name}_seg
+
+${project_mk}: ${PROJECTS_PATH}/.git
+> mkdir -p $(@D) && printf "%s" "$$_${project_name}_seg" > $@
 
 # New projects must be initialized using this goal to avoid typos creating
 # useless projects.
-create-project: ${project_config_mk}
+create-project: ${project_mk}
 > @echo Project ${PROJECT} has been created.
 
-      else # Use existing project.
-$(call Add-Message,Creating project: ${PROJECT} using ${SEED_PROJECT})
-seed_config_path := ${projects_repo_path}/${SEED_PROJECT}
-seed_segment := ${SEED_PROJECT}-cfg
-seed_config_mk := ${seed_config_path}/${seed_segment}.mk
-seed_name := $(call To-Name,${SEED_PROJECT})
+      else # Use existing seed project.
+        $(call Add-Message,Creating project: ${PROJECT} using ${SEED_PROJECT})
+        seed_config_path := ${projects_repo_path}/${SEED_PROJECT}
+        seed_segment := ${SEED_PROJECT}-cfg
+        seed_config_mk := ${seed_config_path}/${seed_segment}.mk
+        seed_name := $(call To-Name,${SEED_PROJECT})
 
 # The seed project config file is retained in the new project for reference.
 create-project: ${seed_config_mk}
-> cp -r ${seed_config_path} ${project_config_path}
+> rsync -avzh --exclude $(notdir ${seed_config_mk}) \
+    ${seed_config_path}/* ${project_path}
+> echo "# Derived from seed project - ${SEED_PROJECT}" > ${project_mk}
 > sed 's/${seed_name}/${project_name}/g' \
-    ${seed_config_mk} > ${project_config_mk}
-      endif
-    else
-$(call Signal-Error,${PROJECT} does not exist.)
+    ${seed_config_mk} >> ${project_mk}
+
+      endif # Use seed project.
+    else # NO, don't create a new project.
+      $(call Signal-Error,${PROJECT} does not exist.)
+
 create-project:
 
-    endif # Yes create the project.
+    endif # Confirm create the project.
   endif # Create project.
 endif # Project config does not exist.
 
@@ -172,8 +190,8 @@ Required sticky command line variables:
 Optional sticky variables:
   PROJECTS_PATH = ${PROJECTS_PATH}
   Default: DEFAULT_PROJECTS_PATH = ${DEFAULT_PROJECTS_PATH}
-  Where the project specific configurations are stored. This is the location
-  of a git repo.
+    Where the project specific configurations are stored. This is the location
+    of a git repo.
   PROJECTS_REPO = ${PROJECTS_REPO}
   Default: DEFAULT_PROJECTS_REPO = ${DEFAULT_PROJECTS_REPO}
     If this is equal to local then a git repo is created to manage the
@@ -186,13 +204,21 @@ Optional sticky variables:
 
 Changes:
   STICKY_PATH = ${STICKY_PATH}
-  Changed to point to the project directory in the projects repo.
+    Changed to point to the project directory in the projects repo.
 
 Command line options:
   SEED_PROJECT = ${SEED_PROJECT}
-  When defined and creating a new project using create-project the new
-  project is initialized by copying files from the seed project to the new
-  project. e.g. make SEED_PROJECT=<existing> create-project
+    When defined and creating a new project using create-project the new
+    project is initialized by copying files from the seed project to the new
+    project. e.g. make SEED_PROJECT=<existing> create-project
+
+Macros:
+  strip-dir-prefix
+  Scan the indicated directory and return the directories having the prefix
+  with the prefix removed.
+  Parameters:
+    1 = The prefix to scan for and to remove.
+    2 = The path to scan.
 
 Command line goals:
   help-${prjSeg}
