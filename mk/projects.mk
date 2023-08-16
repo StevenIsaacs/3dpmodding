@@ -15,18 +15,13 @@ $(call Sticky,PROJECTS_PATH,${DEFAULT_PROJECTS_PATH})
 $(call Sticky,PROJECTS_BRANCH,${DEFAULT_PROJECTS_BRANCH})
 
 projects_repo_path := ${PROJECTS_PATH}
-
-project_dir := ${PROJECT}
-project_path := ${projects_repo_path}/${project_dir}
-project_name := $(call To-Name,${project_dir})
-project_segment := ${PROJECT}
-project_mk := ${project_path}/${project_segment}.mk
-
 projects = $(filter-out .git,$(call Directories-In,${projects_repo_path}))
 
-_${project_name}_seg := \
-$(call Gen-Segment,\
-Project specific definitions for project: ${PROJECT},${project_name})
+project_deps :=
+
+# Redirect the sticky variables to the project config directory.
+project_dir := ${PROJECT}
+STICKY_PATH := ${projects_repo_path}/${project_dir}
 
 ${PROJECTS_PATH}/.git:
 ifeq (${PROJECTS_REPO},local)
@@ -38,67 +33,103 @@ else
     git config pull.rebase true
 endif
 
-# Redirect the sticky variables to the project config directory.
-STICKY_PATH := ${project_path}
+#+
+# Declare project specific variables and goals.
+# Parameters:
+#   1 = The project.
+#   2 = The project name
+#   3 = The optional seed project if creating a new project.
+#-
+define declare-project
+$.ifdef p_$(2)
+$$(call Signal-Error,Project $(2) has already been declared.)
+$.else
+$$(call Verbose,Declaring project: $(1))
 
-ifneq ($(wildcard ${project_path}),)
+p_$(2) := $(1)
+p_$(2)_dir := $(1)
+p_$(2)_path := ${projects_repo_path}/$${p_$(2)_dir}
+p_$(2)_name := $(2)
+p_$(2)_segment := $(1)
+p_$(2)_mk := $${p_$(2)_path}/$${p_$(2)_segment}.mk
+
+project_deps += $${p_$(2)_mk}
+
+$.ifneq ($$(wildcard $${p_$(2)_path}),)
 
   # Project exists
-  $(call Verbose,Using ${PROJECT})
+  $$(call Verbose,Loading project: $(1))
 
-  $(call Add-Segment-Path,$(project_path))
-  $(call Use-Segment,${project_segment})
+  $$(call Add-Segment-Path,$${p_$(2)_path})
+  $$(call Use-Segment,$${p_$(2)_segment})
   # This installs kits and uses a mod within a kit. A kit and mod extends the
   # seg_paths variable as needed.
-  $(call Use-Segment,kits)
+  $$(call Use-Segment,kits)
 
-create-project:
+$(1)-create-project:
 
-else # Project config does not exist.
+$.else # Project config does not exist.
 
-  ifeq ($(call Is-Goal,create-project),)
+  $.ifeq ($$(call Is-Goal,create-project),)
   # Project does not exist and is not being created.
-    $(call Signal-Error,The project ${PROJECT} does not exist. See help-${SegN}.)
-  else # Create a new project
-    ifneq ($(call Confirm,Create new project ${PROJECT}?,y),)
+    $$(call Signal-Error,The project $(1) does not exist. See help-${SegN}.)
+  $.else # Create a new project
+    $.ifneq ($$(call Confirm,Create new project $(1)?,y),)
       # Yes, create a new project.
-      ifndef SEED_PROJECT
+      $.ifeq ($(3),)
       # Not using a SEED_PROJECT
-        $(call Add-Message,Creating project: ${PROJECT})
-        export _${project_name}_seg
+        $$(call Add-Message,Creating project: $(1))
+        p_$${p_$(2)_name}_seg := \
+          $$(call Gen-Segment,\
+          Project specific definitions for project: $(1),$${p_$(2)_name})
+        $.export p_$${p_$(2)_name}_seg
 
-${project_mk}: ${PROJECTS_PATH}/.git
-> mkdir -p $(@D) && printf "%s" "$$_${project_name}_seg" > $@
+$${p_$(2)_mk}: ${PROJECTS_PATH}/.git
+> mkdir -p $$(@D) && printf "%s" "$${D}p_$${p_$(2)_name}_seg" > $$@
 
 # New projects must be initialized using this goal to avoid typos creating
 # useless projects.
-create-project: ${project_mk}
-> @echo Project ${PROJECT} has been created.
+$(1)-create-project: $${p_$(2)_mk}
+> @echo Project $(1) has been created.
 
-      else # Use existing seed project.
-        $(call Add-Message,Creating project: ${PROJECT} using ${SEED_PROJECT})
-        seed_config_path := ${projects_repo_path}/${SEED_PROJECT}
-        seed_segment := ${SEED_PROJECT}-cfg
-        seed_config_mk := ${seed_config_path}/${seed_segment}.mk
-        seed_name := $(call To-Name,${SEED_PROJECT})
+      $.else # Use existing seed project.
+        $$(call Add-Message,Creating project: $(1) using $(3))
+        p_$(2)_seed := $(3)
+        p_$(2)_seed_path := ${projects_repo_path}/$(3)
+        p_$(2)_seed_segment := $(3)
+        p_$(2)_seed_mk := \
+          $${p_$(2)_seed_path}/$${p_$(2)_seed_segment}.mk
+        p_$(2)_seed_name := $(call To-Name,$(3))
 
 # The seed project config file is retained in the new project for reference.
-create-project: ${seed_config_mk}
-> rsync -avzh --exclude $(notdir ${seed_config_mk}) \
-    ${seed_config_path}/* ${project_path}
-> echo "# Derived from seed project - ${SEED_PROJECT}" > ${project_mk}
-> sed 's/${seed_name}/${project_name}/g' \
-    ${seed_config_mk} >> ${project_mk}
+$(1)-create-project: $${p_$(2)_seed_mk}
+> cp -r $${p_$(2)_seed_path}/ $${p_$(2)_path}
+>  echo "# Derived from seed project - $(3)" > $${p_$(2)_mk}
+>  sed \
+    -e 's/$${p_$(2)_seed_name}/$${p_$(2)_name}/g' \
+    -e 's/$${p_$(2)_seed}/$${p_$(2)}/g' \
+    $${p_$(2)_seed_mk} >> $${p_$(2)_mk}
 
-      endif # Use seed project.
-    else # NO, don't create a new project.
-      $(call Signal-Error,${PROJECT} does not exist.)
+      $.endif # Use seed project.
+    $.else # NO, don't create a new project.
+      $$(call Signal-Error,$(1) does not exist.)
 
-create-project:
+$(1)-create-project:
 
-    endif # Confirm create the project.
-  endif # Create project.
-endif # Project config does not exist.
+    $.endif # Confirm create the project.
+  $.endif # Create project.
+$.endif # Project config does not exist.
+
+$.endif # Project already declared.
+
+endef # declare-project
+
+ifneq ($(call Is-Goal,create-project),)
+create-project: ${PROJECT}-create-project
+endif
+
+$(eval $(call \
+  declare-project,${PROJECT},$(call To-Name,${PROJECT}),${SEED_PROJECT}))
 
 # +++++
 # Postamble
