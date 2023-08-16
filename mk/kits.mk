@@ -82,10 +82,6 @@ ${kit_mk}:
 > cd ${KITS_PATH} && git clone ${${KIT}_REPO} ${kit_clone_dir}
 > cd ${KITS_PATH}/${kit_clone_dir} && git checkout ${${KIT}_BRANCH}
 
-# Apply configs before loading the kit and mod segments. NOTE: This will
-# trigger generation of the config file if it doesn't already exist.
-$(call Use-Segment,${kit_config_mk})
-
 # Clone the kit and load the mod using the kit. The kit then defines kit
 # specific variables and goals.
 # NOTE: Using the .mk extension causes a direct include which in turn
@@ -132,12 +128,6 @@ separate git repository.
 
 This segment defines variables based upon the selected mod kit. A number
 of supported kits will be available.
-
-A kit specific config file (${kit_config_mk}) is generated if one
-does not exist. This config file can then be used to config kit or mod
-specific variables instead of using sticky variables. NOTE: In order for
-configs to work as expected they should be declared in the kit or mod using
-Overridable macro.
 
 ModFW does expects config files to be maintained as part of a repository.
 If a repository does not exist in the KIT_CONFIGS_PATH then one is initialized.

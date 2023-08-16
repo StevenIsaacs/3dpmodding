@@ -24,54 +24,9 @@ project_mk := ${project_path}/${project_segment}.mk
 
 projects = $(filter-out .git,$(call Directories-In,${projects_repo_path}))
 
-#+
-# Because this segment, similar to helpers.mk, initializes and changes variables
-# that configure kits and mods the project repo cannot be managed using normal
-# make goals. Instead, immediate shell commands are used.
-#-
-
-define _${project_name}_seg
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# Project specific configs for project: ${PROJECT}
-#----------------------------------------------------------------------------
-# The prefix ${project_name} must be unique for all files.
-# The format of all the ${project_name} based names is required.
-# +++++
-# Preamble
-$.ifndef ${project_name}SegId
-$$(call Enter-Segment,${project_name})
-# -----
-
-# Add configs here.
-
-# +++++
-# Postamble
-# Define help only if needed.
-$.ifneq ($$(call Is-Goal,help-$${${project_name}Seg}),)
-$.define help_$${${project_name}SegN}_msg
-Make segment: $${${project_name}Seg}.mk
-
-Project specific configs for the project: ${PROJECT}
-
-# Add help messages here.
-
-Defines:
-  # Describe each config.
-
-Command line goals:
-  # Describe additional goals provided by the config.
-  help-$${${project_name}Seg}
-    Display this help.
-$.endef
-$.endif # help goal message.
-
-$$(call Exit-Segment,${project_name})
-$.else # ${project_name}SegId exists
-$$(call Check-Segment-Conflicts,${project_name})
-$.endif # ${project_name}SegId
-# -----
-
-endef
+_${project_name}_seg := \
+$(call Gen-Segment,\
+Project specific definitions for project: ${PROJECT},${project_name})
 
 ${PROJECTS_PATH}/.git:
 ifeq (${PROJECTS_REPO},local)
