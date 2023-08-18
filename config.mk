@@ -19,13 +19,6 @@ STICKY_PATH := ${DEFAULT_STICKY_PATH}
 # Make segments and related files for specific features.
 $(call Overridable,MK_PATH,${WorkingPath}/mk)
 
-# A kit is a collection of mods. Each kit is a separate git repo.
-# The directory containing the kit repos.
-$(call Overridable,DEFAULT_KITS_DIR,kits)
-# Where the mod kits are cloned to.
-# NOTE: This is ignored in .gitignore.
-$(call Overridable,DEFAULT_KITS_PATH,${WorkingPath}/${DEFAULT_KITS_DIR})
-
 # The directory containing the projects repo.
 # NOTE: This is ignored in .gitignore.
 $(call Overridable,DEFAULT_PROJECTS_DIR,projects)
@@ -37,6 +30,13 @@ $(call Overridable,DEFAULT_PROJECTS_PATH,${WorkingPath}/${DEFAULT_PROJECTS_DIR})
 $(call Overridable,DEFAULT_PROJECTS_REPO,local)
 # The branch used by the active project.
 $(call Overridable,DEFAULT_PROJECTS_BRANCH,main)
+
+# A kit is a collection of mods. Each kit is a separate git repo.
+# The directory containing the kit repos.
+$(call Overridable,DEFAULT_KITS_DIR,kits)
+# Where the mod kits are cloned to.
+# NOTE: This is ignored in .gitignore.
+$(call Overridable,DEFAULT_KITS_PATH,${WorkingPath}/${DEFAULT_KITS_DIR})
 
 #+
 # NOTE: The following directories are ignored (see .gitignore). These can be

@@ -9,19 +9,17 @@ ifndef prjSegId
 $(call Enter-Segment,prj)
 # -----
 
-$(call Sticky,PROJECTS_REPO,${DEFAULT_PROJECTS_REPO})
 $(call Sticky,PROJECTS_DIR,${DEFAULT_PROJECTS_DIR})
 $(call Sticky,PROJECTS_PATH,${DEFAULT_PROJECTS_PATH})
+$(call Sticky,PROJECTS_REPO,${DEFAULT_PROJECTS_REPO})
 $(call Sticky,PROJECTS_BRANCH,${DEFAULT_PROJECTS_BRANCH})
 
-projects_repo_path := ${PROJECTS_PATH}
-projects = $(filter-out .git,$(call Directories-In,${projects_repo_path}))
+projects = $(filter-out .git,$(call Directories-In,${PROJECTS_PATH}))
 
 project_deps :=
 
 # Redirect the sticky variables to the project config directory.
-project_dir := ${PROJECT}
-STICKY_PATH := ${projects_repo_path}/${project_dir}
+STICKY_PATH := ${PROJECTS_PATH}/${PROJECT}
 
 ${PROJECTS_PATH}/.git:
 ifeq (${PROJECTS_REPO},local)
@@ -33,14 +31,7 @@ else
     git config pull.rebase true
 endif
 
-#+
-# Declare project specific variables and goals.
-# Parameters:
-#   1 = The project.
-#   2 = The project name
-#   3 = The optional seed project if creating a new project.
-#-
-define declare-project
+define use-project
 $.ifdef p_$(2)
 $$(call Signal-Error,Project $(2) has already been declared.)
 $.else
@@ -48,7 +39,7 @@ $$(call Verbose,Declaring project: $(1))
 
 p_$(2) := $(1)
 p_$(2)_dir := $(1)
-p_$(2)_path := ${projects_repo_path}/$${p_$(2)_dir}
+p_$(2)_path := ${PROJECTS_PATH}/$${p_$(2)_dir}
 p_$(2)_name := $(2)
 p_$(2)_segment := $(1)
 p_$(2)_mk := $${p_$(2)_path}/$${p_$(2)_segment}.mk
@@ -71,21 +62,21 @@ $(1)-create-project:
 $.else # Project config does not exist.
 
   $.ifeq ($$(call Is-Goal,create-project),)
-  # Project does not exist and is not being created.
+    # Project does not exist and is not being created.
     $$(call Signal-Error,The project $(1) does not exist. See help-${SegN}.)
   $.else # Create a new project
     $.ifneq ($$(call Confirm,Create new project $(1)?,y),)
       # Yes, create a new project.
       $.ifeq ($(3),)
-      # Not using a SEED_PROJECT
+        # Not using a SEED_PROJECT
         $$(call Add-Message,Creating project: $(1))
         p_$${p_$(2)_name}_seg := \
           $$(call Gen-Segment,\
-          Project specific definitions for project: $(1),$${p_$(2)_name})
+          Project specific definitions for project: $(1),$(2))
         $.export p_$${p_$(2)_name}_seg
 
 $${p_$(2)_mk}: ${PROJECTS_PATH}/.git
-> mkdir -p $$(@D) && printf "%s" "$${D}p_$${p_$(2)_name}_seg" > $$@
+> mkdir -p $$(@D) && printf "%s" "$${Dlr}p_$${p_$(2)_name}_seg" > $$@
 
 # New projects must be initialized using this goal to avoid typos creating
 # useless projects.
@@ -95,7 +86,7 @@ $(1)-create-project: $${p_$(2)_mk}
       $.else # Use existing seed project.
         $$(call Add-Message,Creating project: $(1) using $(3))
         p_$(2)_seed := $(3)
-        p_$(2)_seed_path := ${projects_repo_path}/$(3)
+        p_$(2)_seed_path := ${PROJECTS_PATH}/$(3)
         p_$(2)_seed_segment := $(3)
         p_$(2)_seed_mk := \
           $${p_$(2)_seed_path}/$${p_$(2)_seed_segment}.mk
@@ -122,14 +113,14 @@ $.endif # Project config does not exist.
 
 $.endif # Project already declared.
 
-endef # declare-project
+endef # use-project
 
 ifneq ($(call Is-Goal,create-project),)
 create-project: ${PROJECT}-create-project
 endif
 
 $(eval $(call \
-  declare-project,${PROJECT},$(call To-Name,${PROJECT}),${SEED_PROJECT}))
+  use-project,${PROJECT},$(call To-Name,${PROJECT}),${SEED_PROJECT}))
 
 # +++++
 # Postamble
@@ -155,7 +146,7 @@ but project specific variables, goals and recipes can be added. The developer
 is also expected to add them to the repo and commit changes as needed.
 
 Sticky variables are stored in the project subdirectory thus allowing each
-project to have unique values for sticky variables. This segment change
+project to have unique values for sticky variables. This segment changes
 STICKY_PATH to point to the project specific sticky variables which are also
 maintained in the repo.
 
@@ -164,13 +155,13 @@ existing project using the SEED_PROJECT command line option. In this case
 the existing project files are copied to the new project. The project
 specific segment is renamed for the new project and all project references
 in the new project are changed to reference the new project. For reference
-the seed project config file is copied to the new project.
+the seed project makefile segment is copied to the new project but not used.
 
 Required sticky command line variables:
   PROJECT = ${PROJECT}
-    The name of the project. This is used to create or switch to the
-    project specific directory in the project configurations repo. This
-    variable is stored in the default sticky directory.
+    The name of the active project. This is used to create or switch to the
+    project specific directory in the projects repo. This variable is stored
+    in the default sticky directory.
     DEFAULT_STICKY_PATH = ${DEFAULT_STICKY_PATH}
 
 Optional sticky variables:
@@ -199,12 +190,28 @@ Command line options:
     project. e.g. make SEED_PROJECT=<existing> create-project
 
 Macros:
-  strip-dir-prefix
-  Scan the indicated directory and return the directories having the prefix
-  with the prefix removed.
-  Parameters:
-    1 = The prefix to scan for and to remove.
-    2 = The path to scan.
+  use-project
+    Declare project specific variables, macros and, goals (a namespace). This
+    allows having one project depend upon the output of another. If the project
+    segment exists then it is loaded.
+    Command line goals:
+      <project>-create-project
+        This goal is fully defined only when the create-project goal (below) is
+        used. To reduce the possibility of accidental creation of new projects
+        this goal does nothing if the create-project goal is not in the list of
+        command line goals.
+    Parameters:
+      1 = The project file name. This is used to name:
+            The project make segment file.
+            The project directory.
+            Project specific goals.
+      2 = The project variable name. This is used as part of variable
+          declarations to create variables specific to the project. Typically
+          this should be equal to $$(call To-Name,<project file base name>).
+      3 = The optional seed project to use if creating a new project. The
+          contents of the seed project directory are copied to the new
+          project. The seed project makefile segment is used to generate the
+          new project makefile segment.
 
 Command line goals:
   help-${prjSeg}
