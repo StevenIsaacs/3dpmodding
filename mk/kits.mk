@@ -9,7 +9,10 @@ $(call Enter-Segment,kits)
 # -----
 
 $(call Sticky,KITS_PATH,${DEFAULT_KITS_PATH})
+
+# The active kit.
 $(call Sticky,KIT)
+
 ifneq (${KIT},)
   ifneq (KIT_REPO,)
     ${KIT}_REPO := ${KIT_REPO}
@@ -22,9 +25,10 @@ ifneq (${KIT},)
   $(call Sticky,MOD)
 endif
 
+define use-kit
 # Where the kit is cloned to.
-kit_clone_dir = ${KIT}
-kit_path = ${KITS_PATH}/${kit_clone_dir}
+kit_dir = ${KIT}
+kit_path = ${KITS_PATH}/${kit_dir}
 kit_mk = ${kit_path}/${KIT}.mk
 mod_path = ${kit_path}/${MOD}
 
@@ -79,8 +83,8 @@ kit-branches:
 else ifeq (${Errors},)
 ${kit_mk}:
 > mkdir -p ${KITS_PATH}
-> cd ${KITS_PATH} && git clone ${${KIT}_REPO} ${kit_clone_dir}
-> cd ${KITS_PATH}/${kit_clone_dir} && git checkout ${${KIT}_BRANCH}
+> cd ${KITS_PATH} && git clone ${${KIT}_REPO} ${kit_dir}
+> cd ${KITS_PATH}/${kit_dir} && git checkout ${${KIT}_BRANCH}
 
 # Clone the kit and load the mod using the kit. The kit then defines kit
 # specific variables and goals.
@@ -116,6 +120,8 @@ else
   endif
 endif # Kit defined
 
+endef # use-kit
+
 # +++++
 # Postamble
 ifneq ($(call Is-Goal,help-${kitsSeg}),)
@@ -136,7 +142,7 @@ All generated config files are automatically added to this repository.
 NOTE: ModFW automatically creates and selects branches in this repository
 using PROJECT as the branch name.
 
-The developer can optionally create a project specific repository and use the
+The developer can optionally create a kit specific repository and use the
 KIT_CONFIGS_PATH sticky variable to use it. The repository is automatically
 initialized if it doesn't exist.
 
@@ -146,7 +152,7 @@ Required sticky command line variables:
     This is required when no kit has been selected. Once selected this
     becomes optional.
   MOD=${MOD}
-    Which mod to load.
+    Which mod to build.
 
 Optional sticky variables:
   These are required if the clone directory doesn't exist. If the clone
@@ -171,7 +177,7 @@ Defined in config.mk:
     The top level staging directory.
 
 Defines:
-  kit_clone_dir = ${kit_clone_dir}
+  kit_dir = ${kit_dir}
     The name of the directory the ${KIT} is cloned to.
   kit_path = ${kit_path}
     Where the kit is cloned to.
@@ -187,11 +193,35 @@ Defines:
   mod_staging_path = ${mod_staging_path}
     Where the mod output files are staged.
 
+Macros:
+  use-kit
+    Declare kit specific variables, macros and, goals (a namespace). This
+    allows having one kit or mod depend upon the output of different kit. If
+    the kit segment exists then it is loaded.
+    Command line goals:
+      <kit>-create-kit
+        This goal is fully defined only when the create-kit goal (below) is
+        used. To reduce the possibility of accidental creation of new kits
+        this goal does nothing if the create-kit goal is not in the list of
+        command line goals.
+    Parameters:
+      1 = The kit file name. This is used to name:
+            The kit make segment file.
+            The kit directory.
+            Project specific goals.
+      2 = The kit variable name. This is used as part of variable
+          declarations to create variables specific to the kit. Typically
+          this should be equal to $$(call To-Name,<kit file base name>).
+      3 = The optional seed kit to use if creating a new kit. The
+          contents of the seed kit directory are copied to the new
+          kit. The seed kit makefile segment is used to generate the
+          new kit makefile segment.
+
 Command line goals:
   help-${kitsSeg}
     Display this help.
   show-kits
-    Display a list of kits installed in ${kit_clone_dir}.
+    Display a list of kits installed in ${kit_dir}.
   show-mods
     Display a list of mods contained within the kit.
   kit-branches

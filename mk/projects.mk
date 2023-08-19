@@ -33,9 +33,9 @@ endif
 
 define use-project
 $.ifdef p_$(2)
-$$(call Signal-Error,Project $(2) has already been declared.)
+$$(call Signal-Error,Project $(2) is already in use.)
 $.else
-$$(call Verbose,Declaring project: $(1))
+$$(call Verbose,Using project: $(1))
 
 p_$(2) := $(1)
 p_$(2)_dir := $(1)
@@ -129,11 +129,18 @@ ifneq ($(call Is-Goal,help-${prjSeg}),)
 define help_${prjSegN}_msg
 Make segment: ${prjSeg}.mk
 
-This segment uses git manage project specific configurations. If the git
-repo doesn't exist then it must first be created using the create-project
-goal. The project is either created or cloned depending upon the value of
-PROJECTS_REPO (below). These configurations define the options for
-kits and mods within the kits.
+A ModFW project is mostly intended to contain variable definitions needed to
+configure mod builds and to create project specific packages using the
+output of mod builds. It is possible for one project to be dependent upon the
+output of another project.
+
+Different projects can use different versions of the same kits and mods. The
+versions and dependencies are specified in the project makefile segment.
+
+This segment uses git to help manage ModFW projects. If the git repo doesn't
+exist then it must first be created using the create-project goal. The project
+is either created or cloned depending upon the value of PROJECTS_REPO (below).
+These configurations define the options for kits and mods within the kits.
 
 Each project has a subdirectory in the repository. The variable PROJECT
 specifies which project is active. If a project directory does not exist it
