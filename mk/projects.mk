@@ -37,22 +37,23 @@ $$(call Signal-Error,Project $(2) is already in use.)
 $.else
 $$(call Verbose,Using project: $(1))
 
+# Project specific variables.
 p_$(2) := $(1)
 p_$(2)_dir := $(1)
 p_$(2)_path := ${PROJECTS_PATH}/$${p_$(2)_dir}
 p_$(2)_name := $(2)
 p_$(2)_segment := $(1)
-p_$(2)_mk := $${p_$(2)_path}/$${p_$(2)_segment}.mk
+p_$(2)_mk := $${p_$(2)_path}/$(1).mk
 
 project_deps += $${p_$(2)_mk}
 
 $.ifneq ($$(wildcard $${p_$(2)_path}),)
 
   # Project exists
-  $$(call Verbose,Loading project: $(1))
+  $$(call Verbose,Using project: $(1))
 
   $$(call Add-Segment-Path,$${p_$(2)_path})
-  $$(call Use-Segment,$${p_$(2)_segment})
+  $$(call Use-Segment,$(1))
   # This installs kits and uses a mod within a kit. A kit and mod extends the
   # seg_paths variable as needed.
   $$(call Use-Segment,kits)
@@ -85,21 +86,21 @@ $(1)-create-project: $${p_$(2)_mk}
 
       $.else # Use existing seed project.
         $$(call Add-Message,Creating project: $(1) using $(3))
-        p_$(2)_seed := $(3)
-        p_$(2)_seed_path := ${PROJECTS_PATH}/$(3)
-        p_$(2)_seed_segment := $(3)
-        p_$(2)_seed_mk := \
-          $${p_$(2)_seed_path}/$${p_$(2)_seed_segment}.mk
-        p_$(2)_seed_name := $(call To-Name,$(3))
+        p_seed_$(2) := $(3)
+        p_seed_$(2)_path := ${PROJECTS_PATH}/$(3)
+        p_seed_$(2)_segment := $(3)
+        p_seed_$(2)_mk := \
+          $${p_seed_$(2)_path}/$${p_seed_$(2)_segment}.mk
+        p_seed_$(2)_name := $(call To-Shell-Var,$(3))
 
 # The seed project config file is retained in the new project for reference.
-$(1)-create-project: $${p_$(2)_seed_mk}
-> cp -r $${p_$(2)_seed_path}/ $${p_$(2)_path}
+$(1)-create-project: $${p_seed_$(2)_mk}
+> cp -r $${p_seed_$(2)_path}/ $${p_$(2)_path}
 >  echo "# Derived from seed project - $(3)" > $${p_$(2)_mk}
 >  sed \
-    -e 's/$${p_$(2)_seed_name}/$${p_$(2)_name}/g' \
-    -e 's/$${p_$(2)_seed}/$${p_$(2)}/g' \
-    $${p_$(2)_seed_mk} >> $${p_$(2)_mk}
+    -e 's/$${p_seed_$(2)_name}/$${p_$(2)_name}/g' \
+    -e 's/$${p_seed_$(2)}/$${p_$(2)}/g' \
+    $${p_seed_$(2)_mk} >> $${p_$(2)_mk}
 
       $.endif # Use seed project.
     $.else # NO, don't create a new project.
@@ -120,7 +121,7 @@ create-project: ${PROJECT}-create-project
 endif
 
 $(eval $(call \
-  use-project,${PROJECT},$(call To-Name,${PROJECT}),${SEED_PROJECT}))
+  use-project,${PROJECT},$(call To-Shell-Var,${PROJECT}),${SEED_PROJECT}))
 
 # +++++
 # Postamble
@@ -213,8 +214,8 @@ Macros:
             The project directory.
             Project specific goals.
       2 = The project variable name. This is used as part of variable
-          declarations to create variables specific to the project. Typically
-          this should be equal to $$(call To-Name,<project file base name>).
+          names to create variables specific to the project. Typically
+          this should be equal to $$(call To-Shell-Var,<project file base name>).
       3 = The optional seed project to use if creating a new project. The
           contents of the seed project directory are copied to the new
           project. The seed project makefile segment is used to generate the
