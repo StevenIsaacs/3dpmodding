@@ -101,6 +101,9 @@ declared and maintained in an independent repository. See help-kits for more
 information.
 
 Naming conventions:
+<seg>           The name of a segment. This is used to declare segment specific
+                variables and to derive directory and file names. As a result
+                no two segments can have the same name.
 <seg>.mk        The name of a makefile segment. A makefile segment is designed
                 to be included from another file. These should be formatted to
                 contain a preamble and postamble. See help-helpers for more
