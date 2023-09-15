@@ -1,11 +1,11 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # <purpose for this segment>
 #----------------------------------------------------------------------------
-# The prefix opiz must be unique for all files.
+# The prefix $(call This-Segment-Basename) must be unique for all files.
 # +++++
 # Preamble
-ifndef opizSegId
-$(call Enter-Segment,opiz)
+ifndef $(call This-Segment-Basename)SegId
+$(call Enter-Segment)
 # -----
 $(info Using OS board: ${GW_OS_BOARD})
 
@@ -64,9 +64,10 @@ endif
 
 # +++++
 # Postamble
-ifneq ($(call Is-Goal,help-${opizSeg}),)
-define help_${opizSegN}_msg
-Make segment: ${opizSeg}.mk
+# Define help only if needed.
+ifneq ($(call Is-Goal,help-${Seg}),)
+define help_${SegV}_msg
+Make segment: ${Seg}.mk
 
 The Orange PI Zero does not have a display interface. To monitor the boot
 process it is necessary to use the serial port. Some instructions can be
@@ -89,12 +90,12 @@ ubuntu      Ubuntu version of the Orange PI OS.
 debian      Debian version of teh Orange PI OS.
 
 Command line goals:
-  help-${opizSeg}   Display this help.
+  help-${Seg}
+    Display this help.
 endef
-endif # help goal message.
-
-$(call Exit-Segment,opiz)
-else # opizSegId exists
-$(call Check-Segment-Conflicts,opiz)
-endif # opizSegId
+endif
+$(call Exit-Segment)
+else
+$(call Check-Segment-Conflicts)
+endif # SegId
 # -----

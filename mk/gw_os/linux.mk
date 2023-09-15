@@ -1,11 +1,11 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Modding a Linux OS image (LOI).
 #----------------------------------------------------------------------------
-# The prefix linux must be unique for all files.
+# The prefix $(call This-Segment-Basename) must be unique for all files.
 # +++++
 # Preamble
-ifndef linuxSegId
-$(call Enter-Segment,linux)
+ifndef $(call This-Segment-Basename)SegId
+$(call Enter-Segment)
 # -----
 
 # Common Linux paths.
@@ -36,9 +36,10 @@ help-linux:
 endif
 # +++++
 # Postamble
-ifneq ($(call Is-Goal,help-${linuxSeg}),)
-define help_${linuxSegN}_msg
-Make segment: ${linuxSeg}.mk
+# Define help only if needed.
+ifneq ($(call Is-Goal,help-${Seg}),)
+define help_${SegV}_msg
+Make segment: ${Seg}.mk
 
 This segment serves as a wrapper for the Linux OS image modding segments. Its
 purpose is to provide a means for overriding the paths to the modding segments.
@@ -66,12 +67,12 @@ Defines:
     Where to store temporary files for the priviledged user (system admin).
 
 Command line goals:
-  help-${linuxSeg}   Display this help.
+  help-${Seg}
+    Display this help.
 endef
-endif # help goal message.
-
-$(call Exit-Segment,linux)
-else # linuxSegId exists
-$(call Check-Segment-Conflicts,linux)
-endif # linuxSegId
+endif
+$(call Exit-Segment)
+else
+$(call Check-Segment-Conflicts)
+endif # SegId
 # -----

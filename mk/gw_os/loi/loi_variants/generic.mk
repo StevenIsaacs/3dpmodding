@@ -1,11 +1,11 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Generalizes initialization and first run of a Linux based OS image.
 #----------------------------------------------------------------------------
-# The prefix lgen must be unique for all files.
+# The prefix $(call This-Segment-Basename) must be unique for all files.
 # +++++
 # Preamble
-ifndef lgenSegId
-$(call Enter-Segment,lgen)
+ifndef $(call This-Segment-Basename)SegId
+$(call Enter-Segment)
 # -----
 # Restrict to command line target only.
 ifneq ($(call Is-Goal,stage-os-image),)
@@ -113,7 +113,6 @@ endif # stage-os-image
 # Definitions common to MOST OS variants. These can be overridden by a variant.
 #-
 $(call Require,\
-${GW_OS}.mk,\
 LINUX_TMP_PATH \
 LINUX_ETC_PATH \
 LINUX_HOME_PATH \
@@ -133,10 +132,10 @@ ${GW_OS_VARIANT}_ADMIN_TMP_PATH = ${LINUX_ADMIN_TMP_PATH}
 
 # +++++
 # Postamble
-ifneq ($(call Is-Goal,help-${lgenSeg}),)
-$(info Help message variable: help_${lgenSegN}_msg)
-define help_${lgenSegN}_msg
-Make segment: ${lgenSeg}.mk
+# Define help only if needed.
+ifneq ($(call Is-Goal,help-${Seg}),)
+define help_${SegV}_msg
+Make segment: ${Seg}.mk
 
 Generalizes initialization and first run of an ${GW_OS_VARIANT} based OS image.
 
@@ -155,12 +154,12 @@ Defines:
 	loi.mk. This creates users and installs the first-run scripts.
 
 Command line goals:
-  help-${lgenSeg}   Display this help.
+  help-${Seg}
+    Display this help.
 endef
-endif # help goal message.
-
-$(call Exit-Segment,lgen)
-else # lgenSegId exists
-$(call Check-Segment-Conflicts,lgen)
-endif # lgenSegId
+endif
+$(call Exit-Segment)
+else
+$(call Check-Segment-Conflicts)
+endif # SegId
 # -----

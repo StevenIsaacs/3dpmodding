@@ -1,11 +1,11 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Scripted custom parts using OpenSCAD and Python CAD tools.
 #----------------------------------------------------------------------------
-# The prefix osc must be unique for all files.
+# The prefix $(call This-Segment-Basename) must be unique for all files.
 # +++++
 # Preamble
-ifndef oscSegId
-$(call Enter-Segment,osc)
+ifndef $(call This-Segment-Basename)SegId
+$(call Enter-Segment)
 # -----
 
 #+
@@ -27,7 +27,7 @@ ifeq ($(realpath ${OSC_MOD_MODEL_PATH}),)
     $(call Signal-Error,The model directory does not exist)
   endif
 endif
-$(call Add-Message,OSC_MOD_MODEL_PATH=${OSC_MOD_MODEL_PATH})
+$(call Info,OSC_MOD_MODEL_PATH=${OSC_MOD_MODEL_PATH})
 
 # Where tools are installed.
 OSC_BIN_PATH = ${BIN_PATH}/openscad/${OPENSCAD_VERSION}
@@ -120,7 +120,7 @@ parts: ${_osc_stl_files} ${_oscp_stl_files}
 # If python files are present then assume Python CAD tools in a virtual Python
 # environment is needed.
 #-
-$(call Add-Message,Using Python CAD tools)
+$(call Info,Using Python CAD tools)
 
 _osc_python_path = ${OSC_MOD_MODEL_PATH}:${OSC_LIB_PATH}
 
@@ -173,8 +173,8 @@ _png_files = $(foreach file, ${_model_files}, \
   ${OSC_PNG_PATH}/$(basename $(notdir $(file))).png)
 endif
 
-$(call Add-Message,OpenSCAD libraries:)
-$(call Add-Message,$(wildcard ${OSC_LIB_PATH}/*.mk))
+$(call Info,OpenSCAD libraries:)
+$(call Info,$(wildcard ${OSC_LIB_PATH}/*.mk))
 
 include $(wildcard ${OSC_LIB_PATH}/*.mk)
 
@@ -209,7 +209,7 @@ endif
 ${oscSeg}-docs: ${_osc_python} ${_oscp_doc_files}
 
 ifeq (${MAKECMDGOALS},${oscSeg}-init)
-$(call Add-Message,Initializing: ${OSC_MOD_MODEL_PATH})
+$(call Info,Initializing: ${OSC_MOD_MODEL_PATH})
 
 define _model_readme
 # Describe the model here.
@@ -282,7 +282,7 @@ include $(wildcard ${OSC_BUILD_PATH}/*.deps)
 # Drawings
 ifneq ($(call Is-Goal,clean),)
 ifneq ($(call Is-Goal,help-${oscSeg},)
-$(call Add-Message,Defining pattern rules)
+$(call Info,Defining pattern rules)
 ${OSC_PNG_PATH}/%.png: ${OSC_DRAW_PATH}/%.scad
 > mkdir -p ${OSC_BUILD_PATH}
 > mkdir -p $(dir $@)
@@ -392,10 +392,10 @@ endif
 
 # +++++
 # Postamble
-ifneq ($(call Is-Goal,help-${oscSeg}),)
-$(call Add-Message,Help message variable: help_${oscSegN}_msg)
-define help_${oscSegN}_msg
-Make segment: ${oscSeg}.mk
+# Define help only if needed.
+ifneq ($(call Is-Goal,help-${Seg}),)
+define help_${SegV}_msg
+Make segment: ${Seg}.mk
 
 OpenSCAD and Python CAD tools are used to generate STL files from scripts which
 describe custom parts for a mod. These can also be used to modify existing
@@ -504,13 +504,12 @@ Command line goals:
     and start an interactive Python session.
   help-model
     Display the model specific help.
-  help-${oscSeg}
+  help-${Seg}
     Display this help.
 endef
-endif # help goal message.
-
-$(call Exit-Segment,osc)
-else # oscSegId exists
-$(call Check-Segment-Conflicts,osc)
-endif # oscSegId
+endif
+$(call Exit-Segment)
+else
+$(call Check-Segment-Conflicts)
+endif # SegId
 # -----

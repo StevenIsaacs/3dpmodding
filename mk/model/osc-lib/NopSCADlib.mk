@@ -2,11 +2,11 @@
 # NopSCADlib - An ever expanding library of parts useful for 3D printers
 # and enclosures for electronics.
 #----------------------------------------------------------------------------
-# The prefix nscl must be unique for all files.
+# The prefix $(call This-Segment-Basename) must be unique for all files.
 # +++++
 # Preamble
-ifndef nsclSegId
-$(call Enter-Segment,nscl)
+ifndef $(call This-Segment-Basename)SegId
+$(call Enter-Segment)
 # -----
 
 NOPSCADLIB_VERSION = v18.3.1
@@ -24,24 +24,23 @@ nopscadlib: ${NOPSCADLIB_DEP}
 
 # +++++
 # Postamble
-ifneq ($(call Is-Goal,help-${nsclSeg}),)
-$(info Help message variable: help_${nsclSegN}_msg)
-define help_${nsclSegN}_msg
-Make segment: ${nsclSeg}.mk
+# Define help only if needed.
+ifneq ($(call Is-Goal,help-${Seg}),)
+define help_${SegV}_msg
+Make segment: ${Seg}.mk
 
 NopSCADlib - An ever expanding library of parts useful for 3D printers
 and enclosures for electronics.
 
 Command line goals:
-  help-${nsclSeg}
-    Display this help.
   nopscadlib
     Download and install NopSCADlib.
+  help-${Seg}
+    Display this help.
 endef
-endif # help goal message.
-
-$(call Exit-Segment,nscl)
-else # nsclSegId exists
-$(call Check-Segment-Conflicts,nscl)
-endif # nsclSegId
+endif
+$(call Exit-Segment)
+else
+$(call Check-Segment-Conflicts)
+endif # SegId
 # -----

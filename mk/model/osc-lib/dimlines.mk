@@ -2,11 +2,11 @@
 # dimlines - Create dimensioned lines, title blocks and more which are used
 # to document parts.
 #----------------------------------------------------------------------------
-# The prefix diml must be unique for all files.
+# The prefix $(call This-Segment-Basename) must be unique for all files.
 # +++++
 # Preamble
-ifndef dimlSegId
-$(call Enter-Segment,diml)
+ifndef $(call This-Segment-Basename)SegId
+$(call Enter-Segment)
 # -----
 dimlines_VERSION = master
 dimlines_GIT_URL = https://github.com/sidorof/dimlines.git
@@ -24,24 +24,23 @@ dimlines: ${dimlines_DEP}
 
 # +++++
 # Postamble
-ifneq ($(call Is-Goal,help-${dimlSeg}),)
-$(info Help message variable: help_${dimlSegN}_msg)
-define help_${dimlSegN}_msg
-Make segment: ${dimlSeg}.mk
+# Define help only if needed.
+ifneq ($(call Is-Goal,help-${Seg}),)
+define help_${SegV}_msg
+Make segment: ${Seg}.mk
 
 dimlines - Create dimensioned lines, title blocks and more which are used
 to document parts.
 
 Command line goals:
-  help-${dimlSeg}
-    Display this help.
   dimlines
     Download and install dimlines.
+  help-${Seg}
+    Display this help.
 endef
-endif # help goal message.
-
-$(call Exit-Segment,diml)
-else # dimlSegId exists
-$(call Check-Segment-Conflicts,diml)
-endif # dimlSegId
+endif
+$(call Exit-Segment)
+else
+$(call Check-Segment-Conflicts)
+endif # SegId
 # -----

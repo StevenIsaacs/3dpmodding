@@ -2,11 +2,11 @@
 # MCAD - components commonly used in designing and mocking up mechanical
 # designs.
 #----------------------------------------------------------------------------
-# The prefix mcad must be unique for all files.
+# The prefix $(call This-Segment-Basename) must be unique for all files.
 # +++++
 # Preamble
-ifndef mcadSegId
-$(call Enter-Segment,mcad)
+ifndef $(call This-Segment-Basename)SegId
+$(call Enter-Segment)
 # -----
 $(info MCAD library)
 
@@ -25,24 +25,23 @@ mcad: ${MCAD_DEP}
 
 # +++++
 # Postamble
-ifneq ($(call Is-Goal,help-${mcadSeg}),)
-$(info Help message variable: help_${mcadSegN}_msg)
-define help_${mcadSegN}_msg
-Make segment: ${mcadSeg}.mk
+# Define help only if needed.
+ifneq ($(call Is-Goal,help-${Seg}),)
+define help_${SegV}_msg
+Make segment: ${Seg}.mk
 
 MCAD - components commonly used in designing and mocking up mechanical
 designs.
 
 Command line goals:
-  help-${mcadSeg}
-    Display this help.
   mcad
     Download and install mcad.
+  help-${Seg}
+    Display this help.
 endef
-endif # help goal message.
-
-$(call Exit-Segment,mcad)
-else # mcadSegId exists
-$(call Check-Segment-Conflicts,mcad)
-endif # mcadSegId
+endif
+$(call Exit-Segment)
+else
+$(call Check-Segment-Conflicts)
+endif # SegId
 # -----

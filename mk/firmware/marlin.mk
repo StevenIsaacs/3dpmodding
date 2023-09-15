@@ -1,11 +1,11 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Marlin firmware
 #----------------------------------------------------------------------------
-# The prefix mln must be unique for all files.
+# The prefix $(call This-Segment-Basename) must be unique for all files.
 # +++++
 # Preamble
-ifndef mlnSegId
-$(call Enter-Segment,mln)
+ifndef $(call This-Segment-Basename)SegId
+$(call Enter-Segment)
 # -----
 
 #+
@@ -94,10 +94,9 @@ ${mlnSeg}-firmware: ${mod_firmware}
 
 # +++++
 # Postamble
-ifneq ($(call Is-Goal,help-${mlnSeg}),)
-$(info Help message variable: help_${mlnSegN}_msg)
-define help_${mlnSegN}_msg
-Make segment: ${mlnSeg}.mk
+ifneq ($(call Is-Goal,help-${Seg}),)
+define help_${SegV}_msg
+Make segment: ${Seg}.mk
 
 Marlin firmware is typically used to control 3D printers but can also be
 used for CNC and Laser cutters/engravers.
@@ -147,13 +146,11 @@ Command line goals:
     Install the Marlin source code and PlatformIO.
   ${mlnSeg}-firmware
     Build the Marlin firmware using the mod source files.
-  help-${mlnSeg}
     Display this help.
 endef
-endif # help goal message.
-
-$(call Exit-Segment,mln)
-else # mlnSegId exists
-$(call Check-Segment-Conflicts,mln)
-endif # mlnSegId
+endif
+$(call Exit-Segment)
+else
+$(call Check-Segment-Conflicts)
+endif # SegId
 # -----

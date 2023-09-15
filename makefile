@@ -1,5 +1,7 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # ModFW - A framework for modifying and developing devices.
+# NOTE: ModFW is not a build tool. Rather it is a framework for integrating
+# a variety of build and development tools.
 #----------------------------------------------------------------------------
 # Which branch of the helpers to use. Once the helpers have been cloned
 # this is ignored.
@@ -33,14 +35,7 @@ include ${_helpers}
 # Using a conditional here because of needing to add a dependency on the
 # overrides.mk only if it exists.
 ifneq ($(wildcard overrides.mk),)
-$(call Use-Segment,overrides)
-endif
-
-$(call Debug,STICKY_PATH = ${STICKY_PATH})
-# This variable is in the default sticky directory.
-$(call Sticky,PROJECT)
-ifeq (${PROJECT},)
-$(call Signal-Error,The sticky variable PROJECT must be defined.)
+  $(call Use-Segment,overrides)
 endif
 
 # Config will change the sticky directory to be PROJECT specific.
@@ -49,12 +44,19 @@ $(call Use-Segment,config)
 # Search path for loading segments. This can be extended by kits and mods.
 $(call Add-Segment-Path,$(MK_PATH))
 
-# Setup PROJECT specific configs. A project changes the STICKY_PATH to point
-# to the project repo. This way sticky options are also under revision
+# Common macros for ModFW segments.
+$(call Use-Segment,macros)
+
+$(call Debug,STICKY_PATH = ${STICKY_PATH})
+
+# Setup PROJECT specific variables and goals. A project changes the STICKY_PATH
+# to point to the project repo. This way sticky options are also under revision
 # control.
 $(call Use-Segment,projects)
 
-$(call Debug,${PROJECT} STICKY_PATH = ${STICKY_PATH})
+ifdef APPEND
+  $(call Use-Segment,${APPEND})
+endif
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # The entire project.
@@ -75,35 +77,67 @@ ifneq ($(filter help,$(Goals)),)
 define _mod_fw_usage
 Usage: make [<option>=<value> ...] [<goal>]
 
+This is the top level make file for ModFW. NOTE: ModFW is not a build system.
+Instead, ModFW is intended to integrate a variety of build systems which are
+used to build both software and hardware components and products.
+
 NOTE: This help is displayed if no goal is specified.
 
 This make file and the included make segments define a framework for
-developing new projects or modifying existing projects. A project can
+developing new products or modifying existing products. A product can
 consist of both software and hardware. A system is defined as all of the
-software components needed by the project. A device is defined as all of
-the hardware components needed by the project. All of the tools and existing
-components needed to build the project are automatically downloaded,
+software components needed by the product. A device is defined as all of
+the hardware components needed by the product. All of the tools and existing
+components needed to build the product are automatically downloaded,
 configured and built if necessary.
 
-The collection of files for a given device or system is termed a mod.
-Semantically, a mod is a modification of an existing device or system or
-a mod can also be the development a new device or system.
+Definitions:
+  repo: A git repository.
 
-In the following, <seg> indicates a makefile segment (included file) where
-<seg> is derived using the name of the makefile segment. Changing the name of
-the file changes the name of the associated variables, macros and, goals.
+  container: A directory containing project or kit repos.
 
-An overrides file, overrides.mk, is supported where the developer can preset
-variables rather than having to define them on the command line. This file is
-intended to be temporary and is not maintained as part of the repository (i.e.
-ignored in .gitignore). Additional kit and mod specific overrides can be
-declared and maintained in an independent repository. See help-kits for more
-information.
+  MOD: The collection of files for a given device or system is termed a mod.
+  Semantically, a mod is a modification of an existing device or system or
+  a mod can also be the development a new device or system. A mod can be
+  dependent upon other mods.
+
+  KIT: A kit is a collection of mods. Each kit is a separate git repository and
+  is cloned from the remote repository when needed. New kits can be created
+  locally.
+
+  PROJECT: A project is the collection of files which define a product. This
+  can be as simple as a single makefile segment but should at minimum be the
+  repository for the product documentation. A project is maintained as a
+  separate git repository. Similar to a kit, a project is automatically cloned
+  when needed or can be created locally. The makefile segment for the project
+  should define the kit repo URLs and branches. One project can be the "active"
+  project. Sticky variables are stored in the active project directory.
+
+  component: A project, kit or, mod. Each component has a unique name which is
+  used to name component attributes (see help-macros). Each component contains
+  a makefile segment having the name <component>.mk which is included when the
+  component is referenced.
+
+  <seg>: Indicates a makefile segment (included file) where <seg> is derived
+  using the name of the makefile segment. Changing the name of the file changes
+  the name of the associated variables, macros and, goals. <seg> is also used
+  to name project and kit repositories.
+
+Repositories and branches:
+  As previously mentioned projects and kits are separate git repositories. Mods
+  can be dependent upon the output of other projects and kits. Different mods
+  can be dependent upon different versions of projects and kits. Managing this
+  potential web of dependencies can be a nightmare and lead to disk thrashing
+  when switching to different branches because of mod dependencies. Therefore,
+  only one branch of a repository can be active. The branch can be specified at
+  the time the repository is cloned. Thereafter branches must be switched
+  manually and all interdependent components can only use the same branch of a
+  given repository.
 
 Naming conventions:
 <seg>           The name of a segment. This is used to declare segment specific
                 variables and to derive directory and file names. As a result
-                no two segments can have the same name.
+                no two segments can have the same file name.
 <seg>.mk        The name of a makefile segment. A makefile segment is designed
                 to be included from another file. These should be formatted to
                 contain a preamble and postamble. See help-helpers for more
@@ -133,7 +167,15 @@ used as the first character of a variable name unpredictable behavior can
 occur. This is particularly important for PROJECT, KIT, MOD and, segment
 names.
 
-Terms:
+Overriding variables:
+An overrides file, overrides.mk, is supported where the developer can preset
+variables rather than having to define them on the command line. This file is
+intended to be temporary and is not maintained as part of the repository (i.e.
+ignored in .gitignore). Additional kit and mod specific overrides can be
+declared and maintained in an independent repository. See help-kits for more
+information.
+
+Architectural components:
 Workstation     A development workstation or a system administration
                 workstation.
 Proxy           Manages connections between workstations and gateways. This is
@@ -210,15 +252,7 @@ Design patterns:
                                              (typically a     bus
                                              serial port)
 
-A separate git repository is used to maintain one or more mods with each mod
-having its own subdirectory within the git repository. A repository
-containing a collection of mods is termed a kit.
-
-This includes (but is not limited to) firmware for microcontroller boards or MCUs (e.g. Arduino),
-OS images for single board computers or SBCs (e.g. Raspberry Pi), 3D
-modeling and printing of cases and enclosures as well as the machines
-they control.
-
+Getting started:
 All that is needed to get started is a clone of this repository and then
 run make within the cloned directory. All of the necessary tools are
 automatically installed within the context of the project directory so
@@ -238,6 +272,15 @@ Command line options:
 
   For automated builds it is possible to preset options in another directory
   then overriding STICKY_PATH either in overrides.mk or on the command line.
+
+  APPEND = ${APPEND}
+    When defined on the command line this triggers the inclusion of a makefile
+    segment named by APPEND. This segment is loaded last after all other
+    segments have been loaded. The Use-Segment macro is used to find and load
+    the segment so segment search paths will be used (see help-helpers for more
+    information).
+    For example: "make APPEND=test" will load the makefile segment named
+    test.mk.
 
 Defines:
   seg_paths

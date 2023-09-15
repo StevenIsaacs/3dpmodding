@@ -1,14 +1,14 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # OctoPrint
 #----------------------------------------------------------------------------
-# The prefix aocp must be unique for all files.
+# The prefix $(call This-Segment-Basename) must be unique for all files.
 # +++++
 # Preamble
-ifndef aocpSegId
-$(call Enter-Segment,aocp)
+ifndef $(call This-Segment-Basename)SegId
+$(call Enter-Segment)
 # -----
 
-$(call Require,${MOD}.mk,GW_OS GW_OS_VARIANT GW_USER GW_APP)
+$(call Require,GW_OS GW_OS_VARIANT GW_USER GW_APP)
 
 GW_INIT_SCRIPT = init-octoprint.sh
 
@@ -74,9 +74,9 @@ $(call Use-Segment,gw_os/${GW_OS})
 
 # +++++
 # Postamble
-ifneq ($(call Is-Goal,help-${aocpSeg}),)
-define help_${aocpSegN}_msg
-Make segment: ${aocpSeg}.mk
+ifneq ($(call Is-Goal,help-${Seg}),)
+define help_${SegV}_msg
+Make segment: ${Seg}.mk
 
 This segment is used to install the OctoPrint initialization script in
 an OS image for controlling a 3D printer.
@@ -100,12 +100,12 @@ Defines:
     a QEMU emulation environment.
 
 Command line goals:
-  help-${aocpSeg}   Display this help.
+  help-${Seg}
+    Display this help.
 endef
-endif # help goal message.
-
-$(call Exit-Segment,aocp)
-else # aocpSegId exists
-$(call Check-Segment-Conflicts,aocp)
-endif # aocpSegId
+endif
+$(call Exit-Segment)
+else
+$(call Check-Segment-Conflicts)
+endif # SegId
 # -----

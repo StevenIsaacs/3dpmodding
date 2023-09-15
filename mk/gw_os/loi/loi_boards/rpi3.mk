@@ -1,11 +1,11 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Board and OS definitions for Raspberry PI boards.
 #----------------------------------------------------------------------------
-# The prefix rpi must be unique for all files.
+# The prefix $(call This-Segment-Basename) must be unique for all files.
 # +++++
 # Preamble
-ifndef rpiSegId
-$(call Enter-Segment,rpi)
+ifndef $(call This-Segment-Basename)SegId
+$(call Enter-Segment)
 # -----
 
 # This is important for emulation.
@@ -37,22 +37,22 @@ raspios_LOI_ROOT_PATH = ${raspios_LOI_P2_NAME}
 
 # +++++
 # Postamble
-ifneq ($(call Is-Goal,help-${rpiSeg}),)
-$(info Help message variable: help_${rpiSegN}_msg)
-define help_${rpiSegN}_msg
-Make segment: ${rpiSeg}.mk
+# Define help only if needed.
+ifneq ($(call Is-Goal,help-${Seg}),)
+define help_${SegV}_msg
+Make segment: ${Seg}.mk
 
 Supported OS variants for Raspberry PI 3 or 4:
   raspios   The official Raspberry PI OS.
   octopi    Raspberry PI OS pre-configured for Octoprint
 
 Command line goals:
-  help-${rpiSeg}   Display this help.
+  help-${Seg}
+    Display this help.
 endef
-endif # help goal message.
-
-$(call Exit-Segment,rpi)
-else # rpiSegId exists
-$(call Check-Segment-Conflicts,rpi)
-endif # rpiSegId
+endif
+$(call Exit-Segment)
+else
+$(call Check-Segment-Conflicts)
+endif # SegId
 # -----

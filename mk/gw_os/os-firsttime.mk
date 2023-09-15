@@ -1,11 +1,11 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # OS First Time
 #----------------------------------------------------------------------------
-# The prefix oft must be unique for all files.
+# The prefix $(call This-Segment-Basename) must be unique for all files.
 # +++++
 # Preamble
-ifndef oftSegId
-$(call Enter-Segment,oft)
+ifndef $(call This-Segment-Basename)SegId
+$(call Enter-Segment)
 # -----
 # Not all variants need a specific os-firsttime.mk
 -include ${MK_PATH}/${GW_OS_VARIANT}_os-firsttime.mk
@@ -17,10 +17,10 @@ install-os-firsttime:
 
 # +++++
 # Postamble
-ifneq ($(call Is-Goal,help-${oftSeg}),)
-$(info Help message variable: help_${oftSegN}_msg)
-define help_${oftSegN}_msg
-Make segment: ${oftSeg}.mk
+# Define help only if needed.
+ifneq ($(call Is-Goal,help-${Seg}),)
+define help_${SegV}_msg
+Make segment: ${Seg}.mk
 
 This segment installs a first time script into an OS image. To do so it
 uses os_image to mount the image. Each GW_OS_VARIANT requires its own version
@@ -44,17 +44,15 @@ Defined in config.mk:
 Defines:
 
 Command line goals:
-  help-${oftSeg}
-    Display this help.
   install-os-firsttime
     Mount the OS image, install the first time script and then unmount the
     OS image.
-
+  help-${Seg}
+    Display this help.
 endef
-endif # help goal message.
-
-$(call Exit-Segment,oft)
-else # oftSegId exists
-$(call Check-Segment-Conflicts,oft)
-endif # oftSegId
+endif
+$(call Exit-Segment)
+else
+$(call Check-Segment-Conflicts)
+endif # SegId
 # -----

@@ -1,11 +1,11 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # PlatformIO
 #----------------------------------------------------------------------------
-# The prefix pio must be unique for all files.
+# The prefix $(call This-Segment-Basename) must be unique for all files.
 # +++++
 # Preamble
-ifndef pioSegId
-$(call Enter-Segment,pio)
+ifndef $(call This-Segment-Basename)SegId
+$(call Enter-Segment)
 # -----
 
 #+
@@ -43,8 +43,8 @@ endef
 ${_pio_venv_package_path}/platformio/__init__.py:
 > $(call _pio-install-python-package, platformio)
 
-.PHONY: ${pioSeg}-python
-${pioSeg}-python: ${pio_venv_requirements}
+.PHONY: ${Seg}-python
+${Seg}-python: ${pio_venv_requirements}
 > ( \
 > . ${pio_venv_path}/bin/activate; \
 > python; \
@@ -53,9 +53,9 @@ ${pioSeg}-python: ${pio_venv_requirements}
 
 # +++++
 # Postamble
-ifneq ($(call Is-Goal,help-${pioSeg}),)
-define help_${pioSegN}_msg
-Make segment: ${pioSeg}
+ifneq ($(call Is-Goal,help-${Seg}),)
+define help_${SegV}_msg
+Make segment: ${Seg}.mk
 
 This segment is used to install PlatformIO for building firmware. Since
 PlatformIO is implemented using Python a Python virtual environment is
@@ -82,17 +82,14 @@ Defines:
     A list of requirements for installing PlatformIO.
 
 Command line goals:
-  help-${pioSeg}
-    Display this help.
-  ${pioSeg}-python
+  ${Seg}-python
     Run Python in the PlatformIO virtual environment.
-
-Uses:
-
+  help-${Seg}
+    Display this help.
 endef
-endif # help goal message.
-$(call Exit-Segment,pio)
-else # pioSegId exists
-$(call Check-Segment-Conflicts,pio)
-endif # pioSegId
+endif
+$(call Exit-Segment)
+else
+$(call Check-Segment-Conflicts)
+endif # SegId
 # -----

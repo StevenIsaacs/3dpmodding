@@ -1,11 +1,11 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Linux OS Image (LOI_) modding.
 #----------------------------------------------------------------------------
-# The prefix loi must be unique for all files.
+# The prefix $(call This-Segment-Basename) must be unique for all files.
 # +++++
 # Preamble
-ifndef loiSegId
-$(call Enter-Segment,loi)
+ifndef $(call This-Segment-Basename)SegId
+$(call Enter-Segment)
 # -----
 
 #+
@@ -30,10 +30,9 @@ LOI_BUILD_PATH = ${MOD_BUILD_PATH}/os-images
 LOI_STAGING_PATH = ${MOD_STAGING_PATH}/os-images
 LOI_IMAGE_MNT_PATH = ${LOI_STAGING_PATH}/mnt
 
-$(call Require,config.mk, HELPER_FUNCTIONS)
+$(call Require,HELPER_FUNCTIONS)
 
 $(call Require,\
-${MOD}.mk, \
 GW_OS_VARIANT \
 GW_OS_BOARD \
 GW_ADMIN \
@@ -49,7 +48,7 @@ MCU_ACCESS_METHOD \
 _AccessMethods = $(call Basenames-In,${LOI_ACCESS_METHODS_PATH}/*.mk)
 $(call Must-Be-One-Of,MCU_ACCESS_METHOD,${_AccessMethods})
 
-$(call Require,${GW_APP}.mk,GW_INIT_SCRIPT)
+$(call Require,GW_INIT_SCRIPT)
 
 # These are a collection of scripts designed to run on the GW during
 # first time initialization. Each make segment can add to this list
@@ -61,7 +60,6 @@ $(call Use-Segment,loi_variants/${GW_OS_VARIANT})
 $(call Use-Segment,gw_access_methods/${MCU_ACCESS_METHOD})
 
 $(call Require,\
-${GW_OS_VARIANT}.mk, \
 ${GW_OS_VARIANT}_TMP_PATH \
 )
 
@@ -70,7 +68,6 @@ _OsTmpPath = ${${GW_OS_VARIANT}_TMP_PATH}
 _OsImageTmpPath = ${LOI_IMAGE_MNT_PATH}/${${GW_OS_VARIANT}_LOI_ROOT_PATH}/${_OsTmpPath}
 
 $(call Require,\
-${GW_OS_BOARD}.mk,\
 GW_OS_ARCH \
 ${GW_OS_VARIANT}_LOI_RELEASE \
 ${GW_OS_VARIANT}_LOI_VARIANT \
@@ -84,7 +81,6 @@ ${GW_OS_VARIANT}_LOI_ROOT_PATH \
 )
 
 $(call Require,\
-${GW_OS_VARIANT}.mk,\
 ${GW_OS_VARIANT}_TMP_PATH \
 ${GW_OS_VARIANT}_ETC_PATH \
 ${GW_OS_VARIANT}_HOME_PATH \
@@ -95,9 +91,9 @@ ${GW_OS_VARIANT}_ADMIN_TMP_PATH \
 )
 
 ifeq (${${GW_OS_VARIANT}_LOI_DOWNLOAD},wget)
-  $(call Require, ${GW_OS_BOARD}.mk,${GW_OS_VARIANT}_LOI_IMAGE_URL)
+  $(call Require,${GW_OS_VARIANT}_LOI_IMAGE_URL)
 else ifeq (${${GW_OS_VARIANT}_LOI_DOWNLOAD},google)
-  $(call Require, ${GW_OS_BOARD}.mk,${GW_OS_VARIANT}_LOI_IMAGE_ID)
+  $(call Require,${GW_OS_VARIANT}_LOI_IMAGE_ID)
 else
   $(call Signal-Error,Unsupported download method: ${${GW_OS_VARIANT}_LOI_DOWNLOAD})
 endif
@@ -323,9 +319,10 @@ clean-os-image:
 
 # +++++
 # Postamble
-ifneq ($(call Is-Goal,help-${loiSeg}),)
-define help_${loiSegN}_msg
-Make segment: ${loiSeg}.mk
+# Define help only if needed.
+ifneq ($(call Is-Goal,help-${Seg}),)
+define help_${SegV}_msg
+Make segment: ${Seg}.mk
 
 Using the mount feature other segments can modify the contents of os image
 as if it were part of the file system. Typically these modules install a
@@ -450,12 +447,12 @@ Uses:
   stage_${GW_OS_VARIANT} defined in ${GW_OS_VARIANT}.mk
 
 Command line goals:
-  help-${loiSeg}   Display this help.
+  help-${Seg}
+    Display this help.
 endef
-endif # help goal message.
-
-$(call Exit-Segment,loi)
-else # loiSegId exists
-$(call Check-Segment-Conflicts,loi)
-endif # loiSegId
+endif
+$(call Exit-Segment)
+else
+$(call Check-Segment-Conflicts)
+endif # SegId
 # -----

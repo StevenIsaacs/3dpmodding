@@ -2,11 +2,11 @@
 # Defines variables, targets, and functions for configuring an OS for proxied
 # access.
 #----------------------------------------------------------------------------
-# The prefix pacm must be unique for all files.
+# The prefix $(call This-Segment-Basename) must be unique for all files.
 # +++++
 # Preamble
-ifndef pacmSegId
-$(call Enter-Segment,pacm)
+ifndef $(call This-Segment-Basename)SegId
+$(call Enter-Segment)
 # -----
 # This service file establishes a reverse tunnel with the proxy.
 # This tunnel is used to transport other sessions established from the
@@ -46,9 +46,10 @@ export ProxyTunnelInitScript
 
 # +++++
 # Postamble
-ifneq ($(call Is-Goal,help-${pacmSeg}),)
-define help_${pacmSegN}_msg
-Make segment: ${pacmSeg}.mk
+# Define help only if needed.
+ifneq ($(call Is-Goal,help-${Seg}),)
+define help_${SegV}_msg
+Make segment: ${Seg}.mk
 
 This defines the variables, targets, and functions for configuring an OS for
 proxied access.
@@ -104,19 +105,18 @@ Defines:
 	number and the proxy URL.
 
 Command line goals:
-  help-${pacmSeg}
-    Display this help.
   gen-proxied
     Generate the necessary keys and support scrits.
   stage-proxied
     Install the keys, service file, and scripts into the OS image.
   clean-proxied
     Remove the generated keys and scripts.
+  help-${Seg}
+    Display this help.
 endef
-endif # help goal message.
-
-$(call Exit-Segment,pacm)
-else # pacmSegId exists
-$(call Check-Segment-Conflicts,pacm)
-endif # pacmSegId
+endif
+$(call Exit-Segment)
+else
+$(call Check-Segment-Conflicts)
+endif # SegId
 # -----

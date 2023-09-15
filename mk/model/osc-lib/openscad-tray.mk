@@ -3,11 +3,11 @@
 # configurations, for efficient storing of parts, such as hardware, small
 # tools, board game inserts, etc.
 #----------------------------------------------------------------------------
-# The prefix osct must be unique for all files.
+# The prefix $(call This-Segment-Basename) must be unique for all files.
 # +++++
 # Preamble
-ifndef osctSegId
-$(call Enter-Segment,osct)
+ifndef $(call This-Segment-Basename)SegId
+$(call Enter-Segment)
 # -----
 
 OPENSCAD_TRAY_VERSION = master
@@ -25,25 +25,24 @@ openscad-tray: ${OPENSCAD_TRAY_DEP}
 
 # +++++
 # Postamble
-ifneq ($(call Is-Goal,help-${osctSeg}),)
-$(info Help message variable: help_${osctSegN}_msg)
-define help_${osctSegN}_msg
-Make segment: ${osctSeg}.mk
+# Define help only if needed.
+ifneq ($(call Is-Goal,help-${Seg}),)
+define help_${SegV}_msg
+Make segment: ${Seg}.mk
 
 openscad-tray - Designed to quickly create trays with different
 configurations, for efficient storing of parts, such as hardware, small
 tools, board game inserts, etc.
 
 Command line goals:
-  help-${osctSeg}
-    Display this help.
   openscad-tray
     Download and install openscad-tray.
+  help-${Seg}
+    Display this help.
 endef
-endif # help goal message.
-
-$(call Exit-Segment,osct)
-else # osctSegId exists
-$(call Check-Segment-Conflicts,osct)
-endif # osctSegId
+endif
+$(call Exit-Segment)
+else
+$(call Check-Segment-Conflicts)
+endif # SegId
 # -----
