@@ -1,5 +1,5 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# <purpose for this segment>
+# Test the ModFW features.
 #----------------------------------------------------------------------------
 # The prefix $(call This-Segment-Basename) must be unique for all files.
 # +++++
@@ -38,8 +38,10 @@ _a_ := a
 _A_ := A
 $(call Info,_a_ = ${_a_} _A_ = ${_A_})
 
-$(call gen-command-goal,test-goal,> @echo test goal.)
-$(call gen-command-goal,test-goal-2,> @echo test goal 2.,Gen test-goal-2?)
+$(call gen-command-goal,test-goal,\
+  > @echo test goal.)
+$(call gen-command-goal,test-goal-2,\
+  > @echo test goal 2.,Gen test-goal-2?)
 
 
 # +++++

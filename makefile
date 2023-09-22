@@ -45,7 +45,7 @@ $(call Use-Segment,config)
 $(call Add-Segment-Path,$(MK_PATH))
 
 # Common macros for ModFW segments.
-$(call Use-Segment,macros)
+$(call Use-Segment,modfw-macros)
 
 $(call Debug,STICKY_PATH = ${STICKY_PATH})
 
@@ -64,6 +64,8 @@ endif
 
 # mod_deps is defined by the mod.
 all: ${MAKEFILE_LIST} ${mod_deps}
+
+create-new: ${repo_goals}
 
 # cleaners is defined by the kit and the mod.
 .PHONY: clean
@@ -92,14 +94,10 @@ components needed to build the product are automatically downloaded,
 configured and built if necessary.
 
 Definitions:
-  repo: A git repository.
-
-  container: A directory containing project or kit repos.
-
   MOD: The collection of files for a given device or system is termed a mod.
   Semantically, a mod is a modification of an existing device or system or
   a mod can also be the development a new device or system. A mod can be
-  dependent upon other mods.
+  dependent upon the goals of other mods.
 
   KIT: A kit is a collection of mods. Each kit is a separate git repository and
   is cloned from the remote repository when needed. New kits can be created
@@ -113,26 +111,30 @@ Definitions:
   should define the kit repo URLs and branches. One project can be the "active"
   project. Sticky variables are stored in the active project directory.
 
-  component: A project, kit or, mod. Each component has a unique name which is
-  used to name component attributes (see help-macros). Each component contains
-  a makefile segment having the name <component>.mk which is included when the
-  component is referenced.
+  repo: A git repository.
+
+  container: A directory containing project or kit repos.
+
+  <comp>: Indicates a reference to a component which can be a project, kit or,
+  mod. Each component has a unique name which is used to name component
+  attributes (see help-modfw-macros). A component is stored in a unique directory having the name <comp>. Each component contains a makefile segment
+  having the name <comp>.mk which is included when the component is used.
 
   <seg>: Indicates a makefile segment (included file) where <seg> is derived
-  using the name of the makefile segment. Changing the name of the file changes
-  the name of the associated variables, macros and, goals. <seg> is also used
-  to name project and kit repositories.
+  using the name of the directory containing makefile segment. Changing the
+  name of the file changes the name of the associated variables, macros and,
+  goals. <seg> is also used to name project and kit repositories.
 
 Repositories and branches:
   As previously mentioned projects and kits are separate git repositories. Mods
   can be dependent upon the output of other projects and kits. Different mods
   can be dependent upon different versions of projects and kits. Managing this
   potential web of dependencies can be a nightmare and lead to disk thrashing
-  when switching to different branches because of mod dependencies. Therefore,
-  only one branch of a repository can be active. The branch can be specified at
-  the time the repository is cloned. Thereafter branches must be switched
-  manually and all interdependent components can only use the same branch of a
-  given repository.
+  when switching to different branches because of mod interdependencies.
+  Therefore, only one branch of a repository can be active. The branch can be
+  specified at the time the repository is cloned. Thereafter, branches must be
+  switched manually and all interdependent components can only use the same
+  branch of a given repository.
 
 Naming conventions:
 <seg>           The name of a segment. This is used to declare segment specific
@@ -269,6 +271,13 @@ Command line options:
     to another.
     To help avoid naming conflicts use the prefix prj- when naming projects.
     See help-kits for additional required sticky options.
+  PROJECT_REPO = ${PROJECT_REPO}
+    The repository to clone the project from if it hasn't been installed.
+  PROJECT_BRANCH = ${PROJECT_BRANCH}
+    The branch to switch the project to after cloned.
+    Default:
+      DEFAULT_BRANCH = ${DEFAULT_BRANCH}
+        The default branch used for all repos.
 
   For automated builds it is possible to preset options in another directory
   then overriding STICKY_PATH either in overrides.mk or on the command line.
@@ -282,16 +291,12 @@ Command line options:
     For example: "make APPEND=test" will load the makefile segment named
     test.mk.
 
-Defines:
-  seg_paths
-    A list of paths to be searched when using additional make segments.
-    NOTE: Kits and mods can extend this list (using +=). This list is then
-    passed to the Use-Segment macro (see help-helpers).
-
 Command line goals:
-  all             The firmware is built and all assembly files are processed
-                  to generate the 3D printable parts. Use show-mod_deps for
-                  a list of goals.
+  all             All mods for the active project are built. Use show-mod_deps
+                  for a list of goals.
+  create-new      Create all of the new components indicated by NEW_PROJECT,
+                  NEW_KIT and, NEW_MOD (see help-projects, help-kits or,
+                  help-mods).
   clean           Remove all of the build artifacts. This removes the build
                   and staging directories.
 

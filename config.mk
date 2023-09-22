@@ -30,6 +30,11 @@ $(call Overridable,TOOLS_PATH,${WorkingPath}/tools)
 # Where executables are installed.
 $(call Overridable,BIN_PATH,${TOOLS_PATH}/bin)
 
+# Default repo to use when creating new repos.
+$(call Overridable,DEFAULT_REPO,local)
+# The default branch used when creating or cloning repos.
+$(call Overridable,DEFAULT_BRANCH,main)
+
 # +++++
 # Postamble
 # Define help only if needed.
