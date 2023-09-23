@@ -1,5 +1,5 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# Install kits and load the kit and the mod.
+# Manage multiple ModFW kits using git, branches, and tags.
 #----------------------------------------------------------------------------
 # The prefix $(call This-Segment-Basename) must be unique for all files.
 # +++++
@@ -14,171 +14,40 @@ $(call Overridable,DEFAULT_KITS_DIR,$(Seg))
 # Where the mod kits are cloned to.
 # NOTE: This is ignored in .gitignore.
 $(call Overridable,DEFAULT_KITS_PATH,${WorkingPath}/${DEFAULT_KITS_DIR})
-# If this is not equal to "local" then a remote repo is cloned to create
-# the kit specific configurations. Otherwise, a new git repository is
-# created and initialized.
-$(call Overridable,DEFAULT_KIT_REPO,local)
-# The branch used by the active project.
-$(call Overridable,DEFAULT_KIT_BRANCH,main)
 
+$(call Sticky,KITS_DIR,${DEFAULT_KITS_DIR})
 $(call Sticky,KITS_PATH,${DEFAULT_KITS_PATH})
 
 # The active kit.
 $(call Sticky,KIT)
-$(call Sticky,KIT_REPO,DEFAULT_KIT_REPO)
-$(call Sticky,KIT_BRANCH,DEFAULT_KIT_BRANCH)
 
-kit_deps :=
-used_kits :=
+$(call Require,KIT)
 
-define use-kit
-$.ifeq ($(1),)
-$$(call Signal-Error,use-kit:The kit has not been specified.)
-$.else $.ifneq ($(1)_seg,)
-$$(call Info,use-kit:Kit $(1) is already in use.)
-$.else
-$$(call Verbose,Using kit: $(1))
+#+
+# For the active kit.
+#-
+# These variables are in the active project directory.
+$(call Sticky,KIT_REPO,${DEFAULT_REPO})
+$(call Sticky,KIT_BRANCH,${DEFAULT_BRANCH})
 
-$(call declare-comp,$(1),${KITS_PATH})
+$(call activate-repo,KIT,${Seg},mods)
 
-# Pseudo code:
-# IF the kit exists
-  $.ifneq $($$(wildcard $${$(1)_mk}),)
-    kit_deps += $$($(1)_mk)
-# 2 IF the kit attribute $(1)_REPO is not defined
-    $.ifeq ($(2),)
-      $$(call Verbose,Setting $(1)_REPO using clone directory.)
-#     Define $(1)_REPO using the existing repo
-      $(1)_REPO := \
-        $$(shell cd $${$(1)_path} && git config --get remote.origin.url)
-#     Save the discovered value as a sticky variable
-      $$(call Redefine-Sticky,$(1)_REPO)
-      $$(call Debug,$(1)_REPO:$${$(1)_REPO})
-# 2 ENDIF
-    $.endif
-# 2 IF the kit attribute $(1)_BRANCH is not defined
-    $.ifeq ($(3),)
-      $$(call Verbose,Setting $(1)_BRANCH using clone directory.)
-#     Define $(1)_BRANCH using the existing repo
-      $(1)_BRANCH := \
-        $$(shell cd $${$(1)_path} && git rev-parse --abbrev-ref HEAD)
-#     Save the discovered value as a sticky variable
-      $$(call Redefine-Sticky,$(1)_BRANCH)
-      $$(call Debug,$(1)_BRANCH:$${$(1)_BRANCH})
-# 2 ENDIF
-    $.endif
-#   Add a segment path for the kit
-    $$(call Add-Segment-Path,$${$(1)_path})
-#   Use the kit segment
-    $$(Use-Segment,$(1))
-    used_kits += $(1)
-# ELSE the kit does not exist locally
-  $.else
-# Use git to clone the kit from the server $(1)_REPO.
-$${$(1)_mk}:
-> mkdir -p ${KITS_PATH}
-> git clone $${$(1)_REPO} $${$(1)_path}
-> cd $${$(1)_path} && git checkout $${$(1)_BRANCH}
+# To build the active project.
+active-kit: ${${KIT}_repo_mk}
 
-    $$(call Use-Segment,$${$(1)_mk})
-    used_kits += $(1)
-# ENDIF Kit exists
-  $.endif
-  $(1)_mods := $(filter-out .git,$(call Directories-In,${$(1)_path}))
-$.endif
-endef # use-kit
+# To remove all projects.
+ifneq ($(call Is-Goal,remove-${Seg}),)
 
-new_kits :=
-new_kit_deps :=
+  $(call Info,Removing all kits in: ${KITS_PATH})
+  $(call Warn,This cannot be undone!)
+  ifeq ($(call Confirm,Remove all kits -- can not be undone?),y)
 
-define new-kit
-$.ifneq ($(1)_seg,)
-$$(call Signal-Error,new-kit:Kit $(1) is already in use.)
-$.else
-$$(call Verbose,Creating new kit: $(1))
+remove-${Seg}:
+> echo "rm -rf ${KITS_PATH}"
 
-$(call declare-comp,$(1),${KITS_PATH})
+  endif
 
-# Confirm create kit
-# IF Yes
-  $.ifneq ($$(call Confirm,Create new kit $(1)?,y),)
-    $$(call Sticky,$(1)_REPO=$(2),DEFAULT_KIT_REPO)
-    $$(call Sticky,$(1)_BRANCH=$(3),DEFAULT_KIT_BRANCH)
-# 2 IF a basis kit has NOT been specified
-    $.ifeq ($(4),)
-#     Not using a BASIS_KIT
-#     Use git to initialize a new kit repo
-      $$(call Info,Creating kit: $(1))
-      k_$${$(1)_var}_seg := \
-        $$(call Gen-Segment,\
-        Kit specific definitions for kit: $(1),$(1):)
-      $.export k_$${$(1)_var}_seg
-
-$${$(1)_path}/.git:
-> git init -b $${$(1)_BRANCH} $${@D}
-
-$${$(1)_mk}: $${$(1)_path}/.git
-> mkdir -p $$(@D) && printf "%s" "$${Dlr}k_$${$(1)_var}_seg" > $$@
-
-# New kits must be initialized using this goal to avoid typos creating
-# useless kits.
-$(1)-create-kit: $${$(1)_mk}
-> @echo Kit $(1) has been created.
-
-# 2 ELSE use a basis kit to create the new kit
-    $.else # Use existing basis kit.
-      $$(call Info,Creating kit: $(1) using $(2))
-      $(call declare-comp-kit,k_basis_$(1))
-#   3 IF the basis kit exists
-      $.ifneq ($$(wildcard $${k_basis_$(1)_path},))
-
-#       Use git to clone the existing kit (git clone basis new)
-#       Use git to remove the origin of the new kit (git remote rm origin)
-
-# The basis kit segment is retained in the new kit for reference.
-$(1)-create-kit: $${k_basis_$(1)_mk}
-> git clone k_basis_$(2)_path $(1)_path
-> git remote rm origin $(1)_path
-> echo "# Derived from basis project - $(2)" > $${$(1)_mk}
-> sed \
-    -e 's/$${k_basis_$(1)_var}/$${$(1)_var}/g' \
-    -e 's/$(2)/$(1)/g' \
-    $${k_basis_$(1)_mk} >> $${$(1)_mk}
-
-#   3 ELSE The basis kit does not exist.
-      $.else
-        $$(call Signal-Error,Seed kit $(2) does not exist.)
-#   3 ENDIF Seed kit exists.
-      $.endif
-# 2 ENDIF Use basis kit.
-    $.endif
-  new_kits += $(1)
-  new_kit_deps := $(1)-create-kit
-  $$(call Sticky,$(1)_REPO=${DEFAULT_KIT_REPO})
-  $$(call Sticky,$(1)_BRANCH=${DEFAULT_KIT_BRANCH})
-# ELSE NO, don't create a new kit.
-  $.else
-    $$(call Signal-Error,Kit $(1) does not exist and not creating.)
-
-$(1)-create-kit:
-
-# ENDIF
-  $.endif
-$.endif
-endef # new-kit
-
-${Seg} = $(filter-out .git,$(call Directories-In,${KITS_PATH}))
-
-ifneq (${NEW_KIT},)
-  $(eval $(call new-kit,${NEW_KIT},${BASIS_KIT}))
 endif
-
-create-kit: ${new_kit_deps}
-
-# Load the active kit.
-#$(eval $(call use-kit,${KIT},${KIT_REPO},${KIT_BRANCH}))
-
-#$(call Use-Segment,mods)
 
 # +++++
 # Postamble

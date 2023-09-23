@@ -36,6 +36,20 @@ $(call activate-repo,PROJECT,${Seg},kits)
 # To build the active project.
 active-project: ${${PROJECT}_repo_mk}
 
+# To remove all projects.
+ifneq ($(call Is-Goal,remove-${Seg}),)
+
+  $(call Info,Removing all projects in: ${PROJECTS_PATH})
+  $(call Warn,This cannot be undone!)
+  ifeq ($(call Confirm,Remove all projects -- can not be undone?),y)
+
+remove-${Seg}:
+> echo "rm -rf ${PROJECTS_PATH}"
+
+  endif
+
+endif
+
 # +++++
 # Postamble
 # Define help only if needed.
