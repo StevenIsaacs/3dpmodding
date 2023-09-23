@@ -45,7 +45,7 @@ $(call Use-Segment,config)
 $(call Add-Segment-Path,$(MK_PATH))
 
 # Common macros for ModFW segments.
-$(call Use-Segment,modfw-macros)
+$(call Use-Segment,repo-macrosacros)
 
 $(call Debug,STICKY_PATH = ${STICKY_PATH})
 
@@ -117,7 +117,7 @@ Definitions:
 
   <comp>: Indicates a reference to a component which can be a project, kit or,
   mod. Each component has a unique name which is used to name component
-  attributes (see help-modfw-macros). A component is stored in a unique directory having the name <comp>. Each component contains a makefile segment
+  attributes (see help-repo-macrosacros). A component is stored in a unique directory having the name <comp>. Each component contains a makefile segment
   having the name <comp>.mk which is included when the component is used.
 
   <seg>: Indicates a makefile segment (included file) where <seg> is derived
