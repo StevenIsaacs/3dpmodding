@@ -33,18 +33,20 @@ $(call Sticky,KIT_BRANCH,${DEFAULT_BRANCH})
 $(call activate-repo,KIT,${Seg},mods)
 
 # To build the active project.
-active-kit: ${${KIT}_repo_mk}
+activate-kit: ${${KIT}_repo_mk}
 
 # To remove all projects.
 ifneq ($(call Is-Goal,remove-${Seg}),)
 
   $(call Info,Removing all kits in: ${KITS_PATH})
   $(call Warn,This cannot be undone!)
-  ifeq ($(call Confirm,Remove all kits -- can not be undone?),y)
+  ifeq ($(call Confirm,Remove all ${Seg} -- can not be undone?,y),y)
 
 remove-${Seg}:
-> echo "rm -rf ${KITS_PATH}"
+> rm -rf ${KITS_PATH}
 
+  else
+    $(call Info,Not removing ${Seg}.)
   endif
 
 endif
