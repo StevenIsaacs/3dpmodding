@@ -31,46 +31,7 @@ $(call Require,PROJECT)
 $(call Sticky,PROJECT_REPO,${DEFAULT_REPO})
 $(call Sticky,PROJECT_BRANCH,${DEFAULT_BRANCH})
 
-# $(foreach _d,$(call Directories-In,${PROJECTS_PATH}),
-# Build a list of valid projects.
-projects := $(call Directories-In,${PROJECTS_PATH})
-
-ifneq (,)
-$(foreach _d,$(call Directories-In,${PROJECTS_PATH}),\
-  $(basename $(notdir $(wildcard ${PROJECTS_PATH}/${_d}/${_d}.mk)))\
-)
-endif
-
-ifneq (${NEW_PROJECT},)
-  ifneq ($(call Confirm,Create new repo ${NEW_PROJECT}?,y),)
-  # Ensure the new project is indeed new.
-    $(call Sticky,${NEW_PROJECT}_REPO,${DEFAULT_REPO})
-    $(call Sticky,${NEW_PROJECT}_BRANCH,${DEFAULT_BRANCH})
-    ifneq ($(filter,${NEW_PROJECT},${projects}),)
-      $(call Signal-Error,New project ${NEW_PROJECT} already exists.)
-    else
-      ifneq (${BASIS_PROJECT},)
-        $(call Sticky,${BASIS_PROJECT}_REPO,${DEFAULT_REPO})
-        $(call Sticky,${BASIS_PROJECT}_BRANCH,${DEFAULT_BRANCH})
-      endif
-      $(call new-repo,${PROJECTS_PATH},${NEW_PROJECT},${BASIS_PROJECT})
-    endif
-  else
-    $(call Signal-Error,Not creating repo ${NEW_PROJECT}.)
-  endif
-else
-  # Automatically use the active project if not creating a new project.
-  $(call Sticky,${PROJECT}_REPO,${PROJECT_REPO})
-  $(call Sticky,${PROJECT}_BRANCH,${PROJECT_BRANCH})
-
-  active_project_path := \
-    ${PROJECTS_PATH}/${PROJECT}/${PROJECT}-${PROJECT_BRANCH}
-  # Sticky variables are stored in the active project.
-  STICKY_PATH := ${active_project_path}/sticky
-
-  $(call use-repo,${PROJECTS_PATH},${PROJECT})
-  $(call Use-Segment,kits)
-endif
+$(call activate-repo,PROJECT,${Seg},kits)
 
 # To build the active project.
 active-project: ${${PROJECT}_repo_mk}
