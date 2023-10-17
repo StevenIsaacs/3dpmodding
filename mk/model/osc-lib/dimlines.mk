@@ -2,10 +2,10 @@
 # dimlines - Create dimensioned lines, title blocks and more which are used
 # to document parts.
 #----------------------------------------------------------------------------
-# The prefix $(call This-Segment-Basename) must be unique for all files.
+# The prefix $(call Last-Segment-Basename) must be unique for all files.
 # +++++
 # Preamble
-ifndef $(call This-Segment-Basename)SegId
+ifndef $(call Last-Segment-Basename)SegId
 $(call Enter-Segment)
 # -----
 dimlines_VERSION = master

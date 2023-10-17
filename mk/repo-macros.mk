@@ -1,392 +1,19 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# Macros to support ModFW segments.
+# Macros to support ModFW repos.
 #----------------------------------------------------------------------------
-# The prefix $(call This-Segment-Basename) must be unique for all files.
+# The prefix $(call Last-Segment-Basename) must be unique for all files.
 # +++++
 # Preamble
-ifndef $(call This-Segment-Basename)SegId
+ifndef $(call Last-Segment-Basename)SegId
 $(call Enter-Segment)
 # -----
 
-comps :=
-
-define declare-comp
-$(if ${$(2)_seg},
-  $(call Warn,declare-comp:Component $(2) has already been declared.)
-,
-  $(call Verbose,declare-comp:Declaring component $(2).)
-  $(eval $(2)_seg := $(2))
-  $(eval $(2)_dir := $(2))
-  $(eval $(2)_path := $(1)/$(2))
-  $(eval $(2)_mk := ${$(2)_path}/$(2).mk)
-  $(eval $(2)_var := $(call To-Shell-Var,$(2)))
-  $(eval comps += $(2))
-)
-endef
-
 repos :=
-
-define declare-repo
-$(call Verbose,declare-repo:Declaring repo $(1).)
-$(if $(2),
-  $(if $(filter $(2),${$(1)_REPO}),
-    $(call Verbose,declare-repo:$(1)_REPO unchanged.)
-  ,
-    $(call Verbose,declare-repo:Redefining $(1)_REPO.)
-    $(call Redefine-Sticky($(1)_REPO=$(2)))
-  )
-)
-
-$(if $(3),
-  $(if $(filter $(3),${$(1)_BRANCH}),
-    $(call Verbose,declare-repo:$(1)_BRANCH unchanged.)
-  ,
-    $(call Verbose,declare-repo:Redefining $(1)_BRANCH.)
-    $(call Redefine-Sticky($(1)_BRANCH=$(3)))
-  )
-)
-
-$(eval $(1)_repo_dir := ${$(1)_dir})
-$(eval $(1)_repo_path := ${$(1)_path})
-$(eval $(1)_repo_dep := ${$(1)_repo_path}/.git)
-$(eval $(1)_repo_mk := ${$(1)_repo_path}/$(1).mk)
-
-$(eval  repos += $(1))
-
-endef
-
 repo_goals :=
 
-define gen-init-dep-goal
-$(call Verbose,gen-init-dep-goal:Goal: ${$(1)_repo_dep})
-
-$(eval
-
-${$(1)_repo_dep}:
-> git init -b ${$(1)_BRANCH} $$(@D)
-
-)
-
-endef
-
-define gen-clone-dep-goal
-$(call Verbose,gen-clone-dep-goal:Goal: ${$(1)_repo_dep})
-
-$(eval
-
-${$(1)_repo_dep}:
-> mkdir -p $$(@D) && git clone ${$(1)_REPO} $$(@D)
-> cd $$(@D) && git switch ${$(1)_BRANCH}
-
-)
-endef
-
-define gen-repo-goal
-$(call Verbose,gen-repo-goal:Generating $(1) goal for $(2).)
-$(if $(filter $(1),init clone),
-  $(eval repo_goals += ${$(2)_repo_mk})
-  $(call gen-$(1)-dep-goal,$(2))
-
-  $(eval _seg_${$(2)_var}_txt := \
-    $$(call Gen-Segment,$(2),Makefile segment for repo: $(2)))
-  $(eval export _seg_${$(2)_var}_txt)
-
-  $(eval
-
-${$(2)_repo_mk}: ${$(2)_repo_dep}
-> if [ -e $$@ ]; \
-  then \
-    touch $$@; \
-  else \
-    echo "$$$$_seg_${$(2)_var}_txt" >$$@; \
-    cd $$(@D) && git add . && git commit . -m "New component initialized."; \
-  fi
-
-  )
-,
-  $(call Signal-Error,\
-    gen-repo-goal:Parameter 1=$(1) must be either init or clone.)
-)
-endef
-
-define gen-basis-to-new-goal
-$(eval repo_goals += ${$(1)_repo_mk})
-$(eval
-
-${$(1)_repo_dep}: ${$(2)_repo_mk}
-> git clone $$(<D) $$(@D)
-
-${$(1)_repo_mk}: ${$(1)_repo_dep}
->  echo "# Derived from basis - $(2)" > $$@
->  sed \
-    -e 's/$(2)/$(1)/g' \
-    -e 's/${$(2)_var}/${$(1)_var}/g' \
-    ${$(2)_repo_mk} >> $$@
-> cd $$(@D) && git add . && git commit . -m "New component derived from $(2)."
-
-)
-endef
-
-define gen-command-goal
-$(if $(call Is-Goal,$(1)),
-  $(call Verbose,gen-goal:Generating $(1) to do "$(2)")
-  $(if $(3),
-    $(if $(call Confirm,$(3),y),
-      $(eval
-$(1):
-$(strip $(2))
-      )
-    ,
-    $(call Verbose,Not doing $(1))
-    )
-  ,
-    $(eval
-$(1):
-$(strip $(2))
-    )
-  )
-,
-  $(call Verbose,gen-goal:Goal $(1) is not on command line.)
-)
-endef
-
-define gen-branching-goals
-$(call gen-command-goal,$(1)-branches,\
-  > cd ${$(1)_repo_path} && git branch)
-
-$(call gen-command-goal,$(1)-switch-branch,\
-  > cd ${$(1)_repo_path} && git switch ${$(1)_BRANCH})
-
-$(call gen-command-goal,$(1)-new-branch,\
-  > cd ${$(1)_repo_path} && \
-    git branch ${$(1)_BRANCH},\
-  Create branch ${$(1)_BRANCH} in $(1)?)
-
-$(call gen-command-goal,$(1)-remove-branch,\
-  > cd ${$(1)_repo_path} && \
-    git branch -d ${$(1)_BRANCH},\
-  Delete branch ${$(1)_BRANCH} from $(1)?)
-endef
-
-define use-repo
-$(if $(1),
-  $(if $(2),
-    $(if ${(2)_seg},
-      $(call Info,use-repo:Component $(2) is already in use.)
-    ,
-      $(call declare-comp,$(1),$(2))
-      $(call declare-repo,$(2))
-      $(if $(wildcard ${$(2)_repo_mk}),
-        $(call Info,use-repo:Using repo: $(2))
-        $(call gen-branching-goals,$(2),)
-        $(call Add-Segment-Path,${$(2)_repo_path})
-        $(call Use-Segment,$(2))
-      ,
-        $(if ${$(2)_REPO},
-          $(call Info,use-repo:Generating goal to clone repo: $(2))
-          $(call gen-repo-goal,clone,$(2))
-        ,
-          $(call Signal-Error,\
-            use-repo:Repo $(2) is not defined. Use create-new.)
-        )
-      )
-    )
-  )
-,
-  $(call Signal-Error,use-repo:The repo path has not been specified.)
-)
-endef
-
-define dup-repo
-$(if $(2),
-  $(if $(3),
-    $(call Verbose,dup-repo:Using $(3) as basis for $(2).)
-    $(if $(1),
-      $(call use-repo,$(1),$(3))
-      $(call gen-basis-to-new-goal,$(2),$(3))
-    ,
-      $(call Signal-Error,\
-        dup-repo:The new and basis repo path has not been specified.)
-    )
-  ,
-    $(call Signal-Error,dup-repo:The basis repo has not been specified.)
-  )
-,
-  $(call Signal-Error,dup-repo:The new repo has not been specified.)
-)
-endef
-
-define create-repo
-$(call Verbose,create-repo:Creating repo $(1).)
-$(call Verbose,create-repo:repo:${$(1)_REPO})
-$(call Verbose,create-repo:Filtered:$(filter local,${$(1)_REPO}))
-$(if $(filter local,${$(1)_REPO}),
-  $(call Verbose,create-repo:Creating $(1).)
-  $(call gen-repo-goal,init,$(1))
-,
-  $(call Signal-Error:create-repo:Can only create a local repo.)
-)
-endef
-
-define new-repo
-$(if $(1),
-  $(call Sticky,$(2)_REPO,${DEFAULT_REPO})
-  $(call Sticky,$(2)_BRANCH,${DEFAULT_BRANCH})
-  $(if ${$(2)_REPO},
-    $(if ${(2)_seg},
-      $(call Signal-Error,new-repo:Repo $(2) has already been declared.)
-    ,
-      $(call Info,Creating new repo for: $(2))
-      $(call declare-comp,$(1),$(2))
-      $(call declare-repo,$(2))
-      $(if $(3),
-        $(call Verbose,new-repo:Duplicating $(2) to repo $(3).)
-        $(call dup-repo,$(1),$(2),$(3))
-      ,
-        $(call Verbose,new-repo:Creating repo $(2).)
-        $(call create-repo,$(2))
-      )
-    )
-  ,
-    $(call Signal-Error,new-repo:The new repo has not been defined.)
-  )
-,
-  $(call Signal-Error,new-repo:The new repo path has not been specified.)
-)
-endef
-
-define activate-repo
-$(if $(filter $(1),PROJECT KIT),
-  $(eval $(2) := $(call Directories-In,${$(1)S_PATH}))
-  $(if ${NEW_$(1)},
-    $(call Verbose,activate-repo:Creating a new $(1) repo.)
-    $(if $(call Confirm,Create new repo ${NEW_$(1)}?,y),
-      $(call Sticky,${NEW_$(1)}_REPO,${DEFAULT_REPO})
-      $(call Sticky,${NEW_$(1)}_BRANCH,${DEFAULT_BRANCH})
-      $(if $(filter,${NEW_$(1)},${projects}),
-        $(call Signal-Error,New project ${NEW_$(1)} already exists.)
-      ,
-        $(if ${BASIS_$(1)},
-          $(call Sticky,${BASIS_$(1)}_REPO,${DEFAULT_REPO})
-          $(call Sticky,${BASIS_$(1)}_BRANCH,${DEFAULT_BRANCH})
-        )
-        $(call new-repo,${$(1)S_PATH},${NEW_$(1)},${BASIS_$(1)})
-      )
-    ,
-      $(call Signal-Error,Not creating repo ${NEW_$(1)}.)
-    )
-  ,
-    $(call Verbose,activate-repo:Activate an existing $(1) repo.)
-    $(call Sticky,${$(1)}_REPO,${$(1)_REPO})
-    $(call Sticky,${$(1)}_BRANCH,${$(1)_BRANCH})
-
-    $(if $(filter $(1),PROJECT),
-      $(call Verbose,activate-repo:Pointing STICKY_PATH to the active project.)
-      $(eval STICKY_PATH := ${$(1)S_PATH}/${$(1)}/${$(1)}-${$(1)_BRANCH}/sticky)
-    )
-    $(call use-repo,${$(1)S_PATH},${$(1)})
-    $(call Use-Segment,$(3))
-  )
-,
-  $(call Signal-Error,activate-repo:Class is $(1) but must be PROJECT or KIT.)
-)
-
-endef
-
-# +++++
-# Postamble
-# Define help only if needed.
-ifneq ($(call Is-Goal,help-${Seg}),)
-define help_${SegV}_msg
-Make segment: ${Seg}.mk
-
-This segment defines macros callable from other ModFW segments.
-
-Defines the macros:
-
-declare-comp
-  Define the attributes for a ModFW component. A ModFW component can be a
-  project, kit or mod. The component name is used:
-  - As a prefix for associated variable names (attributes).
-  - As the name of the component makefile segment.
-  - As the name or part of the name of the directory in which the component
-    resides.
-  - In the case of projects and kits as the name of the repo in which the
-    component is maintained.
-  A component must be declared before any other component related macros can be
-  used.
-  Parameters:
-    1 = The path to the directory containing the component directory.
-    2 = The name of the component (<comp>).
-  Defines variables:
-    <comp>_seg    The segment defining the component.
-    <comp>_dir    The name of the directory containing the component.
-    <comp>_path   The path to the directory containing the component files.
-    <comp>_mk     The makefile segment defining the component.
-    <comp>_var    The shell variable name corresponding to the component.
-
-declare-repo
-  Define the attributes of a component repo. A repo must be declared before
-  any other repo related macros can be used.
-  Parameters:
-    1 = The name of the component declared using declare-comp (<comp>).
-    2 = Optional default repo URL.
-    3 = Optional default repo branch.
-  Defines variables:
-    <comp>_REPO       A sticky variable containing the repo URL.
-    <comp>_BRANCH     A sticky variable containing the brach to switch to.
-    <comp>_repo_dir   The name of the repo directory. This is a combination of
-                      the <seg> name and the <seg>_BRANCH.
-    <comp>_repo_path  The full path to the repo.
-    <comp>_repo_dep   A dependency for the repo. This uses the .git directory in
-                      the repo directory as the dependency.
-    repos             Adds the repo to the list of repos.
-
-gen-init-repo-goal
-  Generate a goal to create and initialize a repo in a local directory. A
-  makefile segment for the repo having the same name as the repo is also
-  generated.
-  NOTE: The new component and repo must have already been declared.
-  Parameters:
-    1 = The name of the new repo (<comp>).
-  Uses:
-    <comp>_BRANCH = The main branch for the new repo.
-
-gen-clone-repo-goal
-  Generate a goal to clone a remote project or kit repo to a local directory and
-  switch to the specified branch.
-  Parameters:
-    1 = The name of the component corresponding to the repo (<comp>). This is
-        used to reference the associated variables.
-  Defines variables:
-    <comp>_goal   The goal to use to trigger cloning or creating the repo.
-    repo_goals    Adds the repo goal to the list of repo goals. This variable
-                  can be used to trigger clones of all repos in the list.
-  Uses:
-    <comp>_REPO   The URL for the repo.
-    <comp>_BRANCH The branch to switch to after cloning the repo. The branch
-                  must exist.
-
-gen-basis-to-new-goal
-  Generate a goal to use a basis component to create a new component. The basis
-  component references are changed to the new component references.
-  Parameters:
-    1 = The new component.
-    2 = The basis component.
-  Uses variables:
-    <comp>_mk The makefile segment for the new component.
-    <comp>_mk The makefile segment for the basis component.
-
-gen-command-goal
-  Generate a goal. This is provided to reduce repetitive typing. The goal is
-  generated only if it is referenced on the command line.
-  Parameters:
-    1 = The name of the goal.
-    2 = The commands for the goal.
-    3 = An optional prompt. This generates a y/N confirmation and the goal is
-        generated only if the response is y.
-
-gen-branching-goals
+_macro := gen-branching-goals
+define _help
+${_macro}
   Generate goals to help manage repos. These are provided for convenience to
   help the developer avoid having to find directories where repos are stored.
   Parameters:
@@ -401,103 +28,688 @@ gen-branching-goals
       Prompts to create a new branch and if yes creates the branch.
     <comp>-remove-branch
       Prompts to remove an existing branch and if yes deletes the branch.
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(call Enter-Macro,gen-branching-goals)
+$(call Gen-Command-Goal,$(1)-branches,\
+  > cd ${$(1)_repo_path} && git branch)
 
-use-repo
-  Use a project or kit repo. If the repo doesn't exist locally a goal is
-  generated to clone the repo from a remote server.
-  NOTE: This macro is also be designed to be called by mods which are dependent
-  on the output of another component.
+$(call Gen-Command-Goal,$(1)-switch-branch,\
+  > cd ${$(1)_repo_path} && git switch ${$(1)_BRANCH})
+
+$(call Gen-Command-Goal,$(1)-new-branch,\
+  > cd ${$(1)_repo_path} && \
+    git branch ${$(1)_BRANCH},\
+  Create branch ${$(1)_BRANCH} in $(1)?)
+
+$(call Gen-Command-Goal,$(1)-remove-branch,\
+  > cd ${$(1)_repo_path} && \
+    git branch -d ${$(1)_BRANCH},\
+  Delete branch ${$(1)_BRANCH} from $(1)?)
+$(call Exit-Macro)
+endef
+
+_macro := repo-is-declared
+define _help
+${_macro}
+  Returns a non-empty value if the repo has been declared.
+endef
+help-${_macro} := $(call _help)
+${_macro} = $(if $(filter $(1),${repos}),1)
+
+_macro := is-repo
+define _help
+${_macro}
+  This returns a non-empty value if the repo exists.
   Parameters:
-    1 = The path to the repo.
+    1 = The name of a previously declared repo.
+endef
+help-${_macro} := $(call _help)
+${_macro} = $(if $(wildcard ${$(1)_repo_dep}/HEAD),1)
+
+_macro := declare-repo
+define _help
+${_macro}
+  Define the attributes of a component repo. A repo must be declared before
+  it can be used, created or cloned. A component of the same name is first
+  declared.
+  NOTE: See help-<repo> for more information.
+  Parameters:
+    1 = The repo <class> must be one of: ${repo_classes}.
+    2 = The name of the repo and its corresponding component (<repo>).
+        NOTE: This can be different than the sticky variable.
+  Defines variables:
+    Sticky variables:
+    <repo>_SERVER
+      Default: <class>_SERVER
+      The repo server.
+    <repo>_ACCOUNT
+      Default: <class>_ACCOUNT
+      The account on the server.
+    <repo>_REPO
+      Default: <class>_REPO
+      The repo on the server.
+    <repo>_URL
+      Default: <repo>_SERVER<repo>_ACCOUNT/<repo>_REPO
+      The full URL for the remote repo or full PATH for a local repo.
+    <repo>_BRANCH     The branch to switch to.
+      Default: <class>_BRANCH
+    Attributes:
+    <repo>_repo_class The class of the repo.
+    <repo>_repo_dir   The name of the repo directory which is equal to <comp>.
+    <repo>_repo_path  The full path to the repo. This is a combination of
+                      <class>S_PATH and the <repo> name.
+    <repo>_repo_dep   A dependency for the repo. This uses the .git directory in
+                      the repo directory as the dependency.
+    repos             Adds the repo to the list of repos.
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(call Enter-Macro,declare-repo)
+$(if $(call repo-is-declared,$(2)),
+  $(call Warn,Repo $(2) has already been declared.)
+,
+  $(if $(call Must-Be-One-Of,$(1),${repo_classes}),
+    $(call Verbose,Declaring repo $(2).)
+    $(call declare-comp,${$(1)S_PATH},$(2))
+
+    $(call Sticky,$(2)_SERVER=${$(2)_SERVER},${$(1)_SERVER})
+    $(call Sticky,$(2)_ACCOUNT=${$(2)_ACCOUNT},${$(1)_ACCOUNT})
+    $(call Sticky,$(2)_REPO=${$(2)_REPO},${$(1)})
+    $(call Sticky,\
+      $(2)_URL=${$(2)_URL},${$(2)_SERVER}${$(2)_ACCOUNT}/${$(2)_REPO})
+    $(call Sticky,$(2)_BRANCH=${$(2)_BRANCH},${$(1)_BRANCH})
+
+    $(eval $(2)_repo_class := $(1))
+    $(eval $(2)_repo_dir := ${$(2)_dir})
+    $(eval $(2)_repo_path := ${$(2)_path})
+    $(eval $(2)_repo_dep := ${$(2)_repo_path}/.git)
+    $(eval $(2)_repo_mk := ${$(2)_repo_path}/$(2).mk)
+    $(eval  repos += $(2))
+  ,
+    $(call Signal-Error,The repo class must be one of ${repo_classes}.)
+  )
+)
+$(call Exit-Macro)
+
+endef
+
+_macro := init-repo
+define _help
+${_macro}
+  Use git to initialize a new repo.
+  Parameters:
+    1 = The name of a previously declared repo to init.
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(call Enter-Macro,init-repo)
+$(if $(wildcard ${$(1)_repo_dep}),
+  $(call Warn,The repo for $(1) exists -- no init.)
+,
+  $(call Run,git init -b ${$(1)_BRANCH} ${$(1)_repo_path})
+  $(call Debug,git init return code:(${Run_Rc}))
+  $(if ${Run_Rc},
+    $(call Debug,Run returned:${Run_Output})
+    $(call Signal-Error,Error when initializing repo $(1).)
+  )
+)
+$(call Exit-Macro)
+endef
+
+_macro := repo-is-setup
+define _help
+${_macro}
+  Returns a non-empty value if the repo has been setup.
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(strip
+  $(call Enter-Macro,repo-is-setup)
+  $(if $(and $$(call is-comp-dir,$(1)),$$(call is-repo,$(1))),
+    $(call Run,grep $(1) ${$(1)_repo_mk})
+    $(if ${Run_Rc},
+      $(call Debug,grep returned:${Run_Rc})
+    ,
+      1
+    )
+  )
+  $(call Exit-Macro)
+)
+endef
+
+_macro := get-repo-url
+define _help
+${_macro}
+  Use git to get the URL for the repo. If the repo is local then the
+  LOCAL_REPO (${LOCAL_REPO}) is returned.
+  returned.
+  Parameters:
+    1 = The name of an existing and previously declared repo.
+  Returns:
+    The url for the repo.
+    Run_Rc and Run_Output
+      See Run (help-helpers).
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(strip
+  $(call Enter-Macro,get-repo-url)
+  $(call Run,cd ${$(1)_repo_path} && git ls-remote --get-url)
+  $(if ${Run_Rc},
+    $(call Debug,Using LOCAL_REPO:${LOCAL_REPO})
+    ${LOCAL_REPO}
+  ,
+    $(word 1,${Run_Output})
+  )
+  $(call Exit-Macro)
+)
+endef
+
+_macro := get-repo-branch
+define _help
+${_macro}
+  Use git to get the active branch for the repo.
+  Parameters:
+    1 = The name of an existing and previously declared repo.
+  Returns:
+    The url for the repo. This is empty if git returned an error.
+    Run_Rc and Run_Output
+      See Run (help-helpers).
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(strip
+  $(call Enter-Macro,get-repo-branch)
+  $(call Run,cd ${$(1)_repo_path} && git symbolic-ref --short HEAD)
+  $(if ${Run_Rc},
+    $(call Signal-Error,Could not get branch from ${$(1)_repo})
+  ,
+    $(word 1,${Run_Output})
+  )
+  $(call Exit-Macro)
+)
+endef
+
+_macro := clone-repo
+define _help
+${_macro}
+  Use git to clone either a local or remote repo to a new repo and switch to
+  the specified branch.
+  Parameters:
+    1 = The name of an existing and previously declared repo.
+  Uses:
+    <1>_REPO
+      The URL of the repo to clone from.
+    <1>_BRANCH
+      The branch to switch to.
+  Returns:
+    Run_Rc and Run_Output
+      See Run (help-helpers).
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(call Enter-Macro,clone-repo)
+$(if $(wildcard ${$(1)_repo_dep}),
+  $(call Verbose,The repo for $(1) exists -- no init.)
+,
+  $(call Run, \
+    mkdir -p ${$(1)_repo_path} && \
+    git clone ${$(1)_URL} ${$(1)_repo_path} && \
+    cd ${$(1)_repo_path} && \
+    git switch ${$(1)_BRANCH}\
+  )
+)
+$(call Exit-Macro)
+endef
+
+_macro := remove-repo
+define _help
+${_macro}
+  Remove a repo. This deletes the repo directory. To help mitigate accidental
+  deletions the action is first confirmed.
+  WARNING: Use with care! This can have serious consequences.
+  Parameters:
+    1 = The name of the repo to remove.
+    2 = Optional error severity level. This is the name of the macro to call
+        to report an error after attempting to remove the repo directory. This
+        must be one of Info, Warn, or Signal-Error.
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+  $(call Enter-Macro,remove-repo)
+  $(if $(wildcard ${$(1)_repo_path}),
+    $(if $(call Confirm,Remove ${$(1)_repo_path}?,y),
+      $(call Run,rm -rf ${$(1)_repo_path})
+      $(call Debug,Returned:${Run_Output})
+      $(if ${Run_Rc},
+        $(call Signal-Error,Removing directory failed.)
+      )
+    ,
+      $(call Info,Declined -- not removing $(1).)
+    )
+  ,
+    $(eval _expect := Repo $(1) directory does not exist.)
+    $(call Debug,Error action is:$(2))
+    $(if $(2),
+      $(call $(2),${_expect})
+    ,
+      $(call Signal-Error,${_expect})
+    )
+  )
+  $(call Exit-Macro)
+endef
+
+define _repo_seg_mk
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Makefile segment for $(1): $(2)
+#----------------------------------------------------------------------------
+# The prefix $(2) must be unique for all files.
+# The format of all the $(2) based names is required.
+# +++++
+# Preamble
+$.ifndef $(2)SegId
+$$(call Enter-Segment)
+# -----
+
+$$(call Info,New segment: Add variables, macros, goals, and recipes here.)
+
+# The command line goal for the segment.
+$${Seg}: $${SegF}
+
+# +++++
+# Postamble
+# Define help only if needed.
+$.ifneq ($$(call Is-Goal,help-$${Seg}),)
+$.define help_$${SegV}_msg
+Make segment: $${Seg}.mk
+
+# Place overview here.
+
+# Add help messages here.
+
+Attributes:
+  Sticky variables:
+    $${Seg}_SERVER := $${$${Seg}_SERVER}
+      The server on which the repo is maintained. NOTE: If this is equal to
+      ${LOCAL_REPO} then there is no remote server for this repo.
+    $${Seg}_ACCOUNT := $${$${Seg}_ACCOUNT}
+      The account on the server.
+    $${Seg}_REPO := $${$${Seg}_REPO}
+      The name of the repo on the server.
+    $${Seg}_URL := $${$${Seg}_URL}
+      The full URL for cloning the repo from either a local repo or a remote
+      server.
+    $${Seg}_BRANCH := $${$${Seg}_BRANCH}
+      The branch to switch to after cloning the repo.
+  Defined variables:
+    $${Seg}_repo_class := $${$${Seg}_repo_class}
+      The class associated with this repo.
+      NOTE: This must be equal to one of: ${repo_classes}
+    $${Seg}_repo_dir := $${$${Seg}_repo_dir}
+      The name of the directory where the repo is stored locally. This is the
+      <comp> name for the repo which can be different than $${Seg}_REPO.
+    $${Seg}_repo_path := $${$${Seg}_repo_path}
+      The full path to the repo directory.
+    $${Seg}_repo_dep := $${$${Seg}_repo_dep}
+      A dependency for the repo. This uses the .git directory
+
+Defines:
+  # Describe each variable or macro.
+
+Command line goals:
+  $${Seg}
+    Build this component.
+  # Describe additional goals provided by the segment.
+  help-$${Seg}
+    Display this help.
+
+$.endef
+$.endif # help goal message.
+
+$$(call Exit-Segment)
+$.else # $$(call Last-Segment-Basename)SegId exists
+$$(call Check-Segment-Conflicts)
+$.endif # $$(call Last-Segment-Basename)SegId
+# -----
+
+endef
+
+_macro := gen-repo-mk
+define _help
+${_macro}
+  Uses _repo_seg_mk to generate a makefile segment for the repo including a
+  help section which will display the repo attributes.
+  Parameters:
+    1 = The repo class.
+    2 = The name of a previously declared repo to add the makefile segment to.
+  For example:
+  $$(call gen-repo-mk,PROJECT,a-repo)
+  generates:
+$(call _repo_seg_mk,PROJECT,a-repo)
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(call Enter-Macro,gen-repo-mk)
+$(file >${$(2)_repo_mk},$(call _repo_seg_mk,$(1),$(2)))
+$(call Exit-Macro)
+endef
+
+_macro := setup-repo
+define _help
+${_macro}
+  Uses gen-repo-mk to generate a makefile segment for the repo using the
+  helpers template (see help-helpers Gen-Segment-File) and use git to commit
+  add and commit the file to the repo.
+  NOTE: This generates a template only. The dev expected to modify the file to
+  suite the project or kit.
+  Parameters:
+    1 = The action to perform -- init or clone.
+    2 = The repo class.
+    3 = The name of a previously declared repo to add the makefile segment to.
+  Returns:
+    Run_Rc and Run_Output
+      See Run (help-helpers).
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(call Enter-Macro,setup-repo)
+$(call Verbose,Performing $(1) for repo $(2):$(3).)
+$(if $(filter $(1),init clone),
+  $(eval repo_goals += ${$(3)_repo_mk})
+  $(call $(1)-repo,$(3))
+  $(if $(call repo-is-setup,$(3)),
+    $(call Verbose,Using existing repo makefile segment.)
+  ,
+    $(call Verbose,Generating repo makefile segment.)
+    $(call Verbose,Generating segment for class:$(2))
+    $(call gen-repo-mk,$(2),$(3))
+    $(call Run, \
+      cd $(dir ${$(3)_repo_mk}) && \
+      git add . && git commit . -m "New component initialized."
+    )
+    $(if ${Run_Rc},
+      $(call Signal-Error,\
+        Error when committing $(3) makefile segment.)
+    )
+  )
+,
+  $(call Signal-Error,\
+    Parameter 1=$(1) but must be either init or clone.)
+)
+$(call Exit-Macro)
+endef
+
+_macro := clone-basis-to-new-repo
+define _help
+${_macro}
+  Clone an existing local or remote repo and use the existing makefile segment
+  as the basis to create a new makefile segment for the new segment. The new
+  makefile segment is then added and committed to the repo. The origin of the
+  new repo is removed to avoid accidental commits to the basis repo.
+  Parameters:
+    1 = The existing local or remote repo to use as the basis for the new repo.
+    2 = The name of the new repo.
+  Returns:
+    Run_Rc and Run_Output
+      See Run (help-helpers).
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(call Enter-Macro,clone-basis-to-new-repo)
+$(eval repo_goals += ${$(2)_repo_mk})
+$(if $(wildcard ${$(2)_repo_mk}),
+  $(call Warn,Using existing repo $(2).)
+,
+  $(if $(wildcard ${$(2)_repo_dep}),
+    $(call Warn,Repo $(2) exists -- adding makefile segment.)
+  ,
+    $(if $(wildcard ${$(1)_repo_dep}),
+      $(if $(wildcard ${$(1)_repo_mk}),
+        $(if $(call Require,$(2)_URL),
+          $(call Signal-Error,URL for $(2) is not defined.)
+        ,
+          $(call clone-repo,$(2))
+          $(call Run, \
+            cd ${$(2)_repo_path} && git remote remove origin \
+          )
+          $(call Debug,Git RC:(${Run_Rc}))
+          $(if ${Run_Rc},
+            $(call Signal-Error,Error cloning basis repo.)
+          ,
+            $(call Verbose,Editing:${$(2)_repo_mk})
+            $(call Run, \
+                echo "# Derived from basis - $(1)" > ${$(2)_repo_mk} &&\
+                sed \
+                    -e 's/$(1)/$(2)/g' \
+                    -e 's/${$(1)_var}/${$(2)_var}/g' \
+                    ${$(1)_repo_mk} >> ${$(2)_repo_mk} && \
+                cd ${$(2)_repo_path} && \
+                git add . && \
+                git commit . -m "New component derived from $(2)." \
+            )
+            $(call Debug,Edit RC:(${Run_Rc}))
+            $(if ${Run_Rc},
+              $(call Signal-Error,Error during edit of repo mk file.)
+            )
+          )
+        )
+      ,
+        $(call Signal-Error,Basis repo is not a ModFW repo.)
+      )
+    ,
+      $(call Signal-Error,Basis repo $(1) does not exist.)
+    )
+  )
+)
+$(call Exit-Macro)
+endef
+
+_macro := new-repo
+define _help
+${_macro}
+  Create a new local repo for a project or a kit. This can be based on an
+  existing repo. This is called when NEW_<class> has been defined on the
+  command line. This is intended to be called from activate-repo. If the
+  new repo is based (cloned from) upon an existing repo clone-basis-to-new-repo
+  is called to create the new repo.
+  Parameters:
+    1 = Repo <class>: PROJECT or KIT
+    2 = The component name (<comp>) for the repo. This is used to name the repo
+        directory and associated variables.
+    3 = Optional basis repo.
+  Defines:
+    <2>_SERVER
+    Default: <class>_SERVER
+      The server hosting the repo. If this equals ${LOCAL_REPO} then the
+      <class>_PATH is used and <2>_ACCOUNT is ignored.
+    <2>_ACCOUNT
+    Default: <class>_ACCOUNT
+      The account on the server.
+    <2>_REPO
+    Default: <class>_REPO
+      The name of the directory in which the repo is stored. This can be
+      different than the <comp> (<2>). Which allows multiple copies of the
+      same repo which may be handy for parallel versions.
+    <2>_URL
+    Default: ${$(1)_SERVER}${$(1)_ACCOUNT}/${$(1)_REPO}
+      The URL for the new repo. If the repo is local only then this is the
+      full path to the repo.
+    <2>_BRANCH
+    Default: ${DEFAULT_BRANCH}
+      The initial master branch for the new repo.
+  Uses:
+    If <3> is non-empty then:
+    <3>_SERVER
+    <3>_ACCOUNT
+    <3>_URL
+    <3>_BRANCH
+      This is the name of the component for which the repo is created.
+      e.g make NEW_PROJECT=<project> or make NEW_KIT=<kit>
+    BASIS_<class> If not empty clones an existing repo to a new repo.
+      i.e BASIS_<class>=<new>
+      e.g. make NEW_PROJECT=<project> BASIS_PROJECT=<basis>
+    <new>_REPO=<url>
+      The URL for the new repo. If undefined this defaults to
+      DEFAULT_<CLASS>_REPO.
+    <new>_BRANCH=<branch>
+      The default branch to specify when creating the new repo. This
+      defaults to DEFAULT_<class>_BRANCH.
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(call Enter-Macro,new-repo)
+$(if ${$(2)_REPO},
+  $(if $(call comp-is-declared,$(2)),
+    $(call Signal-Error,Repo $(2) has already been declared.)
+  ,
+    $(call Info,Creating new repo for: $(2))
+    $(call declare-repo,$(1),$(2))
+    $(if $(3),
+      $(call Verbose,Using $(2) as basis for repo $(3).)
+      $(call clone-basis-to-new-repo,$(2),$(3))
+    ,
+      $(call Verbose,Creating repo $(2).)
+      $(call setup-repo,init,$(1),$(2))
+    )
+  )
+,
+  $(call Signal-Error,The new repo has not been defined.)
+)
+$(call Exit-Macro)
+endef
+
+_macro := use-repo
+define _help
+${_macro}
+  Use a project or kit repo. If the repo doesn't exist locally the repo is
+  cloned either from a local repo or from a remote server depending upon
+  <2>_REPO. This is designed to be called by other components be they projects,
+  kits, or mods. NOTE: In this case commits to this repo can be pushed to the
+  origin repo.
+  Parameters:
+    1 = The destination path to the repo clone.
     2 = The name of the component (<comp>) corresponding to the repo. This is
         used to name the repo directory and associated variables.
+  Returns:
+    Run_Rc and Run_Output
+      See Run (help-helpers).
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(call Enter-Macro,use-repo)
+$(if $(1),
+  $(if $(2),
+    $(if ${(2)_seg},
+      $(call Info,Component $(2) is already in use.)
+    ,
+      $(call declare-repo,$(1),$(2))
+      $(call Add-Segment-Path,${$(2)_repo_path})
+      $(if $(wildcard ${$(2)_repo_mk}),
+        $(call Info,Using repo: $(2))
+      ,
+        $(if ${$(2)_REPO},
+          $(call Info,Cloning repo: $(2))
+          $(call clone-repo,$(2))
+        ,
+          $(call Signal-Error,\
+            Repo $(2) is not defined. Use create-new.)
+        )
+      )
+      $(call gen-branching-goals,$(2),)
+      $(call Use-Segment,$(2))
+    )
+  )
+,
+  $(call Signal-Error,The repo path has not been specified.)
+)
+$(call Exit-Macro)
+endef
 
-dup-repo
-  Copy an existing repo to serve as the basis for a new repo. The makefile
-  segment for the basis repo is used to generate the new makefile segment with
-  references to the basis component changed to reference the new component. The
-  basis makefile segment is retained for reference but no longer used. This
-  also generates a "create-repo" goal which must be used on the command line
-  which helps avoid accidental creation of useless repos.
-  Parameters:
-    1 = The path to the directory where the repo will be stored.
-    2 = The name of the component (<comp>) corresponding to the new repo. This
-        is used to name the repo directory and associated variables.
-    3 = The basis component (<basis>) to clone when creating the new repo.
-  Uses:
-    <comp>_REPO     The URL for the new repo.
-    <comp>_BRANCH   The default branch for the new repo.
-    <comp>_path     Where to clone the new repo to.
-    <comp>_mk       The full path to the makefile segment for the new repo.
-    <basis>_REPO    The URL for the basis repo.
-    <basis>_BRANCH  The default branch for the basis repo.
-    <basis>_path    Where the basis repo resides or is cloned to.
-    <basis>_mk      The full path to the makefile segment for the basis repo.
-
-create-repo
-  Create a new repo. The makefile segment for the new repo is generated using
-  the helpers defined template.
-  Parameters:
-    1 = The name of the component (<comp>) corresponding to the new repo. This
-        is used to name the repo directory and the associated variables.
-  Uses:
-    <comp>_REPO     The URL for the new repo.
-
-new-repo
-  Create a new local repo for a project or a kit. This generates the
-  "create-repo" goal which must be used on the command line to create the new
-  repo which helps avoid accidental creation of useless repos.
-  Parameters:
-    1 = The path to where the repo will be stored.
-    2 = The name of the segment corresponding to the repo. This is used to
-        name the repo directory and associated variables.
-    3 = Optional basis repo to clone when creating the new repo. If used this
-        triggers a call to dup-repo.
-
-activate-repo
-  Activate a project or kit repo. This creates, clones or uses project or kit
-  repositories. This is the primary repo macro.
+_macro := activate-repo
+define _help
+${_macro}
+  Activate a project or kit repo (<comp>) as specified by the <class> variable.
+  If the repo has not been installed then it is cloned from an existing repo.
+  The existing repo can be either local or remote. In either case commits to
+  the active repo can be pushed to the original repo.
   NOTE: Only one PROJECT and one KIT can be active at a time.
   Parameters:
     1 = Repo <class>: PROJECT or KIT
-    2 = The name of the variable to use to hold the list of existing repos
-        for the <class>. NOTE: Only repos can be stored in this directory.
-    3 = The name of the <next> segment to load after handling the repo. In the
-        case of a PROJECT this should be "kits". In the case of a KIT this
-        should be "mods".
   Uses:
-    <class>S_PATH The path to the directory where the class repos are stored.
-  Modes:
-    This macro supports two mutually exclusive modes; create and use.
+    <class>       The class variable (i.e. PROJECT or KIT) specifying which
+                  repo (<comp>) is intended to be the active repo.
+    <class>S_PATH The path to the directory where the <class> repos are stored.
+                  NOTE: Only repos should exist in this directory. Directories
+                  that are not repos will be confused with repos and could
+                  produce unexpected results.
+    <comp>_REPO     The remote repo to clone if the component exist locally.
+    <comp>_BRANCH   The branch to switch to after cloning the repo.
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(call Enter-Macro,activate-repo)
+$(eval _class := $(call To-Lower,$(1)))
+$(call Sticky,$(1))
 
-    create  This mode is used to create a new repo when NEW_<class> is not
-            empty. It adds dependencies to the "create-new" goal (see help).
-            Creating a new repo requires an initial run of make to create the
-            new repo before the repos can be used in a later run of make. This
-            is because the new repo component makefile segment will simply be a
-            template which must be completed by the developer before it will
-            have any effect.
-      Calls:
-        new-repo
-      Uses:
-        NEW_<class>   If not empty creates a new PROJECT or KIT. This is the
-                      name of the component for which the repo is created.
-        BASIS_<class> If not empty duplicates an existing project to a new
-                      project.
+$(if $(call Require,$(1)),
+  $(call Signal-Error,$(1) has not been specified -- not activating.)
+,
+  $(call Sticky,${$(1)}_REPO)
+  $(call Sticky,${$(1)}_BRANCH,${DEFAULT_BRANCH})
+  $(if $(call Require,${$(1)}_REPO),
+    $(call Signal-Error,$(1)_REPO has not been specified -- not activating.)
+  ,
+    $(call Attention,Using branch:${$(1)_BRANCH})
+    $(call use-repo,${$(1)S_PATH},${$(1)})
+  )
+)
+$(call Exit-Macro)
+endef
 
-    use     This mode uses an existing repo. The goals generated by this mode
-            will install the repo from a remote server if it doesn't exist
-            locally. The next segment (<next>) is loaded after the goals for
-            the component have been generated.
-      Calls:
-        use-repo
-      Uses:
-        <class>         The name of the component to use. This is either
-                        PROJECT or KIT.
-        <class>_REPO    The remote repo to clone if the component exist locally.
-        <class>_BRANCH  The branch to switch to after cloning the repo.
-        STICKY_PATH     If the <class> is PROJECT then the sticky variables are
-                        stored within the project repo.
+# +++++
+# Postamble
+# Define help only if needed.
+ifneq ($(call Is-Goal,help-${Seg}),)
+define help-${Seg}
+Make segment: ${Seg}.mk
+
+This segment defines macros for managing ModFW repos. They are not intended to
+be called only by the higher level macros (see help-projects, help-kits, and
+help-mods).
+
+Defines the support macros:
+${help-gen-branching-goals}
+
+${help-repo-is-declared}
+
+${help-declare-repo}
+
+${help-init-repo}
+
+${help-repo-is-setup}
+
+${help-get-repo-url}
+
+${help-get-repo-branch}
+
+${help-clone-repo}
+
+${help-remove-repo}
+
+${help-gen-repo-mk}
+
+${help-setup-repo}
+
+${help-clone-basis-to-new-repo}
+
+These are the primary API macros:
+${help-new-repo}
+
+${help-use-repo}
+
+${help-activate-repo}
 
 Command line goals:
   help-${Seg}   Display this help.

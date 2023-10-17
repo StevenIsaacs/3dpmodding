@@ -2,10 +2,10 @@
 # MCAD - components commonly used in designing and mocking up mechanical
 # designs.
 #----------------------------------------------------------------------------
-# The prefix $(call This-Segment-Basename) must be unique for all files.
+# The prefix $(call Last-Segment-Basename) must be unique for all files.
 # +++++
 # Preamble
-ifndef $(call This-Segment-Basename)SegId
+ifndef $(call Last-Segment-Basename)SegId
 $(call Enter-Segment)
 # -----
 $(info MCAD library)

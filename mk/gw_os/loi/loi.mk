@@ -1,10 +1,10 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Linux OS Image (LOI_) modding.
 #----------------------------------------------------------------------------
-# The prefix $(call This-Segment-Basename) must be unique for all files.
+# The prefix $(call Last-Segment-Basename) must be unique for all files.
 # +++++
 # Preamble
-ifndef $(call This-Segment-Basename)SegId
+ifndef $(call Last-Segment-Basename)SegId
 $(call Enter-Segment)
 # -----
 
@@ -17,7 +17,7 @@ $(call Enter-Segment)
 # point to the corresponding directories.
 #-
 
-_loi_Path := $(call This-Segment-Path)
+_loi_Path := $(call Last-Segment-Path)
 
 # Configuration
 LOI_BOARDS_PATH = ${_loi_Path}/loi_boards

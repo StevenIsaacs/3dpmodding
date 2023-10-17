@@ -1,10 +1,10 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Load a mod -- the mod has already been handled.
 #----------------------------------------------------------------------------
-# The prefix $(call This-Segment-Basename) must be unique for all files.
+# The prefix $(call Last-Segment-Basename) must be unique for all files.
 # +++++
 # Preamble
-ifndef $(call This-Segment-Basename)SegId
+ifndef $(call Last-Segment-Basename)SegId
 $(call Enter-Segment)
 # -----
 
@@ -23,7 +23,7 @@ ifneq ($(call Is-Goal,help-${Seg}),)
 define help_${SegV}_msg
 Make segment: ${Seg}.mk
 
-A mod contains all of the variables, goals and, recipes needed to build all
+A mod contains all of the variables, goals, and recipes needed to build all
 of the components needed for the mod.
 
 A mod can be dependent upon other mods in the same kit or different kits.
@@ -60,7 +60,7 @@ Defines:
 
 Macros:
   use-mod
-    Declare mod specific variables, macros and, goals (a namespace). This
+    Declare mod specific variables, macros, and goals (a namespace). This
     allows having one mod dependent upon the output of different mod. If
     the mod segment exists then it is loaded. Otherwise, the kit containing the
     mod is installed or if the "create-mod" goal is used a new mod is created.
@@ -94,7 +94,7 @@ Macros:
         The mod repo branch is switched to <branch>.
 
   new-mod
-    Create a new mod and declare mod specific variables, macros and, goals (a namespace). The mod is created locally and will not have a corresponding
+    Create a new mod and declare mod specific variables, macros, and goals (a namespace). The mod is created locally and will not have a corresponding
     remote repository.
 
     Parameters:

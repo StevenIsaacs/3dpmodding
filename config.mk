@@ -1,12 +1,15 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # ModFW config variables.
 #----------------------------------------------------------------------------
-# The prefix $(call This-Segment-Basename) must be unique for all files.
+# The prefix $(call Last-Segment-Basename) must be unique for all files.
 # +++++
 # Preamble
-ifndef $(call This-Segment-Basename)SegId
+ifndef $(call Last-Segment-Basename)SegId
 $(call Enter-Segment)
 # -----
+
+repo_classes := PROJECT KIT
+comp_classes := ${repo_classes} MOD
 
 # Make segments and related files for specific features.
 $(call Overridable,MK_PATH,${WorkingPath}/mk)
@@ -16,22 +19,27 @@ $(call Overridable,MK_PATH,${WorkingPath}/mk)
 # deleted by a clean.
 #-
 # For downloaded files.
-$(call Overridable,DOWNLOADS_PATH,${WorkingPath}/downloads)
+$(call Overridable,DOWNLOADS_DIR,downloads)
+$(call Overridable,DOWNLOADS_PATH,${WorkingPath}/${DOWNLOADS_DIR})
 
 # Where intermediate build files are stored.
-$(call Overridable,BUILD_PATH,${WorkingPath}/build)
+$(call Overridable,BUILD_DIR,build)
+$(call Overridable,BUILD_PATH,${WorkingPath}/${BUILD_DIR})
 
 # Where the mod output files are staged.
-$(call Overridable,STAGING_PATH,${WorkingPath}/staging)
+$(call Overridable,STAGING_DIR,staging)
+$(call Overridable,STAGING_PATH,${WorkingPath}/${STAGING_DIR})
 
 # Where various tools are downloaded and installed.
-$(call Overridable,TOOLS_PATH,${WorkingPath}/tools)
+$(call Overridable,TOOLS_DIR,tools)
+$(call Overridable,TOOLS_PATH,${WorkingPath}/${TOOLS_DIR})
 
 # Where executables are installed.
-$(call Overridable,BIN_PATH,${TOOLS_PATH}/bin)
+$(call Overridable,BIN_DIR,bin)
+$(call Overridable,BIN_PATH,${TOOLS_PATH}/${BIN_DIR})
 
 # Default repo to use when creating new repos.
-$(call Overridable,DEFAULT_REPO,local)
+$(call Overridable,LOCAL_REPO,local)
 # The default branch used when creating or cloning repos.
 $(call Overridable,DEFAULT_BRANCH,main)
 
@@ -59,7 +67,7 @@ Unless otherwise noted the following can be overridden either on the command
 line or in overrides.mk. Using overrides eliminates the need to modify the
 framework itself.
 
-Make segment paths.
+Make segment paths:
 MK_PATH = ${MK_PATH}
   Where the included make segments are maintained for different build modules.
 
@@ -69,17 +77,28 @@ MODEL_MK_PATH = ${MODEL_MK_PATH}
 HELPERS_PATH = ${HELPERS_PATH}
   Where helper scripts and utilities are maintained.
 
-These may be deleted as part of a clean.
+These may be deleted as part of a clean:
+TOOLS_PATH = ${TOOLS_PATH}
+  Where build tools are installed.
 STAGING_PATH = ${STAGING_PATH}
   Where the build output files for a mod are staged. They are copied here
   so all output files are located in one place. Each kit and mod are staged
   in subdirectories. i.e. <staging_dir>/<kit>/<mod>
-TOOLS_PATH = ${TOOLS_PATH}
-  Where build tools are installed.
 BIN_PATH = ${BIN_PATH}
   Where executable binaries for support utilities are installed.
 DOWNLOADS_PATH = ${DOWNLOADS_PATH}
   Where the downloaded OS images and other mod specific files are stored.
+
+For managing repos:
+repo_classes = ${repo_classes}
+  The classes which are repos.
+comp_classes = ${comp_classes}
+  Valid component classes.
+LOCAL_REPO = ${LOCAL_REPO}
+  The name used to indicate a component is local only (no remote or clone).
+DEFAULT_BRANCH = ${DEFAULT_BRANC}
+  The default branch name to use when creating a new repo or switch to after
+  cloning an existing repo.
 
 Other make segments can define sticky options. These are options which become
 defaults once they have been used. Sticky options can also be preset in the

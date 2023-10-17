@@ -32,10 +32,16 @@ _null := $(shell \
 # Helper macros.
 include ${_helpers}
 
+ifneq ($(call Is-Goal,help),help)
+
 # Using a conditional here because of needing to add a dependency on the
 # overrides.mk only if it exists.
 ifneq ($(wildcard overrides.mk),)
   $(call Use-Segment,overrides)
+endif
+
+ifdef PREPEND
+  $(call Use-Segment,$(PREPEND))
 endif
 
 # Config will change the sticky directory to be PROJECT specific.
@@ -45,14 +51,18 @@ $(call Use-Segment,config)
 $(call Add-Segment-Path,$(MK_PATH))
 
 # Common macros for ModFW segments.
+$(call Use-Segment,comp-macros)
 $(call Use-Segment,repo-macros)
 
 $(call Debug,STICKY_PATH = ${STICKY_PATH})
 
-# Setup PROJECT specific variables and goals. A project changes the STICKY_PATH
-# to point to the project repo. This way sticky options are also under revision
-# control.
-$(call Use-Segment,projects)
+# Testing takes control of when projects, kits, and mods are loaded.
+ifeq (${TESTING},)
+
+  # Setup PROJECT specific variables and goals. A project changes the
+  # STICKY_PATH to point to the project repo. This way sticky options are also # under revision control.
+  $(call Use-Segment,projects)
+endif # TESTING
 
 ifdef APPEND
   $(call Use-Segment,${APPEND})
@@ -65,6 +75,7 @@ endif
 # mod_deps is defined by the mod.
 all: ${MAKEFILE_LIST} ${mod_deps}
 
+# TODO: Remove this?
 create-new: ${repo_goals}
 
 # cleaners is defined by the kit and the mod.
@@ -73,10 +84,10 @@ clean: ${cleaners}
 > rm -rf ${BUILD_PATH}
 > rm -rf ${STAGING_PATH}
 
-SHELL = /bin/bash
+endif # Not help.
 
-ifneq ($(filter help,$(Goals)),)
-define _mod_fw_usage
+ifneq ($(call Is-Goal,help),)
+define help-Usage
 Usage: make [<option>=<value> ...] [<goal>]
 
 This is the top level make file for ModFW. NOTE: ModFW is not a build system.
@@ -97,11 +108,11 @@ Definitions:
   MOD: The collection of files for a given device or system is termed a mod.
   Semantically, a mod is a modification of an existing device or system or
   a mod can also be the development a new device or system. A mod can be
-  dependent upon the goals of other mods.
+  dependent upon the goals of other mods. Only one mod can be the "active" mod.
 
   KIT: A kit is a collection of mods. Each kit is a separate git repository and
   is cloned from the remote repository when needed. New kits can be created
-  locally.
+  locally. One kit can be the "active" kit.
 
   PROJECT: A project is the collection of files which define a product. This
   can be as simple as a single makefile segment but should at minimum be the
@@ -109,21 +120,28 @@ Definitions:
   separate git repository. Similar to a kit, a project is automatically cloned
   when needed or can be created locally. The makefile segment for the project
   should define the kit repo URLs and branches. One project can be the "active"
-  project. Sticky variables are stored in the active project directory.
+  project. Sticky variables are stored in the active project directory. See
+  help-helpers for more information about sticky variables.
 
-  repo: A git repository.
+  <repo>: A git repository.
 
   container: A directory containing project or kit repos.
 
-  <comp>: Indicates a reference to a component which can be a project, kit or,
+  <comp>: Indicates a reference to a component which can be a project, kit, or
   mod. Each component has a unique name which is used to name component
-  attributes (see help-repo-macros). A component is stored in a unique directory having the name <comp>. Each component contains a makefile segment
+  attributes (see help-repo-macros). A component is stored in a unique
+  directory having the name <comp>. Each component contains a makefile segment
   having the name <comp>.mk which is included when the component is used.
+
+  <class>: Indicates a component class used to indicate how the component is
+  intended to be used. This can be one of: ${comp_classes}
 
   <seg>: Indicates a makefile segment (included file) where <seg> is derived
   using the name of the directory containing makefile segment. Changing the
-  name of the file changes the name of the associated variables, macros and,
+  name of the file changes the name of the associated variables, macros, and
   goals. <seg> is also used to name project and kit repositories.
+
+  dev:  The project, kit, and/or mod developer.
 
 Repositories and branches:
   As previously mentioned projects and kits are separate git repositories. Mods
@@ -145,13 +163,15 @@ Naming conventions:
                 contain a preamble and postamble. See help-helpers for more
                 information.
 GLOBAL_VARIABLE Can be overridden on the command line. Sticky variables should
-                have this form. See help-helpers for more information about
-                sticky variables.
+                have this form unless they are for a component in which case
+                the should use the <seg>_VARIABLE form (below). See
+                help-helpers for more information about sticky variables.
 global_variable Available to all segments but should not be overridden on the
                 command line. Attempts to override can have unpredictable
                 results.
 <seg>_VARIABLE  A global variable prefixed with the name of the segment defining
                 the variable. These can be overridden on the command line.
+                Component specific sticky variables should use this form.
 <seg>_variable  A global variable prefixed with the name of the segment
                 defining the variable. These should not be overridden.
 _private_variable Make segment specific. Should not be used by other segments
@@ -160,13 +180,15 @@ callable-macro  The name of a callable macro available to all segments.
 _private-macro  A private macro specific to a segment.
 GlobalVariable  Camel case is used to identify variables defined by the
                 helpers. This is mostly helpers.mk.
+Global_Variable This form is also used by the helpers to bring ore attention
+                to a variable.
 Callable-Macro  The name of a helper defined callable macro.
 
 WARNING: Even though make allows variable names to begin with a numeric
 character this must be avoided for all variable names since they may be
 exported to the environment to be passed to bash. If a numeric character is
 used as the first character of a variable name unpredictable behavior can
-occur. This is particularly important for PROJECT, KIT, MOD and, segment
+occur. This is particularly important for PROJECT, KIT, MOD, and segment
 names.
 
 Overriding variables:
@@ -176,6 +198,20 @@ intended to be temporary and is not maintained as part of the repository (i.e.
 ignored in .gitignore). Additional kit and mod specific overrides can be
 declared and maintained in an independent repository. See help-kits for more
 information.
+
+Makefile processing:
+ModFW divides makefile processing into two distinct phases; pre-process and
+execute.
+
+During the pre-process phase nearly all macros are executed and makefile
+segments are loaded. Any repos that are referenced are cloned or setup during
+this phase. Because of this, variables should be declared using the := form. New
+components (project, kit, or mod) are created during this phase. The PROJECT
+component is processed first followed by the KIT component and finally the MOD
+component.
+
+The execute phase is where the typical make behavior occurs. Dependencies are
+examined and resolved in this phase.
 
 Architectural components:
 Workstation     A development workstation or a system administration
@@ -261,26 +297,41 @@ automatically installed within the context of the project directory so
 that different projects can use different versions of tools without
 conflicts between versions.
 
+Before any actual mods can be built it is necessary to declare which components
+are active, Activating components must in the order of project then kit then mod. The active mod must always be contained within the active kit. If a
+different kit is activated a different mod within that kit must be activated.
+
+For example:
+  make PROJECT=<project> PROJECT_REPO=<url> all
+    Will install the project repo and activate it. Once a project is activated
+    a kit can then be activated.
+  make KIT=<kit> KIT_REPO=<url> activate-kit
+    Will install the kit repo and activate it. Once a kit is activated a mod
+    within the kit can then be activated.
+  make MOD=<mod> activate-mod
+    Will activate a mod within the active kit.
+
+The active project, kit, and mod are the top level or focus. Mods can then
+"use" additional mods and even mods from other kits to build components they
+may be dependent upon. Dependency trees should always begin with the active
+mod.
+
 Command line options:
   Required sticky options:
-  PROJECT = ${PROJECT}
-    Sticky option for the project name. This is stored in the helpers defined
-    default sticky directory. Then the sticky path is changed to be project
-    specific so that all subsequent sticky options are stored in the project
-    specific directory. This allows quickly changing context from one project
-    to another.
-    To help avoid naming conflicts use the prefix prj- when naming projects.
-    See help-kits for additional required sticky options.
-  PROJECT_REPO = ${PROJECT_REPO}
-    The repository to clone the project from if it hasn't been installed.
-  PROJECT_BRANCH = ${PROJECT_BRANCH}
-    The branch to switch the project to after cloned.
-    Default:
-      DEFAULT_BRANCH = ${DEFAULT_BRANCH}
-        The default branch used for all repos.
+  To see the variables needed by projects, kits, and mods use the corresponding
+  help. e.g. make help-projects will display the help related to projects.
 
   For automated builds it is possible to preset options in another directory
   then overriding STICKY_PATH either in overrides.mk or on the command line.
+
+  PREPEND = ${PREPEND}
+    When defined on the command line this triggers the inclusion of a makefile
+    segment named by PREPEND. This segment is loaded after loading the helpers,
+    overrides, and config but before loading the project makefile segments. The
+    Use-Segment macro is used to find and load the segment so segment search
+    paths will be used (see help-helpers for more information).
+    For example: "make PREPEND=test" will load the makefile segment named
+    test.mk immediately before loading projects.mk.
 
   APPEND = ${APPEND}
     When defined on the command line this triggers the inclusion of a makefile
@@ -295,7 +346,7 @@ Command line goals:
   all             All mods for the active project are built. Use show-mod_deps
                   for a list of goals.
   create-new      Create all of the new components indicated by NEW_PROJECT,
-                  NEW_KIT and, NEW_MOD (see help-projects, help-kits or,
+                  NEW_KIT, and NEW_MOD (see help-projects, help-kits, or
                   help-mods).
   clean           Remove all of the build artifacts. This removes the build
                   and staging directories.
@@ -325,6 +376,5 @@ endef
 
 export _mod_fw_usage
 .PHONY: help
-help: display-errors display-messages
-> @echo "$$_mod_fw_usage" | less
+help: help-Usage display-errors display-messages
 endif # help
