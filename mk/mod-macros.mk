@@ -21,7 +21,7 @@ declare-mod
   Calls:
     declare-comp  Declares the mod component to define:
       <mod>_seg   The segment defining the component.
-      <mod>_dir   The name of the directory containing the component.
+      <mod>_name   The name of the directory containing the component.
       <mod>_path  The path to the directory containing the component files.
       <mod>_mk    The makefile segment defining the component.
       <mod>_var   The shell variable name corresponding to the component.
@@ -31,7 +31,7 @@ declare-mod
                   <kit>_REPO and <kit>_BRANCH on the command line or in the
                   <project> (${PROJECT}) make file.
   Defines variables:
-    <mod>_mod_dir   The name of the mod directory. This is a combination of
+    <mod>_mod_name   The name of the mod directory. This is a combination of
                     the <seg> name and the <seg>_BRANCH.
     <mod>_mod_path  The full path to the mod.
     <mod>_mod_dep   A dependency for the mod. This uses the .git directory in
@@ -237,7 +237,7 @@ endef
 # Postamble
 # Define help only if needed.
 ifneq ($(call Is-Goal,help-${Seg}),)
-define help_${SegV}_msg
+define help-${Seg}
 Make segment: ${Seg}.mk
 
 This segment defines macros for managing ModFW mods.

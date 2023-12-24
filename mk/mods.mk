@@ -8,6 +8,8 @@ ifndef $(call Last-Segment-Basename)SegId
 $(call Enter-Segment)
 # -----
 
+containers += MOD
+
 # The active mod.
 $(call Sticky,MOD)
 

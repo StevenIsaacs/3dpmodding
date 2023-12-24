@@ -19,14 +19,21 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 define ${_macro}
-  $(call Enter-Macro,report-comp)
+  $(call Enter-Macro,$(0),$(1))
   $(call Display-Vars,\
+    $(1)_class \
+    $(1)_ctnr \
     $(1)_seg \
-    $(1)_dir \
+    $(1)_name \
     $(1)_path \
     $(1)_mk \
     $(1)_var \
     comps \
+  )
+  $(if ${$(1)_ctnr},
+    $(call Test-Info,Component $(1) is contained in ${$(1)_ctnr})
+  ,
+    $(call Test-Info,Component $(1) is NOT contained in another component.)
   )
   $(call Exit-Macro)
 endef
@@ -36,17 +43,41 @@ define _help
 ${_macro}
   Verify component variables.
   Parameters:
-    1 = The name of the component to verify.
+    1 = The path to the directory containing the component.
+    2 = The name of the component to verify.
 endef
 help-${_macro} := $(call _help)
 define ${_macro}
-  $(call Enter-Macro,verify-comp-vars)
+  $(call Enter-Macro,$(0),$(1) $(2))
   $(call Expect-Vars,\
     $(2)_seg:$(2) \
-    $(2)_dir:$(2) \
+    $(2)_name:$(2) \
     $(2)_path:$(1)/$(2) \
     $(2)_mk:$(1)/$(2)/$(2).mk \
     $(2)_var:_$(2) \
+  )
+  $(call Exit-Macro)
+endef
+
+_macro := report-repo-class
+define _help
+${_macro}
+  Display repo container attributes.
+  Parameters:
+    1 = The name of the class.
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+  $(call Enter-Macro,$(0),$(1))
+  $(call show-container,$(1))
+  $(if $(call Must-Be-One-Of,$(1),${repo_classes})
+    $(call Display-Vars,\
+      $(1)s_repo_name \
+      $(1)s_repo_path \
+      repo_classes \
+    )
+  ,
+    $(call Signal-Error,Class $(1) is not a member of ${repo_classes})
   )
   $(call Exit-Macro)
 endef
@@ -60,7 +91,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 define ${_macro}
-  $(call Enter-Macro,report-repo)
+  $(call Enter-Macro,$(0),$(1))
   $(call report-comp,$(1))
   $(call Display-Vars,\
     $(1)_SERVER \
@@ -69,7 +100,7 @@ define ${_macro}
     $(1)_URL \
     $(1)_BRANCH \
     $(1)_repo_class \
-    $(1)_repo_dir \
+    $(1)_repo_name \
     $(1)_repo_path \
     $(1)_repo_dep \
     $(1)_repo_mk \
@@ -88,10 +119,10 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 define ${_macro}
-  $(call Enter-Macro,verify-repo-vars)
+  $(call Enter-Macro,$(0),$(1) $(2))
   $(call verify-comp-vars,$(1),$(2))
   $(call Expect-Vars,\
-    $(2)_repo_dir:${$(2)_dir} \
+    $(2)_repo_name:${$(2)_name} \
     $(2)_repo_path:${$(2)_path} \
     $(2)_repo_dep:${$(2)_repo_path}/.git \
     $(2)_repo_mk:${$(2)_repo_path}/$(2).mk \
@@ -107,7 +138,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 define ${_macro}
-  $(call Enter-Macro,report-mod)
+  $(call Enter-Macro,$(0),$(1))
 
   $(call Exit-Macro)
 endef
@@ -121,7 +152,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 define ${_macro}
-  $(call Enter-Macro,verify-mod-vars)
+  $(call Enter-Macro,$(0),$(1))
 
   $(call Exit-Macro)
 endef
@@ -135,14 +166,14 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 define ${_macro}
-  $(call Enter-Macro,verify-mod)
+  $(call Enter-Macro,$(0),$(1))
 
   $(call Exit-Macro)
 endef
 
 # Where test data is placed.
 $(call Overridable,TESTING_DIR,testing)
-$(call Overridable,TESTING_PATH,${WorkingPath}/${TESTING_DIR})
+$(call Overridable,TESTING_PATH,/tmp/modfw/${TESTING_DIR})
 
 # Reroute all output to the testing directory.
 STICKY_PATH := ${TESTING_PATH}/sticky
@@ -156,14 +187,6 @@ BIN_DIR := bin
 BIN_PATH := ${TESTING_PATH}/${BIN_DIR}
 DOWNLOADS_DIR := downloads
 DOWNLOADS_PATH := ${TESTING_PATH}/${DOWNLOADS_DIR}
-COMPS_DIR := comps
-COMPS_PATH := ${TESTING_PATH}/$(COMPS_DIR)
-REPOS_DIR := repos
-REPOS_PATH := ${TESTING_PATH}/$(REPOS_DIR)
-PROJECTS_DIR := projects
-PROJECTS_PATH := ${TESTING_PATH}/${PROJECTS_DIR}
-KITS_DIR := kits
-KITS_PATH := ${TESTING_PATH}/${KITS_DIR}
 
 # This is also loaded in makefile and should trigger a segment conflict at
 # that time.
@@ -172,15 +195,13 @@ $(call Use-Segment,config)
 # Search path for loading segments. This can be extended by kits and mods.
 $(call Add-Segment-Path,$(MK_PATH))
 
-$(call Use-Segment,helpers/test/test-helpers)
+$(call Use-Segment,test-helpers)
 
 # These are also loaded in makefile which should trigger a segment conflict
 # error at that time.
-$(call Use-Segment,comp-macros)
 $(call Use-Segment,repo-macros)
 $(call Use-Segment,mod-macros)
 
-$(call Next-Suite,Testing configuration.)
 $(call Display-Vars,\
   STICKY_PATH \
   TESTING \
@@ -191,10 +212,7 @@ $(call Display-Vars,\
   TOOLS_DIR TOOLS_PATH \
   BIN_DIR BIN_PATH \
   DOWNLOADS_DIR DOWNLOADS_PATH \
-  COMPS_DIR COMPS_PATH \
-  REPOS_DIR REPOS_PATH \
-  PROJECTS_DIR PROJECTS_PATH \
-  KITS_DIR KITS_PATH \
+  LogFile \
 )
 
 _macro := verify-repo
@@ -206,7 +224,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 define ${_macro}
-  $(call Enter-Macro,verify-repo)
+  $(call Enter-Macro,$(0),$(1) $(2))
   $(call Test-Info,Verifying repo:$(1))
   $(if $$(call is-repo-dir,$(1)),
     $(call PASS,Repo $(1) is a git repo.)
@@ -242,7 +260,7 @@ define ${_macro}
   $(call Exit-Macro)
 endef
 
-_macro := verify-declare
+_macro := verify-declare-repo
 define _help
 ${_macro}
   Test declaration of components. These can be a <comp>, <repo>, <kit>,
@@ -264,28 +282,23 @@ define ${_macro}
   $(call declare-$(1),$(2),$(3))
   $(call report-$(1),$(3))
   $(call verify-$(1)-vars,$(2),$(3))
-  $(call Test-Info,Expect an already declared error.)
-  $(call Expect-Error,Component $(3) has already been declared.)
+  $(call Test-Info,Expect an already declared warning.)
+  $(call Expect-Warning,Component $(3) has already been declared.)
   $(call declare-$(1),$(2),$(3))
-  $(call Verify-Error)
+  $(call Verify-Warning)
   $(call Exit-Macro)
 endef
 
 #+++++++++++ Test Suites +++++++++++++
-ifneq ($(call Is-Goal,test-comps),)
-  $(call Next-Suite,test-comps)
+$(call Add-Segment-Path,${SegP}/suites)
 
-  $(call Test-Info,Testing:declare-comp)
-  $(call verify-declare,comp,${COMPS_PATH},comp$(SuiteID))
-
-test-comps: display-errors display-messages
-
-endif
+$(call Run-Tests,${SegP}/suites)
 
 ifneq ($(call Is-Goal,test-repos),)
-  $(call Next-Suite,test-repos)
+  $(call Begin-Suite,test-repos)
 
   $(call Test-Info,Testing:declare-repo)
+$(call Enable-Single-Step)
   $(call verify-declare,repo,${REPOS_PATH},repo$(SuiteID))
   $(call Expect_Vars,\
     repo${SuiteID}_REPO:${LOCAL_REPO}\
@@ -322,7 +335,6 @@ ifneq ($(call Is-Goal,test-repos),)
   $(call verify-repo,repo${SuiteID})
 
   $(call remove-repo,repo${SuiteID},Warn)
-$(call Enable-Single-Step)
   $(call setup-repo,init,repo${SuiteID},test)
   $(call verify-repo,repo${SuiteID},setup)
 
@@ -371,25 +383,25 @@ ifneq ($(call Is-Goal,test-projects),)
     $(call Use-Segment,projects)
   endif
 
-  $(call Next-Suite,declare-project)
+  $(call Begin-Suite,declare-project)
 
-  $(call Next-Suite,init-project)
+  $(call Begin-Suite,init-project)
 
-  $(call Next-Suite,clone-project)
+  $(call Begin-Suite,clone-project)
 
-  $(call Next-Suite,setup-project)
+  $(call Begin-Suite,setup-project)
 
-  $(call Next-Suite,clone-basis-to-new-project)
+  $(call Begin-Suite,clone-basis-to-new-project)
 
-  $(call Next-Suite,use-project)
+  $(call Begin-Suite,use-project)
 
-  $(call Next-Suite,dup-project)
+  $(call Begin-Suite,dup-project)
 
-  $(call Next-Suite,create-project)
+  $(call Begin-Suite,create-project)
 
-  $(call Next-Suite,new-project)
+  $(call Begin-Suite,new-project)
 
-  $(call Next-Suite,activate-project)
+  $(call Begin-Suite,activate-project)
 
 test-projects: display-errors display-messages
 
@@ -401,25 +413,25 @@ ifneq ($(call Is-Goal,test-kits),)
     $(call Use-Segment,projects)
   endif
 
-  $(call Next-Suite,declare-kit)
+  $(call Begin-Suite,declare-kit)
 
-  $(call Next-Suite,init-kit)
+  $(call Begin-Suite,init-kit)
 
-  $(call Next-Suite,clone-kit)
+  $(call Begin-Suite,clone-kit)
 
-  $(call Next-Suite,setup-kit)
+  $(call Begin-Suite,setup-kit)
 
-  $(call Next-Suite,clone-basis-to-new-kit)
+  $(call Begin-Suite,clone-basis-to-new-kit)
 
-  $(call Next-Suite,use-kit)
+  $(call Begin-Suite,use-kit)
 
-  $(call Next-Suite,dup-kit)
+  $(call Begin-Suite,dup-kit)
 
-  $(call Next-Suite,create-kit)
+  $(call Begin-Suite,create-kit)
 
-  $(call Next-Suite,new-kit)
+  $(call Begin-Suite,new-kit)
 
-  $(call Next-Suite,activate-kit)
+  $(call Begin-Suite,activate-kit)
 
 test-kits: display-errors display-messages
 
@@ -433,31 +445,31 @@ ifneq ($(call Is-Goal,test-mods),)
 
   $(call Test-Info,Testing mods.)
 
-  $(call Next-Suite,declare-mod)
+  $(call Begin-Suite,declare-mod)
 
-  $(call Next-Suite,init-mod)
+  $(call Begin-Suite,init-mod)
 
-  $(call Next-Suite,copy-mod)
+  $(call Begin-Suite,copy-mod)
 
-  $(call Next-Suite,setup-mod)
+  $(call Begin-Suite,setup-mod)
 
-  $(call Next-Suite,copy-basis-to-new-mod)
+  $(call Begin-Suite,copy-basis-to-new-mod)
 
-  $(call Next-Suite,use-mod)
+  $(call Begin-Suite,use-mod)
 
-  $(call Next-Suite,dup-mod)
+  $(call Begin-Suite,dup-mod)
 
-  $(call Next-Suite,create-mod)
+  $(call Begin-Suite,create-mod)
 
-  $(call Next-Suite,new-mod)
+  $(call Begin-Suite,new-mod)
 
-  $(call Next-Suite,activate-mod)
+  $(call Begin-Suite,activate-mod)
 
 test-mods: display-errors display-messages
 
 endif
 
-$(call Next-Suite,\
+$(call Begin-Suite,\
   Expect already included config${Comma} comp-macros${Comma} and repo-macros.)
 
 $(call Report-Test-Summary)
@@ -466,7 +478,7 @@ $(call Report-Test-Summary)
 # Postamble
 # Define help only if needed.
 ifneq ($(call Is-Goal,help-${Seg}),)
-define help_${SegV}_msg
+define help-${Seg}
 Make segment: ${Seg}.mk
 
 Macros, goals and recipes to test ModFW makefile segments. This is intended to

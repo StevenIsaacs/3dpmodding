@@ -15,6 +15,9 @@ $(call Overridable,DEFAULT_KITS_DIR,$(Seg))
 # NOTE: This is ignored in .gitignore.
 $(call Overridable,DEFAULT_KITS_PATH,${WorkingPath}/${DEFAULT_KITS_DIR})
 
+repo_classes += KIT
+containers += KIT
+
 $(call Sticky,KITS_DIR,${DEFAULT_KITS_DIR})
 $(call Sticky,KITS_PATH,${DEFAULT_KITS_PATH})
 

@@ -8,9 +8,6 @@ ifndef $(call Last-Segment-Basename)SegId
 $(call Enter-Segment)
 # -----
 
-repo_classes := PROJECT KIT
-comp_classes := ${repo_classes} MOD
-
 # Make segments and related files for specific features.
 $(call Overridable,MK_PATH,${WorkingPath}/mk)
 
@@ -92,8 +89,8 @@ DOWNLOADS_PATH = ${DOWNLOADS_PATH}
 For managing repos:
 repo_classes = ${repo_classes}
   The classes which are repos.
-comp_classes = ${comp_classes}
-  Valid component classes.
+containers = ${containers}
+  Valid containeres.
 LOCAL_REPO = ${LOCAL_REPO}
   The name used to indicate a component is local only (no remote or clone).
 DEFAULT_BRANCH = ${DEFAULT_BRANC}

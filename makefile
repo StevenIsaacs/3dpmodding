@@ -3,12 +3,16 @@
 # NOTE: ModFW is not a build tool. Rather it is a framework for integrating
 # a variety of build and development tools.
 #----------------------------------------------------------------------------
+# Using a conditional here because of needing to include overrides.mk only if
+# it exists.
+-include overrides.mk
+
 # Which branch of the helpers to use. Once the helpers have been cloned
 # this is ignored.
 HELPERS_BRANCH ?= main
 
 # Helper scripts and utilities.
-HELPERS_PATH := helpers
+HELPERS_PATH ?= helpers
 ifeq (${HELPERS_BRANCH},main)
   HELPERS_REPO := https://github.com/StevenIsaacs/modfw-helpers.git
 else
@@ -33,12 +37,6 @@ _null := $(shell \
 include ${_helpers}
 
 ifneq ($(call Is-Goal,help),help)
-
-# Using a conditional here because of needing to add a dependency on the
-# overrides.mk only if it exists.
-ifneq ($(wildcard overrides.mk),)
-  $(call Use-Segment,overrides)
-endif
 
 ifdef PREPEND
   $(call Use-Segment,$(PREPEND))
@@ -125,16 +123,18 @@ Definitions:
 
   <repo>: A git repository.
 
-  container: A directory containing project or kit repos.
+  <ctnr>: A container for components. A container can be a component which is
+  contained in another container. e.g. A kit is a component which contains mods.
+  The directory where kits are stored is also a container but not a component.
 
   <comp>: Indicates a reference to a component which can be a project, kit, or
   mod. Each component has a unique name which is used to name component
-  attributes (see help-repo-macros). A component is stored in a unique
-  directory having the name <comp>. Each component contains a makefile segment
-  having the name <comp>.mk which is included when the component is used.
-
-  <class>: Indicates a component class used to indicate how the component is
-  intended to be used. This can be one of: ${comp_classes}
+  attributes (see help-comp-macros). A component must be stored in a container.
+  A component is stored within its container in a unique directory having the
+  name <comp>. Each component contains a makefile segment having the name
+  <comp>.mk which is included when the component is used. As mentioned
+  previously, a component can also be a container in which case it must first
+  be declared as a container before being declared as a component.
 
   <seg>: Indicates a makefile segment (included file) where <seg> is derived
   using the name of the directory containing makefile segment. Changing the
@@ -169,10 +169,12 @@ GLOBAL_VARIABLE Can be overridden on the command line. Sticky variables should
 global_variable Available to all segments but should not be overridden on the
                 command line. Attempts to override can have unpredictable
                 results.
-<seg>_VARIABLE  A global variable prefixed with the name of the segment defining
-                the variable. These can be overridden on the command line.
+<ctx>           A specific context. A context can be a segment, macro or
+                group of related variables.
+<ctx>.VARIABLE  A global variable prefixed with the name of specific context.
+                These can be overridden on the command line.
                 Component specific sticky variables should use this form.
-<seg>_variable  A global variable prefixed with the name of the segment
+<ctx>.variable  A global variable prefixed with the name of the segment
                 defining the variable. These should not be overridden.
 _private_variable Make segment specific. Should not be used by other segments
                 since these can be changed without concern for other segments.
@@ -180,7 +182,7 @@ callable-macro  The name of a callable macro available to all segments.
 _private-macro  A private macro specific to a segment.
 GlobalVariable  Camel case is used to identify variables defined by the
                 helpers. This is mostly helpers.mk.
-Global_Variable This form is also used by the helpers to bring ore attention
+Global_Variable This form is also used by the helpers to bring more attention
                 to a variable.
 Callable-Macro  The name of a helper defined callable macro.
 
@@ -195,9 +197,11 @@ Overriding variables:
 An overrides file, overrides.mk, is supported where the developer can preset
 variables rather than having to define them on the command line. This file is
 intended to be temporary and is not maintained as part of the repository (i.e.
-ignored in .gitignore). Additional kit and mod specific overrides can be
-declared and maintained in an independent repository. See help-kits for more
-information.
+ignored in .gitignore). The overrides.mk file is loaded immediately. None of
+the helpers are available. Therefore overrides should only define variables
+which would otherwise be defined on the command line.
+
+Additional project, kit and mod specific overrides can be declared and maintained in a project repository. Unlike overrides.mk the helpers will be available to the project overrides. See help-projects for more information.
 
 Makefile processing:
 ModFW divides makefile processing into two distinct phases; pre-process and

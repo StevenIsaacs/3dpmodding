@@ -7,9 +7,40 @@
 ifndef $(call Last-Segment-Basename)SegId
 $(call Enter-Segment)
 # -----
+$(call Use-Segment,comp-macros)
 
 repos :=
 repo_goals :=
+repo_classes :=
+
+_macro := add-repo-class
+define _help
+${_macro}
+  Add a repo container name. A repo container MUST be declared before a repo of that
+  container can be declared. A container of the same name is also defined.
+  Parameters:
+    1 = The name of the container for the repo (<repo>).
+    2 = The path to the directory where repos of that container are stored.
+        The repos are stored in a subdirectory named using the container name.
+  Defines:
+    repo_classes
+      The container name is added to this list.
+    <repo>s_name
+      The name of the directory where the container files are stored.
+      The name of the directory is the plural form of <repo> (an s is
+      appended to the name).
+    <repo>s_path
+      The full path to the component directory.
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(call Enter-Macro,$(0),$(1) $(2))
+$(call declare-container,$(1),$(2))
+$(eval repo_classes += $(1))
+$(eval $(1)s_repo_name := $(1)s)
+$(eval $(1)s_repo_path := $(2)/${$(1)s_name})
+$(call Exit-Macro)
+endef
 
 _macro := gen-branching-goals
 define _help
@@ -31,7 +62,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 define ${_macro}
-$(call Enter-Macro,gen-branching-goals)
+$(call Enter-Macro,$(0),$(1) $(2))
 $(call Gen-Command-Goal,$(1)-branches,\
   > cd ${$(1)_repo_path} && git branch)
 
@@ -76,37 +107,37 @@ ${_macro}
   declared.
   NOTE: See help-<repo> for more information.
   Parameters:
-    1 = The repo <class> must be one of: ${repo_classes}.
+    1 = The repo <ctnr> must be one of: ${repo_classes}.
     2 = The name of the repo and its corresponding component (<repo>).
         NOTE: This can be different than the sticky variable.
   Defines variables:
     Sticky variables:
     <repo>_SERVER
-      Default: <class>_SERVER
+      Default: <ctnr>_SERVER
       The repo server.
     <repo>_ACCOUNT
-      Default: <class>_ACCOUNT
+      Default: <ctnr>_ACCOUNT
       The account on the server.
     <repo>_REPO
-      Default: <class>_REPO
+      Default: <ctnr>_REPO
       The repo on the server.
     <repo>_URL
       Default: <repo>_SERVER<repo>_ACCOUNT/<repo>_REPO
       The full URL for the remote repo or full PATH for a local repo.
     <repo>_BRANCH     The branch to switch to.
-      Default: <class>_BRANCH
+      Default: <ctnr>_BRANCH
     Attributes:
-    <repo>_repo_class The class of the repo.
-    <repo>_repo_dir   The name of the repo directory which is equal to <comp>.
+    <repo>_repo_class The container of the repo.
+    <repo>_repo_name   The name of the repo directory which is equal to <comp>.
     <repo>_repo_path  The full path to the repo. This is a combination of
-                      <class>S_PATH and the <repo> name.
+                      <ctnr>S_PATH and the <repo> name.
     <repo>_repo_dep   A dependency for the repo. This uses the .git directory in
                       the repo directory as the dependency.
     repos             Adds the repo to the list of repos.
 endef
 help-${_macro} := $(call _help)
 define ${_macro}
-$(call Enter-Macro,declare-repo)
+$(call Enter-Macro,$(0),$(1) $(2))
 $(if $(call repo-is-declared,$(2)),
   $(call Warn,Repo $(2) has already been declared.)
 ,
@@ -122,13 +153,13 @@ $(if $(call repo-is-declared,$(2)),
     $(call Sticky,$(2)_BRANCH=${$(2)_BRANCH},${$(1)_BRANCH})
 
     $(eval $(2)_repo_class := $(1))
-    $(eval $(2)_repo_dir := ${$(2)_dir})
+    $(eval $(2)_repo_name := ${$(2)_name})
     $(eval $(2)_repo_path := ${$(2)_path})
     $(eval $(2)_repo_dep := ${$(2)_repo_path}/.git)
     $(eval $(2)_repo_mk := ${$(2)_repo_path}/$(2).mk)
     $(eval  repos += $(2))
   ,
-    $(call Signal-Error,The repo class must be one of ${repo_classes}.)
+    $(call Signal-Error,The repo container must be one of ${repo_classes}.)
   )
 )
 $(call Exit-Macro)
@@ -144,7 +175,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 define ${_macro}
-$(call Enter-Macro,init-repo)
+$(call Enter-Macro,$(0),$(1))
 $(if $(wildcard ${$(1)_repo_dep}),
   $(call Warn,The repo for $(1) exists -- no init.)
 ,
@@ -162,11 +193,13 @@ _macro := repo-is-setup
 define _help
 ${_macro}
   Returns a non-empty value if the repo has been setup.
+  Parameters:
+    1 = The name of an existing and previously declared repo.
 endef
 help-${_macro} := $(call _help)
 define ${_macro}
 $(strip
-  $(call Enter-Macro,repo-is-setup)
+  $(call Enter-Macro,$(0),$(1))
   $(if $(and $$(call is-comp-dir,$(1)),$$(call is-repo,$(1))),
     $(call Run,grep $(1) ${$(1)_repo_mk})
     $(if ${Run_Rc},
@@ -195,7 +228,7 @@ endef
 help-${_macro} := $(call _help)
 define ${_macro}
 $(strip
-  $(call Enter-Macro,get-repo-url)
+  $(call Enter-Macro,$(0),$(1))
   $(call Run,cd ${$(1)_repo_path} && git ls-remote --get-url)
   $(if ${Run_Rc},
     $(call Debug,Using LOCAL_REPO:${LOCAL_REPO})
@@ -221,7 +254,7 @@ endef
 help-${_macro} := $(call _help)
 define ${_macro}
 $(strip
-  $(call Enter-Macro,get-repo-branch)
+  $(call Enter-Macro,$(0),$(1))
   $(call Run,cd ${$(1)_repo_path} && git symbolic-ref --short HEAD)
   $(if ${Run_Rc},
     $(call Signal-Error,Could not get branch from ${$(1)_repo})
@@ -250,7 +283,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 define ${_macro}
-$(call Enter-Macro,clone-repo)
+$(call Enter-Macro,$(0),$(1))
 $(if $(wildcard ${$(1)_repo_dep}),
   $(call Verbose,The repo for $(1) exists -- no init.)
 ,
@@ -278,7 +311,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 define ${_macro}
-  $(call Enter-Macro,remove-repo)
+  $(call Enter-Macro,$(0),$(1) $(2))
   $(if $(wildcard ${$(1)_repo_path}),
     $(if $(call Confirm,Remove ${$(1)_repo_path}?,y),
       $(call Run,rm -rf ${$(1)_repo_path})
@@ -345,9 +378,9 @@ Attributes:
       The branch to switch to after cloning the repo.
   Defined variables:
     $${Seg}_repo_class := $${$${Seg}_repo_class}
-      The class associated with this repo.
+      The container associated with this repo.
       NOTE: This must be equal to one of: ${repo_classes}
-    $${Seg}_repo_dir := $${$${Seg}_repo_dir}
+    $${Seg}_repo_name := $${$${Seg}_repo_name}
       The name of the directory where the repo is stored locally. This is the
       <comp> name for the repo which can be different than $${Seg}_REPO.
     $${Seg}_repo_path := $${$${Seg}_repo_path}
@@ -391,7 +424,7 @@ $(call _repo_seg_mk,PROJECT,a-repo)
 endef
 help-${_macro} := $(call _help)
 define ${_macro}
-$(call Enter-Macro,gen-repo-mk)
+$(call Enter-Macro,$(0),$(1) $(2))
 $(file >${$(2)_repo_mk},$(call _repo_seg_mk,$(1),$(2)))
 $(call Exit-Macro)
 endef
@@ -414,7 +447,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 define ${_macro}
-$(call Enter-Macro,setup-repo)
+$(call Enter-Macro,$(0),$(1) $(2) $(3))
 $(call Verbose,Performing $(1) for repo $(2):$(3).)
 $(if $(filter $(1),init clone),
   $(eval repo_goals += ${$(3)_repo_mk})
@@ -457,7 +490,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 define ${_macro}
-$(call Enter-Macro,clone-basis-to-new-repo)
+$(call Enter-Macro,$(0),$(1) $(2))
 $(eval repo_goals += ${$(2)_repo_mk})
 $(if $(wildcard ${$(2)_repo_mk}),
   $(call Warn,Using existing repo $(2).)
@@ -510,25 +543,25 @@ _macro := new-repo
 define _help
 ${_macro}
   Create a new local repo for a project or a kit. This can be based on an
-  existing repo. This is called when NEW_<class> has been defined on the
+  existing repo. This is called when NEW_<ctnr> has been defined on the
   command line. This is intended to be called from activate-repo. If the
   new repo is based (cloned from) upon an existing repo clone-basis-to-new-repo
   is called to create the new repo.
   Parameters:
-    1 = Repo <class>: PROJECT or KIT
+    1 = Repo <ctnr>: PROJECT or KIT
     2 = The component name (<comp>) for the repo. This is used to name the repo
         directory and associated variables.
     3 = Optional basis repo.
   Defines:
     <2>_SERVER
-    Default: <class>_SERVER
+    Default: <ctnr>_SERVER
       The server hosting the repo. If this equals ${LOCAL_REPO} then the
-      <class>_PATH is used and <2>_ACCOUNT is ignored.
+      <ctnr>_PATH is used and <2>_ACCOUNT is ignored.
     <2>_ACCOUNT
-    Default: <class>_ACCOUNT
+    Default: <ctnr>_ACCOUNT
       The account on the server.
     <2>_REPO
-    Default: <class>_REPO
+    Default: <ctnr>_REPO
       The name of the directory in which the repo is stored. This can be
       different than the <comp> (<2>). Which allows multiple copies of the
       same repo which may be handy for parallel versions.
@@ -547,19 +580,19 @@ ${_macro}
     <3>_BRANCH
       This is the name of the component for which the repo is created.
       e.g make NEW_PROJECT=<project> or make NEW_KIT=<kit>
-    BASIS_<class> If not empty clones an existing repo to a new repo.
-      i.e BASIS_<class>=<new>
+    BASIS_<ctnr> If not empty clones an existing repo to a new repo.
+      i.e BASIS_<ctnr>=<new>
       e.g. make NEW_PROJECT=<project> BASIS_PROJECT=<basis>
     <new>_REPO=<url>
       The URL for the new repo. If undefined this defaults to
       DEFAULT_<CLASS>_REPO.
     <new>_BRANCH=<branch>
       The default branch to specify when creating the new repo. This
-      defaults to DEFAULT_<class>_BRANCH.
+      defaults to DEFAULT_<ctnr>_BRANCH.
 endef
 help-${_macro} := $(call _help)
 define ${_macro}
-$(call Enter-Macro,new-repo)
+$(call Enter-Macro,$(0),$(1) $(2) $(3))
 $(if ${$(2)_REPO},
   $(if $(call comp-is-declared,$(2)),
     $(call Signal-Error,Repo $(2) has already been declared.)
@@ -598,7 +631,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 define ${_macro}
-$(call Enter-Macro,use-repo)
+$(call Enter-Macro,$(0),$(1) $(2))
 $(if $(1),
   $(if $(2),
     $(if ${(2)_seg},
@@ -630,17 +663,17 @@ endef
 _macro := activate-repo
 define _help
 ${_macro}
-  Activate a project or kit repo (<comp>) as specified by the <class> variable.
+  Activate a project or kit repo (<comp>) as specified by the <ctnr> variable.
   If the repo has not been installed then it is cloned from an existing repo.
   The existing repo can be either local or remote. In either case commits to
   the active repo can be pushed to the original repo.
   NOTE: Only one PROJECT and one KIT can be active at a time.
   Parameters:
-    1 = Repo <class>: PROJECT or KIT
+    1 = Repo <ctnr>: PROJECT or KIT
   Uses:
-    <class>       The class variable (i.e. PROJECT or KIT) specifying which
+    <ctnr>       The container variable (i.e. PROJECT or KIT) specifying which
                   repo (<comp>) is intended to be the active repo.
-    <class>S_PATH The path to the directory where the <class> repos are stored.
+    <ctnr>S_PATH The path to the directory where the <ctnr> repos are stored.
                   NOTE: Only repos should exist in this directory. Directories
                   that are not repos will be confused with repos and could
                   produce unexpected results.
@@ -649,7 +682,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 define ${_macro}
-$(call Enter-Macro,activate-repo)
+$(call Enter-Macro,$(0),$(1))
 $(eval _class := $(call To-Lower,$(1)))
 $(call Sticky,$(1))
 
@@ -683,6 +716,8 @@ Defines the support macros:
 ${help-gen-branching-goals}
 
 ${help-repo-is-declared}
+
+${help-add-repo-class}
 
 ${help-declare-repo}
 

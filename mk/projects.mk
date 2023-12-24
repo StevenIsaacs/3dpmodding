@@ -17,6 +17,9 @@ $(call Overridable,DEFAULT_PROJECTS_DIR,${Seg})
 # Where project specific kit and mod configuration repo is maintained.
 $(call Overridable,DEFAULT_PROJECTS_PATH,${WorkingPath}/${DEFAULT_PROJECTS_DIR})
 
+repo_classes += PROJECT
+containers += PROJECT
+
 $(call Sticky,PROJECT)
 $(call Sticky,PROJECTS_DIR,${DEFAULT_PROJECTS_DIR})
 $(call Sticky,PROJECTS_PATH,${DEFAULT_PROJECTS_PATH})
@@ -74,7 +77,7 @@ endif
 # Postamble
 # Define help only if needed.
 ifneq ($(call Is-Goal,help-${Seg}),)
-define help_${SegV}_msg
+define help-${Seg}
 Make segment: ${Seg}.mk
 
 A ModFW project is mostly intended to contain variable definitions needed to
