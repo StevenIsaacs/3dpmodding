@@ -1,44 +1,128 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # ModFW config variables.
 #----------------------------------------------------------------------------
-# The prefix $(call Last-Segment-Basename) must be unique for all files.
 # +++++
-# Preamble
-ifndef $(call Last-Segment-Basename)SegId
+$(call Last-Segment-UN)
+ifndef ${LastSegUN}.SegID
 $(call Enter-Segment)
 # -----
 
-# Make segments and related files for specific features.
-$(call Overridable,MK_PATH,${WorkingPath}/mk)
+_var := MK_PATH
+$(call Overridable,${_var},${WorkingPath}/mk)
+define _help
+${_var} = ${${_var}}
+  The path to the ModFW makefile segments. This is the primary segment search
+  path.
+endef
+help-${_var} := $(call _help)
 
 #+
-# NOTE: The following directories are ignored (see .gitignore). These can be
-# deleted by a clean.
+# NOTE: The following directories are ignored by git(see .gitignore). These can
+# be deleted by a clean.
 #-
-# For downloaded files.
-$(call Overridable,DOWNLOADS_DIR,downloads)
-$(call Overridable,DOWNLOADS_PATH,${WorkingPath}/${DOWNLOADS_DIR})
+_var := DOWNLOADS_DIR
+$(call Overridable,${_var},downloads)
+define _help
+${_var} = ${${_var}}
+  The name of the directory where downloaded files are stored.
+endef
+help-${_var} := $(call _help)
 
-# Where intermediate build files are stored.
-$(call Overridable,BUILD_DIR,build)
-$(call Overridable,BUILD_PATH,${WorkingPath}/${BUILD_DIR})
+_var := DOWNLOADS_PATH
+$(call Overridable,${_var},${WorkingPath}/${DOWNLOADS_DIR})
+define _help
+${_var} = ${${_var}}
+  The name of the directory where downloaded files are stored.
+endef
+help-${_var} := $(call _help)
 
-# Where the mod output files are staged.
-$(call Overridable,STAGING_DIR,staging)
-$(call Overridable,STAGING_PATH,${WorkingPath}/${STAGING_DIR})
+_var := BUILD_DIR
+$(call Overridable,${_var},build)
+define _help
+${_var} = ${${_var}}
+  The name of the directory where build intermediate files are stored.
+endef
+help-${_var} := $(call _help)
 
-# Where various tools are downloaded and installed.
-$(call Overridable,TOOLS_DIR,tools)
-$(call Overridable,TOOLS_PATH,${WorkingPath}/${TOOLS_DIR})
+_var := BUILD_PATH
+$(call Overridable,${_var},${WorkingPath}/${BUILD_DIR})
+define _help
+${_var} = ${${_var}}
+  The full path to where build intermediate files are stored.
+endef
+help-${_var} := $(call _help)
 
-# Where executables are installed.
-$(call Overridable,BIN_DIR,bin)
-$(call Overridable,BIN_PATH,${TOOLS_PATH}/${BIN_DIR})
+_var := STAGING_DIR
+$(call Overridable,${_var},staging)
+define _help
+${_var} = ${${_var}}
+  The the name of the directory where deliverables files are stored.
+endef
+help-${_var} := $(call _help)
 
-# Default repo to use when creating new repos.
-$(call Overridable,LOCAL_REPO,local)
-# The default branch used when creating or cloning repos.
-$(call Overridable,DEFAULT_BRANCH,main)
+_var := STAGING_PATH
+$(call Overridable,${_var},${WorkingPath}/${STAGING_DIR})
+define _help
+${_var} = ${${_var}}
+  The full path to where deliverable files are stored.
+endef
+help-${_var} := $(call _help)
+
+_var := TOOLS_DIR
+$(call Overridable,${_var},tools)
+define _help
+${_var} = ${${_var}}
+  The the name of the directory where tools are stored.
+endef
+help-${_var} := $(call _help)
+
+_var := TOOLS_PATH
+$(call Overridable,${_var},${WorkingPath}/${TOOLS_DIR})
+define _help
+${_var} = ${${_var}}
+  The the full path to where tools are stored.
+endef
+help-${_var} := $(call _help)
+
+_var := BIN_DIR
+$(call Overridable,${_var},bin)
+define _help
+${_var} = ${${_var}}
+  The the name of the directory where tools are installed.
+endef
+help-${_var} := $(call _help)
+
+_var := BIN_PATH
+$(call Overridable,${_var},${TOOLS_PATH}/${BIN_DIR})
+define _help
+${_var} = ${${_var}}
+  The full path to where tools are installed.
+endef
+help-${_var} := $(call _help)
+
+_var := LOCAL_REPO
+$(call Overridable,${_var},local)
+define _help
+${_var} = ${${_var}}
+  Using this as a repo location says it is a local repo (no server).
+endef
+help-${_var} := $(call _help)
+
+_var := DEFAULT_SERVER
+$(call Overridable,${_var},git@github.com/StevenIsaacs)
+define _help
+${_var} = ${${_var}}
+  The default server to use when installing or creating a repo.
+endef
+help-${_var} := $(call _help)
+
+_var := DEFAULT_BRANCH
+$(call Overridable,${_var},main)
+define _help
+${_var} = ${${_var}}
+  The branch to checkout by default when installing or creating a repo.
+endef
+help-${_var} := $(call _help)
 
 # +++++
 # Postamble
@@ -64,38 +148,31 @@ Unless otherwise noted the following can be overridden either on the command
 line or in overrides.mk. Using overrides eliminates the need to modify the
 framework itself.
 
-Make segment paths:
-MK_PATH = ${MK_PATH}
-  Where the included make segments are maintained for different build modules.
+${help-MK_PATH}
 
-MODEL_MK_PATH = ${MODEL_MK_PATH}
-  The path to the make segments corresponding to modeling tools.
+${help-DOWNLOADS_DIR}
 
-HELPERS_PATH = ${HELPERS_PATH}
-  Where helper scripts and utilities are maintained.
+${help-DOWNLOADS_PATH}
 
-These may be deleted as part of a clean:
-TOOLS_PATH = ${TOOLS_PATH}
-  Where build tools are installed.
-STAGING_PATH = ${STAGING_PATH}
-  Where the build output files for a mod are staged. They are copied here
-  so all output files are located in one place. Each kit and mod are staged
-  in subdirectories. i.e. <staging_dir>/<kit>/<mod>
-BIN_PATH = ${BIN_PATH}
-  Where executable binaries for support utilities are installed.
-DOWNLOADS_PATH = ${DOWNLOADS_PATH}
-  Where the downloaded OS images and other mod specific files are stored.
+${help-BUILD_DIR}
 
-For managing repos:
-repo_classes = ${repo_classes}
-  The classes which are repos.
-containers = ${containers}
-  Valid containeres.
-LOCAL_REPO = ${LOCAL_REPO}
-  The name used to indicate a component is local only (no remote or clone).
-DEFAULT_BRANCH = ${DEFAULT_BRANC}
-  The default branch name to use when creating a new repo or switch to after
-  cloning an existing repo.
+${help-BUILD_PATH}
+
+${help-STAGING_DIR}
+
+${help-STAGING_PATH}
+
+${help-TOOLS_DIR}
+
+${help-TOOLS_PATH}
+
+${help-BIN_DIR}
+
+${help-BIN_PATH}
+
+${help-LOCAL_REPO}
+
+${help-DEFAULT_BRANCH}
 
 Other make segments can define sticky options. These are options which become
 defaults once they have been used. Sticky options can also be preset in the

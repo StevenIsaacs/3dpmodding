@@ -1,10 +1,9 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # OS First Time
 #----------------------------------------------------------------------------
-# The prefix $(call Last-Segment-Basename) must be unique for all files.
 # +++++
-# Preamble
-ifndef $(call Last-Segment-Basename)SegId
+$(call Last-Segment-UN)
+ifndef ${LastSegUN}.SegID
 $(call Enter-Segment)
 # -----
 # Not all variants need a specific os-firsttime.mk

@@ -1,10 +1,9 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Scripted custom parts using OpenSCAD and Python CAD tools.
 #----------------------------------------------------------------------------
-# The prefix $(call Last-Segment-Basename) must be unique for all files.
 # +++++
-# Preamble
-ifndef $(call Last-Segment-Basename)SegId
+$(call Last-Segment-UN)
+ifndef ${LastSegUN}.SegID
 $(call Enter-Segment)
 # -----
 
@@ -193,7 +192,7 @@ endif
 ${oscSeg}-stl: ${OPENSCAD_CLI} ${_osc_model_deps} ${_stl_files}
 
 # See if running in WSL. If so The OpenSCAD GUI can't be started without
-# an X server running which is outside the scope of this project.
+# an X server running which is outside the scope of this product.
 ifneq (${Platform},Microsoft)
 ${oscSeg}-png: ${OPENSCAD_CLI} ${_osc_model_deps} ${_png_files}
 

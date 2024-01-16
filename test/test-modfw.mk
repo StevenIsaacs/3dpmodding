@@ -3,8 +3,8 @@
 #----------------------------------------------------------------------------
 # The prefix $(call Last-Segment-Basename) must be unique for all files.
 # +++++
-# Preamble
-ifndef $(call Last-Segment-Basename)SegId
+$(call Last-Segment-UN)
+ifndef ${LastSegUN}.SegID
 $(call Enter-Segment)
 # -----
 
@@ -21,17 +21,17 @@ help-${_macro} := $(call _help)
 define ${_macro}
   $(call Enter-Macro,$(0),$(1))
   $(call Display-Vars,\
-    $(1)_class \
-    $(1)_ctnr \
-    $(1)_seg \
-    $(1)_name \
-    $(1)_path \
-    $(1)_mk \
-    $(1)_var \
+    $(1).class \
+    $(1).node \
+    $(1).seg \
+    $(1).name \
+    $(1).path \
+    $(1).mk \
+    $(1).var \
     comps \
   )
-  $(if ${$(1)_ctnr},
-    $(call Test-Info,Component $(1) is contained in ${$(1)_ctnr})
+  $(if ${$(1).node},
+    $(call Test-Info,Component $(1) is contained in ${$(1).node})
   ,
     $(call Test-Info,Component $(1) is NOT contained in another component.)
   )
@@ -50,11 +50,11 @@ help-${_macro} := $(call _help)
 define ${_macro}
   $(call Enter-Macro,$(0),$(1) $(2))
   $(call Expect-Vars,\
-    $(2)_seg:$(2) \
-    $(2)_name:$(2) \
-    $(2)_path:$(1)/$(2) \
-    $(2)_mk:$(1)/$(2)/$(2).mk \
-    $(2)_var:_$(2) \
+    $(2).seg:$(2) \
+    $(2).name:$(2) \
+    $(2).path:$(1)/$(2) \
+    $(2).mk:$(1)/$(2)/$(2).mk \
+    $(2).var:_$(2) \
   )
   $(call Exit-Macro)
 endef
@@ -62,14 +62,14 @@ endef
 _macro := report-repo-class
 define _help
 ${_macro}
-  Display repo container attributes.
+  Display repo node attributes.
   Parameters:
     1 = The name of the class.
 endef
 help-${_macro} := $(call _help)
 define ${_macro}
   $(call Enter-Macro,$(0),$(1))
-  $(call show-container,$(1))
+  $(call show-node,$(1))
   $(if $(call Must-Be-One-Of,$(1),${repo_classes})
     $(call Display-Vars,\
       $(1)s_repo_name \
@@ -94,16 +94,16 @@ define ${_macro}
   $(call Enter-Macro,$(0),$(1))
   $(call report-comp,$(1))
   $(call Display-Vars,\
-    $(1)_SERVER \
-    $(1)_ACCOUNT \
-    $(1)_REPO \
-    $(1)_URL \
-    $(1)_BRANCH \
-    $(1)_repo_class \
-    $(1)_repo_name \
-    $(1)_repo_path \
-    $(1)_repo_dep \
-    $(1)_repo_mk \
+    $(1).SERVER \
+    $(1).ACCOUNT \
+    $(1).REPO \
+    $(1).URL \
+    $(1).BRANCH \
+    $(1).repo_class \
+    $(1).repo_name \
+    $(1).repo_path \
+    $(1).repo_dep \
+    $(1).repo_mk \
     repos \
   )
   $(Exit-Macro)
@@ -122,10 +122,10 @@ define ${_macro}
   $(call Enter-Macro,$(0),$(1) $(2))
   $(call verify-comp-vars,$(1),$(2))
   $(call Expect-Vars,\
-    $(2)_repo_name:${$(2)_name} \
-    $(2)_repo_path:${$(2)_path} \
-    $(2)_repo_dep:${$(2)_repo_path}/.git \
-    $(2)_repo_mk:${$(2)_repo_path}/$(2).mk \
+    $(2).repo_name:${$(2).name} \
+    $(2).repo_path:${$(2).path} \
+    $(2).repo_dep:${$(2).repo_path}/.git \
+    $(2).repo_mk:${$(2).repo_path}/$(2).mk \
   )
   $(call Exit-Macro)
 endef
@@ -233,12 +233,12 @@ define ${_macro}
   )
   $(eval _u := $(call get-repo-url,$(1)))
   $(call Debug,get-repo-url returned:(${_u}))
-  $(call Debug,$(1)_REPO = (${$(1)_REPO}) LOCAL_REPO = (${LOCAL_REPO}))
-  $(if $(filter ${$(1)_REPO},${LOCAL_REPO}),
+  $(call Debug,$(1).REPO = (${$(1).REPO}) LOCAL_REPO = (${LOCAL_REPO}))
+  $(if $(filter ${$(1).REPO},${LOCAL_REPO}),
     $(call Expect-String,\
       ${Run_Output},fatal: No remote configured to list refs from. 128)
   ,
-    $(call Expect-Vars,$(1)_REPO:${_u})
+    $(call Expect-Vars,$(1).REPO:${_u})
   )
   $(eval _b := $(call get-repo-branch,$(1)))
   $(call Debug,get-repo-branch returned:${_b})
@@ -247,7 +247,7 @@ define ${_macro}
     $(call FAIL,Could not retrieve the active branch.)
   ,
     $(call Debug,Branch:${_b})
-    $(call Expect-Vars,$(1)_BRANCH:${_b})
+    $(call Expect-Vars,$(1).BRANCH:${_b})
   )
   $(if $(2),
     $(call Debug,Verifying repo $(1) setup.)
@@ -374,7 +374,7 @@ endif
 
 ifneq ($(call Is-Goal,test-projects),)
   # Basic vars for testing projects.
-  PROJECT := prj$(SuiteID)
+  PROJECT := prod$(SuiteID)
   PROJECT_REPO := local
   PROJECT_BRANCH := test
 

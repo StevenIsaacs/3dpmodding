@@ -1,10 +1,9 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # ModFW - comp-macros test suite.
 #----------------------------------------------------------------------------
-# The prefix $(call Last-Segment-Basename) must be unique for all files.
 # +++++
-# Preamble
-ifndef $(call Last-Segment-Basename)SegId
+$(call Last-Segment-UN)
+ifndef ${LastSegUN}.SegID
 $(call Enter-Segment)
 # -----
 $(call Use-Segment,comp-macros)
@@ -101,11 +100,11 @@ define ${_macro}
   )
 
   $(call Test-Info,Adding a non-component class.)
-  $(eval _class := not-ctnr)
+  $(eval _class := not-node)
   $(call verify-declare-component,${_class})
 
   $(call Test-Info,Adding a component class.)
-  $(eval _class := ctnr)
+  $(eval _class := node)
   $(call verify-declare-component,${_class},${TESTING_PATH})
 
   $(call Exit-Macro)
@@ -129,12 +128,12 @@ define ${_macro}
   $(call declare-comp,comp,${_class})
   $(call Verify-Error)
 
-  $(call declare-component,ctnr,${TESTING_PATH})
-  $(call declare-component,non-ctnr)
+  $(call declare-component,node,${TESTING_PATH})
+  $(call declare-component,non-node)
 
   $(eval _comp := comp)
   $(call Test-Info,A component component component:${_class})
-  $(call declare-comp,ctnr,ctnr-1)
+  $(call declare-comp,node,node-1)
   $(call report-comp,$(1))
   $(call verify-comp-vars,$(1))
   $(call Test-Info,Expect an already declared warning.)
@@ -162,7 +161,7 @@ $(call declare-comp,comp,${_comp})
 
 
 # A component component and a component inside a component.
-_class := ctnr-c-1
+_class := node-c-1
 $(call declare-component,${_class},${TESTING_PATH})
 $(call declare-component,)
 

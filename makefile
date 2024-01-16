@@ -38,25 +38,24 @@ include ${_helpers}
 
 ifneq ($(call Is-Goal,help),help)
 
-ifdef PREPEND
-  $(call Use-Segment,$(PREPEND))
-endif
-
 # Config will change the sticky directory to be PROJECT specific.
 $(call Use-Segment,config)
 
 # Search path for loading segments. This can be extended by kits and mods.
-$(call Add-Segment-Path,$(MK_PATH))
+$(call Add-Segment-Path,${MK_PATH})
 
 # Common macros for ModFW segments.
-$(call Use-Segment,comp-macros)
+$(call Use-Segment,node-macros)
 $(call Use-Segment,repo-macros)
 
 $(call Debug,STICKY_PATH = ${STICKY_PATH})
 
+ifdef PREPEND
+  $(call Use-Segment,${PREPEND})
+endif
+
 # Testing takes control of when projects, kits, and mods are loaded.
 ifeq (${TESTING},)
-
   # Setup PROJECT specific variables and goals. A project changes the
   # STICKY_PATH to point to the project repo. This way sticky options are also # under revision control.
   $(call Use-Segment,projects)
@@ -90,58 +89,68 @@ Usage: make [<option>=<value> ...] [<goal>]
 
 This is the top level make file for ModFW. NOTE: ModFW is not a build system.
 Instead, ModFW is intended to integrate a variety of build systems which are
-used to build both software and hardware components and products.
+used to build both software and hardware components and projects.
 
-NOTE: This help is displayed if no goal is specified.
-
-This make file and the included make segments define a framework for
-developing new products or modifying existing products. A product can
-consist of both software and hardware. A system is defined as all of the
-software components needed by the product. A device is defined as all of
-the hardware components needed by the product. All of the tools and existing
-components needed to build the product are automatically downloaded,
-configured and built if necessary.
+This make file and the included make segments define a framework for developing
+new projects or modifying existing projects. A project can consist of both
+software and hardware. All of the tools and existing components needed to build
+the project are automatically downloaded, configured and built when needed.
 
 Definitions:
-  MOD: The collection of files for a given device or system is termed a mod.
-  Semantically, a mod is a modification of an existing device or system or
-  a mod can also be the development a new device or system. A mod can be
-  dependent upon the goals of other mods. Only one mod can be the "active" mod.
+  deliverable: A deliverable is the end result of a ModFW run. In make
+  terminology a deliverable is an end goal or target. In ModFW a deliverable is
+  a file which can be:
+  * A software executable or library.
+  * A file describing an object which can be manufactured using a 3D printer or
+    CNC.
+  * A file describing a printed circuit board needed to manufacture and assemble
+    the board.
 
-  KIT: A kit is a collection of mods. Each kit is a separate git repository and
-  is cloned from the remote repository when needed. New kits can be created
-  locally. One kit can be the "active" kit.
+  project: A ModFW project is the collection of one or more deliverables which
+  serve a specific purpose.
 
-  PROJECT: A project is the collection of files which define a product. This
-  can be as simple as a single makefile segment but should at minimum be the
-  repository for the product documentation. A project is maintained as a
+  seg: Indicates the name of a makefile segment (included file). Changing the
+  name of the file changes the name of the associated variables, macros, and
+  goals.
+
+  mod: The collection of files for a given deliverable is termed a mod.
+  Semantically, a mod is a modification of an existing deliverable or a mod can
+  be the development a new deliverable. A mod can be dependent upon the goals of
+  other mods. Only one mod can be the "active" mod. The active mod is specified
+  using the MOD variable.
+
+  kit: A kit is a collection of mods. Each kit is a separate git repository
+  and is cloned from the remote repository when needed. New kits can be created
+  locally. One kit can be the "active" kit. The active kit is specified using
+  the KIT variable.
+
+  prod: Defines the mods comprising a project. This can be as simple as
+  a single makefile segment but can include project documentation as well as
+  goals for packaging the project deliverables. A project is maintained as a
   separate git repository. Similar to a kit, a project is automatically cloned
   when needed or can be created locally. The makefile segment for the project
   should define the kit repo URLs and branches. One project can be the "active"
   project. Sticky variables are stored in the active project directory. See
-  help-helpers for more information about sticky variables.
+  help-helpers for more information about sticky variables. The active project
+  is specified using the PROJECT variable.
 
-  <repo>: A git repository.
+  tree: ModFW uses a tree structure to organize components needed to assemble
+  deliverables. This structure is similar to a classic tree structure as
+  described here: https://en.wikipedia.org/wiki/Tree_(data_structure)
 
-  <ctnr>: A container for components. A container can be a component which is
-  contained in another container. e.g. A kit is a component which contains mods.
-  The directory where kits are stored is also a container but not a component.
+  node: A node for related files. A node is implemented as a directory
+  in the file system. A node can be contained in another node (parent).
+  Conversely, a node can contain other nodes (children).Semantically, a node serves to differentiate directories which are part of the ModFW structure apart from unrelated directories. A node must at minimum contain a makefile segment (seg) having the same name as the node itself.
 
-  <comp>: Indicates a reference to a component which can be a project, kit, or
-  mod. Each component has a unique name which is used to name component
-  attributes (see help-comp-macros). A component must be stored in a container.
-  A component is stored within its container in a unique directory having the
-  name <comp>. Each component contains a makefile segment having the name
-  <comp>.mk which is included when the component is used. As mentioned
-  previously, a component can also be a container in which case it must first
-  be declared as a container before being declared as a component.
+  root node: A root node has no parent but has children. The ModFW directory is
+  a root node. Typically the project and kit directories are children of the
+  ModFW node but can exist in other locations making them root nodes as well.
 
-  <seg>: Indicates a makefile segment (included file) where <seg> is derived
-  using the name of the directory containing makefile segment. Changing the
-  name of the file changes the name of the associated variables, macros, and
-  goals. <seg> is also used to name project and kit repositories.
+  forest: A number of unconnected trees.
 
-  dev:  The project, kit, and/or mod developer.
+  repo: A node which is also a clone of a git repository.
+
+  eng: The designer and/or developer of a project.
 
 Repositories and branches:
   As previously mentioned projects and kits are separate git repositories. Mods
@@ -164,7 +173,7 @@ Naming conventions:
                 information.
 GLOBAL_VARIABLE Can be overridden on the command line. Sticky variables should
                 have this form unless they are for a component in which case
-                the should use the <seg>_VARIABLE form (below). See
+                the should use the <seg>.VARIABLE form (below). See
                 help-helpers for more information about sticky variables.
 global_variable Available to all segments but should not be overridden on the
                 command line. Attempts to override can have unpredictable
@@ -174,7 +183,7 @@ global_variable Available to all segments but should not be overridden on the
 <ctx>.VARIABLE  A global variable prefixed with the name of specific context.
                 These can be overridden on the command line.
                 Component specific sticky variables should use this form.
-<ctx>.variable  A global variable prefixed with the name of the segment
+<ctx>.variable  A global variable prefixed with the name of the context
                 defining the variable. These should not be overridden.
 _private_variable Make segment specific. Should not be used by other segments
                 since these can be changed without concern for other segments.
@@ -188,7 +197,7 @@ Callable-Macro  The name of a helper defined callable macro.
 
 WARNING: Even though make allows variable names to begin with a numeric
 character this must be avoided for all variable names since they may be
-exported to the environment to be passed to bash. If a numeric character is
+exported to the environment to be passed to a shell. If a numeric character is
 used as the first character of a variable name unpredictable behavior can
 occur. This is particularly important for PROJECT, KIT, MOD, and segment
 names.
@@ -301,19 +310,13 @@ automatically installed within the context of the project directory so
 that different projects can use different versions of tools without
 conflicts between versions.
 
-Before any actual mods can be built it is necessary to declare which components
-are active, Activating components must in the order of project then kit then mod. The active mod must always be contained within the active kit. If a
-different kit is activated a different mod within that kit must be activated.
+Before any actual mods can be built it is necessary to declare which project
+is active,
 
 For example:
-  make PROJECT=<project> PROJECT_REPO=<url> all
+  make PROJECT=<project> PROJECT.URL=<url> all
     Will install the project repo and activate it. Once a project is activated
     a kit can then be activated.
-  make KIT=<kit> KIT_REPO=<url> activate-kit
-    Will install the kit repo and activate it. Once a kit is activated a mod
-    within the kit can then be activated.
-  make MOD=<mod> activate-mod
-    Will activate a mod within the active kit.
 
 The active project, kit, and mod are the top level or focus. Mods can then
 "use" additional mods and even mods from other kits to build components they
@@ -345,6 +348,11 @@ Command line options:
     information).
     For example: "make APPEND=test" will load the makefile segment named
     test.mk.
+
+Testing the process.
+  TESTING = ${TESTING}
+    When this variable is not empty then the normal project processing does not
+    occur. Instead, PREPEND should be used to initiate a testing process.
 
 Command line goals:
   all             All mods for the active project are built. Use show-mod_deps

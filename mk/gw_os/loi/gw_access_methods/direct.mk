@@ -2,12 +2,11 @@
 # Defines variables, targets, and functions for configuring an OS for direct
 # access.
 #----------------------------------------------------------------------------
-# The prefix $(call Last-Segment-Basename) must be unique for all files.
 # +++++
-# Preamble
-ifndef $(call Last-Segment-Basename)SegId
+$(call Last-Segment-UN)
+ifndef ${LastSegUN}.SegID
 $(call Enter-Segment)
-# +++++
+# -----
 # Postamble
 # Define help only if needed.
 ifneq ($(call Is-Goal,help-${Seg}),)

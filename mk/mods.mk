@@ -1,22 +1,228 @@
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Load a mod -- the mod has already been handled.
 #----------------------------------------------------------------------------
-# The prefix $(call Last-Segment-Basename) must be unique for all files.
 # +++++
-# Preamble
-ifndef $(call Last-Segment-Basename)SegId
+$(call Last-Segment-UN)
+ifndef ${LastSegUN}.SegID
 $(call Enter-Segment)
 # -----
 
-containers += MOD
+${Seg} :=
 
-# The active mod.
-$(call Sticky,MOD)
+_macro := kit-name
+define _help
+${_macro}
+  Returns the kit portion of a mod reference.
+  Parameters:
+    1 = <kit>.<mod> reference.
+endef
+help-${_macro} := $(call _help)
+${_macro} = $(word 1,$(subst ., ,$(1)))
 
-$(call Require,MOD)
+_macro := mod-name
+define _help
+${_macro}
+  Returns the mod portion of a mod reference.
+  Parameters:
+    1 = <kit>.<mod> reference.
+endef
+help-${_macro} := $(call _help)
+${_macro} = $(word 2,$(subst ., ,$(1)))
 
-mods_path := ${${KIT}_repo_path}
-mod_path := ${mods_path}/${MOD}
+_macro := declare-mod
+define _help
+${_macro}
+  Define the attributes of a mod. A mod must be declared before any other mod
+  related macros can be used. If the kit containing the mod has not been
+  declared it is automatically used.
+  Parameters:
+    1 = The <kit>.<mod> reference to the mod.
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(call Enter-Macro,$(0),$(1) $(2))
+$(if ${$(1).SegID},
+  $(call Warn,Mod $(1) is already in use.)
+,
+  $(if $(2),
+    $(eval _k := $(2))
+  ,
+    $(eval _k := $(KIT))
+  )
+  $(if ${${_k}_repo_path},
+    $(call Verbose,Kit ${_k} is in use.)
+  ,
+    $(call Verbose,Using kit ${_k})
+    $(call use-repo,${KITS_PATH},${_k})
+  )
+  $(if $(wildcard ${${_k}_repo_path}),
+    $(call Verbose,Declaring mod $(1).)
+    $(call declare-comp,${${_k}_repo_path},$(1))
+    $(eval comps += $(1))
+    $(eval mods += $(1))
+  ,
+    $(call Signal-Error,Using kit ${_k} failed.)
+  )
+)
+$(call Exit-Macro)
+endef
+
+_macro := setup-mod
+define _help
+${_macro}
+  Generate a goal to create and initialize a mod in a local directory. A
+  makefile segment for the mod having the same name as the mod is also
+  generated.
+  NOTE: The new component and mod must have already been declared. Also,
+  the KIT containing the mod MUST exist and have also been declared.
+  Parameters:
+    1 = The name of the new mod (<mod>).
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(call Enter-Macro,$(0),$(1))
+  $(call Attention,TBD)
+$(call Exit-Macro)
+endef
+
+_macro := use-mod
+define _help
+${_macro}
+  Use a project or kit mod. If the mod doesn't exist locally a goal is
+  generated to clone the mod from a remote server.
+  NOTE: This macro is also be designed to be called by mods which are dependent
+  on the output of another component.
+  Parameters:
+    1 = The path to the mod.
+    2 = The name of the component (<mod>) corresponding to the mod. This is
+        used to name the mod directory and associated variables.
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(call Enter-Macro,$(0),$(1) $(2))
+$(if $(1),
+  $(if $(2),
+    $(if ${(2).seg},
+      $(call Info,Component $(2) is already in use.)
+    ,
+      $(call declare-comp,$(1),$(2))
+      $(call declare-mod,$(2))
+      $(if $(wildcard ${$(2).mod_mk}),
+        $(call Info,Using mod: $(2))
+        $(call Add-Segment-Path,${$(2).mod_path})
+        $(call Use-Segment,$(2))
+      ,
+        $(if ${$(2).REPO},
+          $(call Info,Generating goal to clone mod: $(2))
+          $(call gen-mod-goal,copy,$(2))
+        ,
+          $(call Signal-Error,\
+            use-mod:Repo $(2) is not defined. Use create-new.)
+        )
+      )
+    )
+  )
+,
+  $(call Signal-Error,The mod path has not been specified.)
+)
+$(call Exit-Macro)
+endef
+
+_macro := copy-basis-to-new-mod
+define _help
+${_macro}
+  Copy an existing mod to serve as the basis for a new mod. The makefile
+  segment for the basis mod is used to generate the new makefile segment with
+  references to the basis mod changed to reference the new mod. The
+  basis makefile segment is retained for reference but no longer used. This
+  also generates a "create-mod" goal which must be used on the command line
+  which helps avoid accidental creation of useless mods.
+  Parameters:
+    1 = The path to the directory where the mod will be stored.
+    2 = The name of the component (<mod>) corresponding to the new mod. This
+        is used to name the mod directory and associated variables.
+    3 = The basis component (<basis>) to clone when creating the new mod.
+    4 = The kit containing the basis mod. This defaults to the active kit.
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(call Enter-Macro,$(0),$(1) $(2) $(3) $(4))
+$(if $(2),
+  $(if $(3),
+    $(call Verbose,Using $(3) as basis for $(2).)
+    $(if $(1),
+      $(call use-mod,$(1),$(3))
+      $(call gen-basis-to-new-mod-goal,$(2),$(3))
+    ,
+      $(call Signal-Error,\
+        dup-mod:The new and basis mod path has not been specified.)
+    )
+  ,
+    $(call Signal-Error,The basis mod has not been specified.)
+  )
+,
+  $(call Signal-Error,The new mod has not been specified.)
+)
+$(call Exit-Macro)
+endef
+
+_macro := new-mod
+define _help
+${_macro}
+  Create and initialize a new mod within a kit. A makefile segment is generated from a template. The dev must then complete the makefile segment before attempting a build.
+  NOTE: This is designed to be callable from the make command line using the
+  helpers call-<macro> goal.
+  For example:
+    make ${_macro}.PARMS=<mod>[:<basis>] call-${_macro}
+  Parameters:
+    1 = The name of the new mod.
+    2 = Optional mod name to use as the basis of the new kit.
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(call Enter-Macro,$(0),$(1) $(2))
+$(call Verbose,Creating mod $(1).)
+$(call Verbose,mod:${$(1).REPO})
+$(call Verbose,Filtered:$(filter local,${$(1).REPO}))
+$(if $(filter local,${$(1).REPO}),
+  $(call Verbose,Creating $(1).)
+  $(call gen-mod-goal,init,$(1))
+,
+  $(call Signal-Error:create-mod:Can only create a local mod.)
+)
+$(call Exit-Macro)
+endef
+
+_macro := use-mod
+define _help
+${_macro}
+  Use a mod. The mod must already exist.
+  Parameters:
+    1 = A <kit>.<mod> reference.
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(call Enter-Macro,$(0),$(1) $(2) $(3))
+$(if $(1),
+  $(if ${(2).seg},
+    $(call Verbose,Kit $(2) has already been declared.)
+  ,
+    $(call use-kit,$(2))
+  )
+  $(call Info,Creating new mod for: $(2))
+  $(call declare-mod,$(1),$(2))
+  $(if $(3),
+    $(call Verbose,Duplicating $(3) to mod $(1).)
+    $(call dup-mod,$(1),$(2),$(3),$(4))
+  ,
+    $(call Verbose,Creating mod $(1).)
+    $(call create-mod,$(1))
+  )
+,
+  $(call Signal-Error,The new mod name has not been specified.)
+)
+$(call Exit-Macro)
+endef
 
 # +++++
 # Postamble
@@ -25,121 +231,20 @@ ifneq ($(call Is-Goal,help-${Seg}),)
 define help_${SegV}_msg
 Make segment: ${Seg}.mk
 
-A mod contains all of the variables, goals, and recipes needed to build all
-of the components needed for the mod.
+A mod contains all of the variables, macros, goals, and recipes needed to build
+all of the mod deliverables. A mod is always a subdirectory in a kit repo
+making the kit the parent of the mod. This avoids name conflicts
+between kits. The <kit> portion of the reference is also a reference to the
+parent node for the mod.
 
 A mod can be dependent upon other mods in the same kit or different kits.
 
-Required sticky command line variables:
-  KIT=${KIT}
-    Which kit is the active kit (see "help-kits").
-  MOD=${MOD}
-    Which mod is the active mod from the active kit.
-
-Optional sticky variables:
-  These are required if the clone directory doesn't exist. If the clone
-  directory does exist then they will be set using git to determine the
-  repository URL and the active branch. This feature allows use of a local
-  repository or one that was cloned manually.
-  ${KIT}_REPO = ${${KIT}_REPO}
-    Synonym = KIT_REPO
-    The git repo to clone to download the mod.
-  ${KIT}_BRANCH = ${${KIT}_BRANCH}
-    Synonym = KIT_BRANCH
-    Which version of the mod to use. This determines which branch to checkout
-    once cloned.
-  KIT_CONFIGS_PATH = ${KIT_CONFIGS_PATH}
-    Where generated config files are maintained. This can be a path to a
-    repository maintained by the developer.
-
-Defined in config.mk:
-  KITS_PATH = ${KITS_PATH}
-    Where mod mods are installed (cloned from a git repo).
-  STAGING_PATH = ${STAGING_PATH}
-    The top level staging directory.
-
-Defines:
-
 Macros:
-  use-mod
-    Declare mod specific variables, macros, and goals (a namespace). This
-    allows having one mod dependent upon the output of different mod. If
-    the mod segment exists then it is loaded. Otherwise, the kit containing the
-    mod is installed or if the "create-mod" goal is used a new mod is created.
-    Command line goals:
-      <mod>-create-mod
-        This goal is fully defined only when the "create-mod" goal (below) is
-        used. To reduce the possibility of accidental creation of new mods
-        this goal does nothing if the "create-mod" goal is not in the list of
-        command line goals.
-    Parameters:
-      1 = The mod file name. This is used to name:
-          Defaults to the active mod: ${MOD}
-            - The mod make segment file.
-            - The mod directory.
-            - Mod specific goals.
-      2 = The kit containing the mod.
-          Defaults to the active kit: ${KIT}
-      3 = The branch in the kit repository to use.
-          Default: Previous value or ${DEFAULT_KIT_BRANCH}
-    Examples:
-      $$(call use-mod)
-        Use the active mod from the active kit.
-      $$(call use-mod,<mod>)
-        Use a mod from the active kit.
-        The repo and branch default to the previously saved value or defaults.
-        No basis project is used if creating a new mod.
-      $$(call use-mod,<mod>,<kit>)
-        Use a mod from a specific kit.
-      $$(call use-mod,<mod>,,<branch>)
-        The repo defaults to the previously saved value or default.
-        The mod repo branch is switched to <branch>.
-
-  new-mod
-    Create a new mod and declare mod specific variables, macros, and goals (a namespace). The mod is created locally and will not have a corresponding
-    remote repository.
-
-    Parameters:
-      1 = The new mod name. This is used to name:
-            - The mod repository directory name.
-            - The mod make segment file.
-            - Kit specific goals.
-      2 = The kit in which to create the new mod.
-          Defaults to the active kit: ${KIT}
-      3 = The branch in the kit repository to use.
-          Default: Previous value or ${DEFAULT_KIT_BRANCH}
-      4 = The optional basis mod to use if creating a new mod. The basis mod must
-          have been previously cloned or created. The contents of the basis mod
-          directory are cloned to the new mod using git. The basis mod makefile
-          segment is used to generate the new mod makefile segment.
-    Updates:
-      new_mods = ${new_mods}
-        A list of new mods being created.
-      new_mod_deps = ${new_mod_deps}
-        A list of new mods dependencies. This is used as the dependency list
-        for the "create-mod" goal.
-    Defines the mod specific sticky variables:
-      <mod>_REPO = ${DEFAULT_KIT_REPO}
-        For new mods this is always equal to DEFAULT_KIT_REPO.
-      <mod>_BRANCH = ${DEFAULT_KIT_BRANCH}
-        The main branch for the new mod. This is always equal to
-        DEFAULT_KIT_BRANCH.
-    Command line goals:
-      <mod>-create-mod
-        This goal is fully defined only when the "create-mod" goal (below) is
-        used. To reduce the possibility of accidental creation of new mods
-        this goal does nothing if the "create-mod" goal is not in the list of
-        command line goals. This is added to the new_mod_deps list.
-    Examples:
-      $$(call new-mod,<mod>)
-        No basis project is used when creating a new mod.
-      $$(call new-mod,<mod>,<basis_mod>)
-        The a basis mod is cloned when creating a new mod.
 
 Command line goals:
-  show-mods
+  show-${Seg}
     Display a list of loaded mods.
-  help-<mod>
+  help-<kit>.<mod>
     For mod specific help.
   help-${Seg}
     Display this help.
