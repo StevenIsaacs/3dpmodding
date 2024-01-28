@@ -34,6 +34,7 @@ _null := $(shell \
 )
 
 # Helper macros.
+MakeD := ModFW -- A modding framework.
 include ${_helpers}
 
 ifneq ($(call Is-Goal,help),help)
@@ -45,8 +46,8 @@ $(call Use-Segment,config)
 $(call Add-Segment-Path,${MK_PATH})
 
 # Common macros for ModFW segments.
-$(call Use-Segment,node-macros)
-$(call Use-Segment,repo-macros)
+$(call Use-Segment,nodes)
+$(call Use-Segment,repos)
 
 $(call Debug,STICKY_PATH = ${STICKY_PATH})
 
@@ -64,6 +65,7 @@ endif # TESTING
 ifdef APPEND
   $(call Use-Segment,${APPEND})
 endif
+$(call Display-Segs)
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # The entire project.
@@ -83,8 +85,13 @@ clean: ${cleaners}
 
 endif # Not help.
 
-ifneq ($(call Is-Goal,help),)
-define help-Usage
+_h := $(or \
+  $(call Is-Goal,help-${SegUN}), \
+  $(call Is-Goal,help-${SegID}))
+ifneq (${_h},)
+$(call Attention,Defining ${_h} for:${Seg})
+define _help
+Makefile: ${Seg}
 Usage: make [<option>=<value> ...] [<goal>]
 
 This is the top level make file for ModFW. NOTE: ModFW is not a build system.
@@ -101,13 +108,19 @@ Definitions:
   terminology a deliverable is an end goal or target. In ModFW a deliverable is
   a file which can be:
   * A software executable or library.
-  * A file describing an object which can be manufactured using a 3D printer or
-    CNC.
+  * A file describing an object which can be manufactured using a 3D printer,
+    CNC or other means.
   * A file describing a printed circuit board needed to manufacture and assemble
     the board.
+  * A bill of materials (BOM) for off the shelf parts.
 
   project: A ModFW project is the collection of one or more deliverables which
-  serve a specific purpose.
+  serve a specific purpose. By default all components, intermediate files and
+  deliverables are contained in the project directory tree. This allows
+  different projects to use different versions of kits without worry of
+  version conflicts. The disadvantage of this approach is the potential of
+  having multiple copies of mods so one must be careful when editing mods to
+  avoid mistakenly modifying a file in the wrong project.
 
   seg: Indicates the name of a makefile segment (included file). Changing the
   name of the file changes the name of the associated variables, macros, and
@@ -116,15 +129,14 @@ Definitions:
   mod: The collection of files for a given deliverable is termed a mod.
   Semantically, a mod is a modification of an existing deliverable or a mod can
   be the development a new deliverable. A mod can be dependent upon the goals of
-  other mods. Only one mod can be the "active" mod. The active mod is specified
-  using the MOD variable.
+  other mods. See help-mods for more information.
 
   kit: A kit is a collection of mods. Each kit is a separate git repository
   and is cloned from the remote repository when needed. New kits can be created
-  locally. One kit can be the "active" kit. The active kit is specified using
-  the KIT variable.
+  locally. All kits used in a ModFW run must have unique names. See help-kits
+  for more information.
 
-  prod: Defines the mods comprising a project. This can be as simple as
+  prj: Defines the mods comprising a project. This can be as simple as
   a single makefile segment but can include project documentation as well as
   goals for packaging the project deliverables. A project is maintained as a
   separate git repository. Similar to a kit, a project is automatically cloned
@@ -132,7 +144,8 @@ Definitions:
   should define the kit repo URLs and branches. One project can be the "active"
   project. Sticky variables are stored in the active project directory. See
   help-helpers for more information about sticky variables. The active project
-  is specified using the PROJECT variable.
+  is specified using the PROJECT variable. See help-projects for more
+  information.
 
   tree: ModFW uses a tree structure to organize components needed to assemble
   deliverables. This structure is similar to a classic tree structure as
@@ -140,7 +153,8 @@ Definitions:
 
   node: A node for related files. A node is implemented as a directory
   in the file system. A node can be contained in another node (parent).
-  Conversely, a node can contain other nodes (children).Semantically, a node serves to differentiate directories which are part of the ModFW structure apart from unrelated directories. A node must at minimum contain a makefile segment (seg) having the same name as the node itself.
+  Conversely, a node can contain other nodes (children). Semantically, a node serves to differentiate directories which are part of the ModFW structure apart from unrelated directories. A node must at minimum contain a makefile segment (seg) having the same name as the node itself. See help-nodes for
+  more information.
 
   root node: A root node has no parent but has children. The ModFW directory is
   a root node. Typically the project and kit directories are children of the
@@ -150,7 +164,7 @@ Definitions:
 
   repo: A node which is also a clone of a git repository.
 
-  eng: The designer and/or developer of a project.
+  dev: The designer and/or developer of a project.
 
 Repositories and branches:
   As previously mentioned projects and kits are separate git repositories. Mods
@@ -385,8 +399,6 @@ Command line goals:
   help-<seg>      Display a make segment specific help.
 
 endef
-
-export _mod_fw_usage
-.PHONY: help
-help: help-Usage display-errors display-messages
-endif # help
+${_h} := ${_help}
+endif
+$(call Resolve-Help-Goals)

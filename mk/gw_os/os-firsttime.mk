@@ -4,7 +4,7 @@
 # +++++
 $(call Last-Segment-UN)
 ifndef ${LastSegUN}.SegID
-$(call Enter-Segment)
+$(call Enter-Segment,OS First Time)
 # -----
 # Not all variants need a specific os-firsttime.mk
 -include ${MK_PATH}/${GW_OS_VARIANT}_os-firsttime.mk
@@ -17,8 +17,10 @@ install-os-firsttime:
 # +++++
 # Postamble
 # Define help only if needed.
-ifneq ($(call Is-Goal,help-${Seg}),)
-define help_${SegV}_msg
+__h := $(or $(call Is-Goal,help-${SegUN}),$(call Is-Goal,help-${SegID}))
+ifneq (${__h},)
+$(call Attention,Generating help for:${Seg})
+define __help
 Make segment: ${Seg}.mk
 
 This segment installs a first time script into an OS image. To do so it
@@ -46,9 +48,10 @@ Command line goals:
   install-os-firsttime
     Mount the OS image, install the first time script and then unmount the
     OS image.
-  help-${Seg}
+  help-${SegUN}
     Display this help.
 endef
+${__h} := ${__help}
 endif
 $(call Exit-Segment)
 else

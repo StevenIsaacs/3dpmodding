@@ -4,7 +4,7 @@
 # +++++
 $(call Last-Segment-UN)
 ifndef ${LastSegUN}.SegID
-$(call Enter-Segment)
+$(call Enter-Segment,Macros to support ModFW repos.)
 # -----
 $(call Use-Segment,comp-macros)
 
@@ -16,7 +16,7 @@ ${_var}
 endef
 
 _var := repo_attributes
-${_var} := URL BRANCH seg_f dep
+${_var} := URL BRANCH seg_f dep ${node_attributes}
 define _help
 ${_var}
   In addition to the attributes of the node in which a repo resides a repo
@@ -31,17 +31,13 @@ ${_var}
     The branch to switch to after cloning the repo. This is also used to derive
     the name of the node in which the repo resides.
 
-  Derived variables:
-  <repo>.name
-    This is used as a sanity check and should equal <repo>.
+  Additional attributes:
   <repo>.seg_f
     The path and file name of the makefile segment for the repo.
   <repo>.dep
     A dependency used to determine if a node is a repo.
 
-  Additional attributes:
-    A node is used to contain the clone of the repo. See help-node_attributes
-    for more information.
+${help-node-attributes}
 endef
 help-${_var} := $(call _help)
 
@@ -72,54 +68,6 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 ${_macro} = $(if $(wildcard ${$(1).seg_f}),1)
-
-_macro := declare-repo
-define _help
-${_macro}
-  Declare a tree node as a repo.
-  NOTE: A repo MUST have a parent node.
-  NOTE: See help-repo_attributes for more information.
-  Parameters:
-    1 = <repo>: The name of the repo being declared.
-    2 = The name of the parent node which contains the repo.
-  Uses sticky variables (see help-repo_attributes):
-    <repo>.URL
-      Default: ${DEFAULT_SERVER}/<repo>
-    <repo>.BRANCH
-      Default: ${DEFAULT_BRANCH}
-${help-repo_attributes}
-endef
-help-${_macro} := $(call _help)
-define ${_macro}
-$(call Enter-Macro,$(0),$(1) $(2))
-$(if $(call repo-is-declared,$(1)),
-  $(call Warn,Repo $(1) has already been declared.)
-,
-  $(if $(call node-is-declared,$(1)),
-    $(call Signal-Error,The node name for repo $(1) has already been declared.)
-  ,
-    $(call Sticky,$(1).URL,${DEFAULT_SERVER}/$(1))
-    $(call Sticky,$(1).BRANCH,${DEFAULT_BRANCH})
-    $(eval _udef := $(call Require,$(1).URL $(1).BRANCH))
-    $(if ${_udef},
-      $(call Signal-Error,These sticky variables must be defined:${_udef})
-    ,
-      $(if $(2),
-        $(call Verbose,Declaring repo $(1).)
-        $(call declare-node,$(1),$(2))
-        $(eval $(1).name := $(1))
-        $(eval $(1).seg_f := ${$(1).path}/$(1).mk)
-        $(eval $(1).dep := ${$(1).path}/.git/HEAD)
-        $(eval repos += $(1))
-      ,
-        $(call Signal-Error,Repo $(1) must have a parent node.)
-      )
-    )
-  )
-)
-$(call Exit-Macro)
-
-endef
 
 _macro := is-modfw-repo
 define _help
@@ -203,44 +151,51 @@ $(strip
 )
 endef
 
-_macro := init-repo
+_macro := declare-repo
 define _help
 ${_macro}
-  Use git to initialize a new repo. A new makefile segment is generated from a
-  template and committed to the repo. After initialization the dev needs to
-  customize the makefile segment for its intended use.
+  Declare a tree node as a repo.
+  NOTE: A repo MUST have a parent node.
+  NOTE: See help-repo_attributes for more information.
   Parameters:
-    1 = The name of a previously declared repo.
+    1 = <repo>: The name of the repo being declared.
+    2 = The name of the parent node which contains the repo.
+  Uses sticky variables (see help-repo_attributes):
+    <repo>.URL
+      Default: ${DEFAULT_SERVER}/<repo>
+    <repo>.BRANCH
+      Default: ${DEFAULT_BRANCH}
+${help-repo_attributes}
 endef
 help-${_macro} := $(call _help)
 define ${_macro}
-$(call Enter-Macro,$(0),$(1))
-$(if $(call is-modfw-repo,$(1)),
-  $(call Info,The node $(1) is a ModFW repo -- no init.)
+$(call Enter-Macro,$(0),$(1) $(2))
+$(if $(call repo-is-declared,$(1)),
+  $(call Warn,Repo $(1) has already been declared.)
 ,
-  $(if $(call repo-is-declared,$(1)),
-    $(call Run,git init -b ${$(1).BRANCH} ${$(1).path})
-    $(call Debug,git init return code:(${Run_Rc}))
-    $(if ${Run_Rc},
-      $(call Debug,Run returned:${Run_Output})
-      $(call Signal-Error,Error when initializing repo $(1).)
+  $(if $(call node-is-declared,$(1)),
+    $(call Signal-Error,The node name for repo $(1) has already been declared.)
+  ,
+    $(call Sticky,$(1).URL,${DEFAULT_SERVER}/$(1))
+    $(call Sticky,$(1).BRANCH,${DEFAULT_BRANCH})
+    $(eval _udef := $(call Require,$(1).URL $(1).BRANCH))
+    $(if ${_udef},
+      $(call Signal-Error,These sticky variables must be defined:${_udef})
     ,
-      $(call Verbose,Generating makefile segment for repo:$(1))
-      $(call Gen-Segment-File,$(1),$(1).path,Makefile segment for repo:$(1))
-      $(call Run, \
-        cd ${$(1).path} && \
-        git add . && git commit . -m "New component initialized."
-      )
-      $(if ${Run_Rc},
-        $(call Signal-Error,\
-          Error when committing $(1) makefile segment.)
+      $(if $(2),
+        $(call Verbose,Declaring repo $(1).)
+        $(call declare-node,$(1),$(2))
+        $(eval $(1).seg_f := ${$(1).path}/$(1).mk)
+        $(eval $(1).dep := ${$(1).path}/.git/HEAD)
+        $(eval repos += $(1))
+      ,
+        $(call Signal-Error,Repo $(1) must have a parent node.)
       )
     )
-  ,
-    $(call Signal-Error,Repo $(1) has not been declared.)
   )
 )
 $(call Exit-Macro)
+
 endef
 
 _macro := clone-repo
@@ -277,6 +232,49 @@ $(if $(call is-repo,$(1)),
   ,
     $(call Signal-Error,Makefile segment for repo $(1) does not exist.)
   )
+)
+$(call Exit-Macro)
+endef
+
+_macro := use-repo
+define _help
+${_macro}
+  Use a previously declared repo. If the repo doesn't exist locally the repo is
+  cloned either from a local repo or from a remote server depending upon
+  <2>.URL. Commits to the repo can be pushed to the origin repo. Once the repo
+  is in use Use-Segment should be called to load the repo makefile segment. The
+  path to the repo is added to the segment search paths to simplify the call to
+  Use-Segment. e.g. $$(call Use-Segment,<repo>)
+  Parameters:
+    1 = <repo>: The name of the repo. This is also the name of the tree node
+        for the repo.
+    2 = The branch of the repo to use. If this is empty then <repo>.BRANCH is
+        used.
+  Returns:
+    Run_Rc and Run_Output
+      See Run (help-helpers).
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(call Enter-Macro,$(0),$(1) $(2))
+$(if $(call node-is-declared,$(1)),
+  $(if ${(1).SegID},
+    $(call Info,Repo $(1) is already in use.)
+  ,
+    $(if $(wildcard ${$(1).seg_f}),
+      $(call Info,Using existing repo: $(1))
+    ,
+      $(if ${$(1).URL},
+        $(call Info,Cloning repo: $(1))
+        $(call clone-repo,$(1),$(2))
+      ,
+        $(call Signal-Error,Repo $(1) is not defined. Use create-new.)
+      )
+    )
+    $(call Add-Segment-Path,${$(1).path})
+  )
+,
+  $(call Signal-Error,The tree node for repo $(1) has not been declared.)
 )
 $(call Exit-Macro)
 endef
@@ -343,6 +341,46 @@ $(if $(call is-modfw-repo,$(2)),
 $(call Exit-Macro)
 endef
 
+_macro := init-repo
+define _help
+${_macro}
+  Use git to initialize a new repo. A new makefile segment is generated from a
+  template and committed to the repo. After initialization the dev needs to
+  customize the makefile segment for its intended use.
+  Parameters:
+    1 = The name of a previously declared repo.
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(call Enter-Macro,$(0),$(1))
+$(if $(call is-modfw-repo,$(1)),
+  $(call Info,The node $(1) is a ModFW repo -- no init.)
+,
+  $(if $(call repo-is-declared,$(1)),
+    $(call Run,git init -b ${$(1).BRANCH} ${$(1).path})
+    $(call Debug,git init return code:(${Run_Rc}))
+    $(if ${Run_Rc},
+      $(call Debug,Run returned:${Run_Output})
+      $(call Signal-Error,Error when initializing repo $(1).)
+    ,
+      $(call Verbose,Generating makefile segment for repo:$(1))
+      $(call Gen-Segment-File,$(1),$(1).path,<edit this description for>:$(1))
+      $(call Run, \
+        cd ${$(1).path} && \
+        git add . && git commit . -m "New component initialized."
+      )
+      $(if ${Run_Rc},
+        $(call Signal-Error,\
+          Error when committing $(1) makefile segment.)
+      )
+    )
+  ,
+    $(call Signal-Error,Repo $(1) has not been declared.)
+  )
+)
+$(call Exit-Macro)
+endef
+
 _macro := new-repo
 define _help
 ${_macro}
@@ -373,49 +411,6 @@ $(if ${$(2).REPO},
   )
 ,
   $(call Signal-Error,The new repo has not been defined.)
-)
-$(call Exit-Macro)
-endef
-
-_macro := use-repo
-define _help
-${_macro}
-  Use a previously declared repo. If the repo doesn't exist locally the repo is
-  cloned either from a local repo or from a remote server depending upon <2>.
-  REPO. Commits to the repo can be pushed to the origin repo. Once the repo is
-  in use Use-Segment should be called to load the repo makefile segment. The
-  path to the repo is added to the segment search paths to simplify the call to
-  Use-Segment. e.g. $$(call Use-Segment,<repo>)
-  Parameters:
-    1 = <repo>: The name of the repo. This is also the name of the tree node
-        for the repo.
-    2 = The branch of the repo to use. If this is empty then <repo>.BRANCH is
-        used.
-  Returns:
-    Run_Rc and Run_Output
-      See Run (help-helpers).
-endef
-help-${_macro} := $(call _help)
-define ${_macro}
-$(call Enter-Macro,$(0),$(1) $(2))
-$(if $(call node-is-declared,$(1)),
-  $(if ${(1).SegID},
-    $(call Info,Repo $(1) is already in use.)
-  ,
-    $(if $(wildcard ${$(1).seg_f}),
-      $(call Info,Using existing repo: $(1))
-    ,
-      $(if ${$(1).URL},
-        $(call Info,Cloning repo: $(1))
-        $(call clone-repo,$(1),$(2))
-      ,
-        $(call Signal-Error,Repo $(1) is not defined. Use create-new.)
-      )
-    )
-    $(call Add-Segment-Path,${$(1).path})
-  )
-,
-  $(call Signal-Error,The tree node for repo $(1) has not been declared.)
 )
 $(call Exit-Macro)
 endef
@@ -575,13 +570,25 @@ endef
 # +++++
 # Postamble
 # Define help only if needed.
-ifneq ($(call Is-Goal,help-${Seg}),)
-define help-${Seg}
+__h := \
+  $(or \
+    $(call Is-Goal,help-${Seg}),\
+    $(call Is-Goal,help-${SegUN}),\
+    $(call Is-Goal,help-${SegID}))
+ifneq (${__h},)
+define __help
 Make segment: ${Seg}.mk
 
 This segment defines macros for managing ModFW repos. They are not intended to
 be called only by the higher level macros (see help-projects, help-kits, and
 help-mods).
+
+A ModFW repo contains, at minimum, a makefile segment having the same name as
+the repo. The full path to this segment is available in the <repo>.seg_f
+attribute.
+
+The repo attributes are:
+${help-repo_attributes}
 
 Defines the support macros:
 ${help-repo-is-declared}
@@ -624,8 +631,9 @@ ${help-use-repo}
 ${help-activate-repo}
 
 Command line goals:
-  help-${Seg}   Display this help.
+  help-${SegUN}   Display this help.
 endef
+${__h} := ${__help}
 endif # help goal message.
 
 $(call Exit-Segment)

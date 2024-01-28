@@ -4,7 +4,7 @@
 # +++++
 $(call Last-Segment-UN)
 ifndef ${LastSegUN}.SegID
-$(call Enter-Segment)
+$(call Enter-Segment,Manage multiple ModFW kits using git, branches, and tags.)
 # -----
 
 # A kit is a collection of mods. Each kit is a separate git repo.
@@ -20,7 +20,51 @@ $(call Sticky,KITS_PATH,${DEFAULT_KITS_PATH})
 $(call declare-node,${KITS_DIR},,${KITS_PATH})
 $(call create-node,${KITS_DIR})
 
-${Seg} :=
+_var := kit_attributes
+${_var} := ${repo_attributes}
+define _help
+${_var}
+  A kit is a ModFW repo and has the same attributes as the repo.
+
+${help-repo_attributes}
+endef
+help-${_var} := $(call _help)
+
+_macro := declare-kit
+define _help
+${_macro}
+  Define the attributes of a kit.
+  Parameters:
+    1 = The name of the kit to declare.
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(call Enter-Macro,$(0),$(1) $(2))
+$(if ${$(1).name},
+  $(call Warn,Kit $(1) is already in use.)
+,
+  $(if $(2),
+    $(eval _k := $(2))
+  ,
+    $(eval _k := $(KIT))
+  )
+  $(if ${${_k}_repo_path},
+    $(call Verbose,Kit ${_k} is in use.)
+  ,
+    $(call Verbose,Using kit ${_k})
+    $(call use-repo,${KITS_PATH},${_k})
+  )
+  $(if $(wildcard ${${_k}_repo_path}),
+    $(call Verbose,Declaring mod $(1).)
+    $(call declare-comp,${${_k}_repo_path},$(1))
+    $(eval comps += $(1))
+    $(eval mods += $(1))
+  ,
+    $(call Signal-Error,Using kit ${_k} failed.)
+  )
+)
+$(call Exit-Macro)
+endef
 
 _macro := new-kit
 define _help
@@ -66,7 +110,7 @@ $(if ${$(1).SegID},
   $(if $(call is-modfw-repo,$(1)),
     $(call Info,Using kit:$(1))
     $(call Use-Segment,$(1))
-    $(eval ${Seg} += $(1))
+    $(eval ${SegUN} += $(1))
   ,
     $(call Signal-Error,$(1) is not a ModFW repo.)
   )
@@ -92,8 +136,14 @@ endif
 # +++++
 # Postamble
 # Define help only if needed.
-ifneq ($(call Is-Goal,help-${Seg}),)
-define help_${SegV}_msg
+__h := \
+  $(or \
+    $(call Is-Goal,help-${Seg}),\
+    $(call Is-Goal,help-${SegUN}),\
+    $(call Is-Goal,help-${SegID}))
+ifneq (${__h},)
+$(call Attention,Generating help for:${Seg})
+define __help
 Make segment: ${Seg}.mk
 
 A kit is a collection of mods. Each kit is assumed to be maintained as a
@@ -124,13 +174,14 @@ ${help-use-kit}
 Command line goals:
   call-new-kit
     Create a new kit. See help-new-kit for more info.
-  show-${Seg}
+  show-${SegUN}
     Display a list of kits which are in use.
   help-<kit>
     Display the help message for a kit.
-  help-${Seg}
+  help-${SegUN}
     Display this help.
 endef
+${__h} := ${__help}
 endif # help goal message.
 
 $(call Exit-Segment)

@@ -4,7 +4,7 @@
 # +++++
 $(call Last-Segment-UN)
 ifndef ${LastSegUN}.SegID
-$(call Enter-Segment)
+$(call Enter-Segment,ModFW - comp-macros test suite.)
 # -----
 $(call Use-Segment,comp-macros)
 
@@ -143,7 +143,7 @@ define ${_macro}
   $(call Exit-Macro)
 endef
 
-$(call Begin-Suite,${Seg})
+$(call Begin-Suite,${SegUN})
 $(call verify-component-macros)
 $(call verify-declare-comp)
 
@@ -165,20 +165,22 @@ _class := node-c-1
 $(call declare-component,${_class},${TESTING_PATH})
 $(call declare-component,)
 
-${Seg}: display-errors display-messages
+${SegUN}: display-errors display-messages
 
 # +++++
 # Postamble
 # Define help only if needed.
-ifneq ($(call Is-Goal,help-${Seg}),)
-define help-${Seg}
+__h := $(or $(call Is-Goal,help-${SegUN}),$(call Is-Goal,help-${SegID}))
+ifneq (${__h},)
+define __help
 Make segment: ${Seg}.mk
 
 This test suite verifies the macros and variables defined in comp-macros.mk.
 
 Command line goals:
-  help-${Seg}   Display this help.
+  help-${SegUN}   Display this help.
 endef
+${__h} := ${__help}
 endif # help goal message.
 
 $(call Exit-Segment)

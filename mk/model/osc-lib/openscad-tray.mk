@@ -6,7 +6,7 @@
 # +++++
 $(call Last-Segment-UN)
 ifndef ${LastSegUN}.SegID
-$(call Enter-Segment)
+$(call Enter-Segment,openscad-tray - parts storage trays.)
 # -----
 
 OPENSCAD_TRAY_VERSION = master
@@ -25,8 +25,10 @@ openscad-tray: ${OPENSCAD_TRAY_DEP}
 # +++++
 # Postamble
 # Define help only if needed.
-ifneq ($(call Is-Goal,help-${Seg}),)
-define help_${SegV}_msg
+__h := $(or $(call Is-Goal,help-${SegUN}),$(call Is-Goal,help-${SegID}))
+ifneq (${__h},)
+$(call Attention,Generating help for:${Seg})
+define __help
 Make segment: ${Seg}.mk
 
 openscad-tray - Designed to quickly create trays with different
@@ -36,9 +38,10 @@ tools, board game inserts, etc.
 Command line goals:
   openscad-tray
     Download and install openscad-tray.
-  help-${Seg}
+  help-${SegUN}
     Display this help.
 endef
+${__h} := ${__help}
 endif
 $(call Exit-Segment)
 else

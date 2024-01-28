@@ -4,7 +4,7 @@
 # +++++
 $(call Last-Segment-UN)
 ifndef ${LastSegUN}.SegID
-$(call Enter-Segment)
+$(call Enter-Segment,Scripted custom parts using OpenSCAD and Python CAD tools.)
 # -----
 
 #+
@@ -392,8 +392,10 @@ endif
 # +++++
 # Postamble
 # Define help only if needed.
-ifneq ($(call Is-Goal,help-${Seg}),)
-define help_${SegV}_msg
+__h := $(or $(call Is-Goal,help-${SegUN}),$(call Is-Goal,help-${SegID}))
+ifneq (${__h},)
+$(call Attention,Generating help for:${Seg})
+define __help
 Make segment: ${Seg}.mk
 
 OpenSCAD and Python CAD tools are used to generate STL files from scripts which
@@ -503,9 +505,10 @@ Command line goals:
     and start an interactive Python session.
   help-model
     Display the model specific help.
-  help-${Seg}
+  help-${SegUN}
     Display this help.
 endef
+${__h} := ${__help}
 endif
 $(call Exit-Segment)
 else

@@ -5,14 +5,16 @@
 # +++++
 $(call Last-Segment-UN)
 ifndef ${LastSegUN}.SegID
-$(call Enter-Segment)
+$(call Enter-Segment,Definitions for configuring an OS for ssh access.)
 # -----
 
 # +++++
 # Postamble
 # Define help only if needed.
-ifneq ($(call Is-Goal,help-${Seg}),)
-define help_${SegV}_msg
+__h := $(or $(call Is-Goal,help-${SegUN}),$(call Is-Goal,help-${SegID}))
+ifneq (${__h},)
+$(call Attention,Generating help for:${Seg})
+define __help
 Make segment: ${Seg}.mk
 
 This defines the variables, targets, and functions for configuring an OS for
@@ -26,9 +28,10 @@ Root login is disabled. No passwords are allowed meaning the client must have
 a key listed in authorized_keys.
 
 Command line goals:
-  help-${Seg}
+  help-${SegUN}
     Display this help.
 endef
+${__h} := ${__help}
 endif
 $(call Exit-Segment)
 else

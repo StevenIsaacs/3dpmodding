@@ -5,7 +5,7 @@
 # +++++
 $(call Last-Segment-UN)
 ifndef ${LastSegUN}.SegID
-$(call Enter-Segment)
+$(call Enter-Segment,BOSL2 - The Belfry OpenScad Library)
 # -----
 
 BOSL2_VERSION = revarbat_dev
@@ -25,8 +25,10 @@ bosl2: ${BOSL2_DEP}
 # +++++
 # Postamble
 # Define help only if needed.
-ifneq ($(call Is-Goal,help-${Seg}),)
-define help_${SegV}_msg
+__h := $(or $(call Is-Goal,help-${SegUN}),$(call Is-Goal,help-${SegID}))
+ifneq (${__h},)
+$(call Attention,Generating help for:${Seg})
+define __help
 Make segment: ${Seg}.mk
 
 BOSL2 - The Belfry OpenScad Library - A library of tools, shapes, and
@@ -35,9 +37,10 @@ helpers to make OpenScad easier to use.
 Command line goals:
   bosl2
     Download and install BOSL2.
-  help-${Seg}
+  help-${SegUN}
     Display this help.
 endef
+${__h} := ${__help}
 endif
 $(call Exit-Segment)
 else

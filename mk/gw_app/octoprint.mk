@@ -4,7 +4,7 @@
 # +++++
 $(call Last-Segment-UN)
 ifndef ${LastSegUN}.SegID
-$(call Enter-Segment)
+$(call Enter-Segment,OctoPrint)
 # -----
 
 $(call Require,GW_OS GW_OS_VARIANT GW_USER GW_APP)
@@ -73,8 +73,10 @@ $(call Use-Segment,gw_os/${GW_OS})
 
 # +++++
 # Postamble
-ifneq ($(call Is-Goal,help-${Seg}),)
-define help_${SegV}_msg
+__h := $(or $(call Is-Goal,help-${SegUN}),$(call Is-Goal,help-${SegID}))
+ifneq (${__h},)
+$(call Attention,Generating help for:${Seg})
+define __help
 Make segment: ${Seg}.mk
 
 This segment is used to install the OctoPrint initialization script in
@@ -99,9 +101,10 @@ Defines:
     a QEMU emulation environment.
 
 Command line goals:
-  help-${Seg}
+  help-${SegUN}
     Display this help.
 endef
+${__h} := ${__help}
 endif
 $(call Exit-Segment)
 else

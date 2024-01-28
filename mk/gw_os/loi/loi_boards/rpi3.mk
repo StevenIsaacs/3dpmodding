@@ -4,7 +4,7 @@
 # +++++
 $(call Last-Segment-UN)
 ifndef ${LastSegUN}.SegID
-$(call Enter-Segment)
+$(call Enter-Segment,Definitions for board: Raspberry Pi 3.)
 # -----
 
 # This is important for emulation.
@@ -37,8 +37,10 @@ raspios_LOI_ROOT_PATH = ${raspios_LOI_P2_NAME}
 # +++++
 # Postamble
 # Define help only if needed.
-ifneq ($(call Is-Goal,help-${Seg}),)
-define help_${SegV}_msg
+__h := $(or $(call Is-Goal,help-${SegUN}),$(call Is-Goal,help-${SegID}))
+ifneq (${__h},)
+$(call Attention,Generating help for:${Seg})
+define __help
 Make segment: ${Seg}.mk
 
 Supported OS variants for Raspberry PI 3 or 4:
@@ -46,9 +48,10 @@ Supported OS variants for Raspberry PI 3 or 4:
   octopi    Raspberry PI OS pre-configured for Octoprint
 
 Command line goals:
-  help-${Seg}
+  help-${SegUN}
     Display this help.
 endef
+${__h} := ${__help}
 endif
 $(call Exit-Segment)
 else

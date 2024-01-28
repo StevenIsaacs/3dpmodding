@@ -4,7 +4,7 @@
 # +++++
 $(call Last-Segment-UN)
 ifndef ${LastSegUN}.SegID
-$(call Enter-Segment)
+$(call Enter-Segment,Linux OS Image (LOI_) modding.)
 # -----
 
 #+
@@ -319,8 +319,10 @@ clean-os-image:
 # +++++
 # Postamble
 # Define help only if needed.
-ifneq ($(call Is-Goal,help-${Seg}),)
-define help_${SegV}_msg
+__h := $(or $(call Is-Goal,help-${SegUN}),$(call Is-Goal,help-${SegID}))
+ifneq (${__h},)
+$(call Attention,Generating help for:${Seg})
+define __help
 Make segment: ${Seg}.mk
 
 Using the mount feature other segments can modify the contents of os image
@@ -446,9 +448,10 @@ Uses:
   stage_${GW_OS_VARIANT} defined in ${GW_OS_VARIANT}.mk
 
 Command line goals:
-  help-${Seg}
+  help-${SegUN}
     Display this help.
 endef
+${__h} := ${__help}
 endif
 $(call Exit-Segment)
 else

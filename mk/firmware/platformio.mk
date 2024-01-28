@@ -4,7 +4,7 @@
 # +++++
 $(call Last-Segment-UN)
 ifndef ${LastSegUN}.SegID
-$(call Enter-Segment)
+$(call Enter-Segment,PlatformIO)
 # -----
 
 #+
@@ -42,8 +42,8 @@ endef
 ${_pio_venv_package_path}/platformio/__init__.py:
 > $(call _pio-install-python-package, platformio)
 
-.PHONY: ${Seg}-python
-${Seg}-python: ${pio_venv_requirements}
+.PHONY: ${SegUN}-python
+${SegUN}-python: ${pio_venv_requirements}
 > ( \
 > . ${pio_venv_path}/bin/activate; \
 > python; \
@@ -52,8 +52,10 @@ ${Seg}-python: ${pio_venv_requirements}
 
 # +++++
 # Postamble
-ifneq ($(call Is-Goal,help-${Seg}),)
-define help_${SegV}_msg
+__h := $(or $(call Is-Goal,help-${SegUN}),$(call Is-Goal,help-${SegID}))
+ifneq (${__h},)
+$(call Attention,Generating help for:${Seg})
+define __help
 Make segment: ${Seg}.mk
 
 This segment is used to install PlatformIO for building firmware. Since
@@ -81,11 +83,12 @@ Defines:
     A list of requirements for installing PlatformIO.
 
 Command line goals:
-  ${Seg}-python
+  ${SegUN}-python
     Run Python in the PlatformIO virtual environment.
-  help-${Seg}
+  help-${SegUN}
     Display this help.
 endef
+${__h} := ${__help}
 endif
 $(call Exit-Segment)
 else

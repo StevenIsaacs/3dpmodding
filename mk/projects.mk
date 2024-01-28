@@ -4,7 +4,7 @@
 # +++++
 $(call Last-Segment-UN)
 ifndef ${LastSegUN}.SegID
-$(call Enter-Segment)
+$(call Enter-Segment,Manage multiple ModFW projects using git, branches, and tags.)
 # -----
 
 #+
@@ -12,20 +12,84 @@ $(call Enter-Segment)
 #-
 # The directory containing the projects repo.
 # NOTE: This is ignored in .gitignore.
-$(call Overridable,DEFAULT_PROJECTS_DIR,${Seg})
+$(call Overridable,DEFAULT_PROJECTS_DIR,${SegUN})
 # Where project specific kit and mod configuration repo is maintained.
 $(call Overridable,DEFAULT_PROJECTS_PATH,${WorkingPath})
 
 $(call Sticky,PROJECTS_DIR,${DEFAULT_PROJECTS_DIR})
 $(call Sticky,PROJECTS_PATH,${DEFAULT_PROJECTS_PATH})
 
+$(call Use-Segment,nodes)
+$(call Use-Segment,repos)
+
 $(call declare-node,${PROJECTS_DIR},,${PROJECTS_PATH})
 $(call create-node,${PROJECTS_DIR})
 
-${Seg} :=
+_var := project_attributes
+${_var} := ${repo_attributes}
+define _help
+${_var}
+  A project is a ModFW repo and has the same attributes as the repo.
 
-$(call Use-Segment,kits)
-$(call Use-Segment,mods)
+${help-repo_attributes}
+endef
+help-${_var} := $(call _help)
+
+_var := PROJECT
+define _help
+${_var} = ${${_var}}
+    The name of the active project. This is used to create or switch to the
+    project specific repo in the projects directory. No two projects can have
+    the same name.
+endef
+help-${_var} := $(call _help)
+
+_var := PRJ_BUILD_PATH
+define _help
+${_var} = ${${_var}}
+  The full path to where project build intermediate files are stored.
+endef
+help-${_var} := $(call _help)
+
+_var := PRJ_STAGING_PATH
+define _help
+${_var} = ${${_var}} (sticky)
+  The full path to where project deliverable files are stored.
+endef
+help-${_var} := $(call _help)
+
+
+_macro := use-project
+define _help
+${_macro}
+  Use this to install a project repo in the project. This clones an existing
+  repo into the parent node directory.
+  Parameters:
+    1 = The name of the project to use.
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(call Enter-Macro,$(0),$(1))
+$(if ${$(1).SegID},
+  $(call Verbose,Project $(1) is already in use.)
+,
+  $(call declare-repo,$(1),${PROJECTS_DIR})
+  $(call use-repo,$(1))
+  $(if $(call is-modfw-repo,$(1)),
+    $(call Info,Using project:$(1))
+    $(call Attention,Redirecting sticky variables to project:${PROJECT})
+    $(call Redirect-Sticky,${${PROJECT}.path}/sticky)
+    $(call Sticky,PRJ_BUILD_PATH,${BUILD_PATH}/$(1))
+    $(call Sticky,PRJ_STAGING_PATH,${STAGING_PATH}/$(1))
+    $(call Use-Segment,kits)
+    $(call Use-Segment,mods)
+    $(call Use-Segment,$(1))
+  ,
+    $(call Signal-Error,$(1) is not a ModFW repo.)
+  )
+)
+$(call Exit-Macro)
+endef
 
 _macro := new-project
 define _help
@@ -52,64 +116,63 @@ $(if $(call repo-is-setup,$(1)),
 $(call Exit-Macro)
 endef
 
-_macro := use-project
+_macro := remove-project
 define _help
 ${_macro}
-  Use this to install a project repo in the project. This clones an existing
-  repo into the parent node directory.
+  Remove an project repo.
+  NOTE: This is designed to be callable from the make command line using the
+  helpers call-<macro> goal.
+  For example:
+    make ${_macro}.PARMS=<project> call-${_macro}
   Parameters:
-    1 = The name of the project to use.
+    1 = The name of the project to be removed.
 endef
 help-${_macro} := $(call _help)
 define ${_macro}
 $(call Enter-Macro,$(0),$(1))
-$(if ${$(1).SegID},
-  $(call Verbose,Project $(1) is already in use.)
+$(if $(call repo-is-setup,$(1)),
+  $(call Signal-Error,Project $(1) already exists -- not creating.)
 ,
-  $(call declare-repo,$(1),${PROJECTS_DIR})
-  $(call use-repo,$(1))
-  $(if $(call is-modfw-repo,$(1)),
-    $(call Info,Using project:$(1))
-    $(call Use-Segment,$(1))
-    $(eval ${Seg} := $(1))
-  ,
-    $(call Signal-Error,$(1) is not a ModFW repo.)
-  )
+  $(call remove-repo,$(1),${PROJECTS_DIR},$(2))
 )
 $(call Exit-Macro)
 endef
 
 # To remove all projects.
-ifneq ($(call Is-Goal,remove-${Seg}),)
+ifneq ($(call Is-Goal,remove-${SegUN}),)
 
   $(call Info,Removing all projects in: ${PROJECTS_PATH})
   $(call Warn,This cannot be undone!)
-  ifeq ($(call Confirm,Remove all ${Seg} -- cannot be undone?,y),y)
+  ifeq ($(call Confirm,Remove all ${SegUN} -- cannot be undone?,y),y)
 
-remove-${Seg}:
+remove-${SegUN}:
 > rm -rf ${PROJECTS_PATH}
 
   else
-    $(call Info,Not removing ${Seg}.)
+    $(call Info,Not removing ${SegUN}.)
   endif
 else
   ifneq ($(call Is-Goal,call-new-project),)
-    $(call Attention,Creating new project.)
+    $(call Attention,Creating new project:${PROJECT})
   else
-    $(call Sticky,PROJECT)
-    $(call declare-repo,${PROJECT},$(PROJECTS_DIR))
-    $(call Attention,Redirecting sticky variables to project:${PROJECT})
-    $(call Redirect-Sticky,${${PROJECT}.path}/sticky)
-    $(call use-project,${PROJECT})
-    # If the project exists then run the project init.
-    ifneq ($(call repo-is-setup,${PROJECT}),)
-      $(if $(findstring undefined,$(flavor ${PROJECT}.init)),
-        $(call Warn,The init macro for ${PROJECT} is undefined.)
-      ,
-        $(call ${PROJECT}.init)
-      )
+    ifneq ($(call Is-Goal,call-remove-project),)
+      $(call Attention,Removing project:${PROJECT})
     else
-      $(call Signal-Error,The PROJECT repo ${PROJECT} is not setup.)
+      $(call Sticky,PROJECT)
+      $(call declare-repo,${PROJECT},$(PROJECTS_DIR))
+      $(call Attention,Redirecting sticky variables to project:${PROJECT})
+      $(call Redirect-Sticky,${${PROJECT}.path}/sticky)
+      $(call use-project,${PROJECT})
+      # If the project exists then run the project init.
+      ifneq ($(call repo-is-setup,${PROJECT}),)
+        $(if $(findstring undefined,$(flavor ${PROJECT}.init)),
+          $(call Warn,The init macro for ${PROJECT} is undefined.)
+        ,
+          $(call ${PROJECT}.init)
+        )
+      else
+        $(call Signal-Error,The PROJECT repo ${PROJECT} is not setup.)
+      endif
     endif
   endif
 endif
@@ -117,8 +180,13 @@ endif
 # +++++
 # Postamble
 # Define help only if needed.
-ifneq ($(call Is-Goal,help-${Seg}),)
-define help-${Seg}
+__h := \
+  $(or \
+    $(call Is-Goal,help-${Seg}),\
+    $(call Is-Goal,help-${SegUN}),\
+    $(call Is-Goal,help-${SegID}))
+ifneq (${__h},)
+define __help
 Make segment: ${Seg}.mk
 
 A ModFW project is mostly intended to contain variable definitions needed to
@@ -165,21 +233,18 @@ specific segment is renamed for the new project and all project references
 in the new project are changed to reference the new project. For reference
 the basis project makefile segment is copied to the new project but not used.
 
+The project build and staged artifacts are stored in subdirectories of the  build (BUILD_PATH) and staging (STAGING_PATH) directories. These subdirectories
+have the same name as the project.
+
+Projects cannot be dependent upon other projects.
+
 Required sticky variables:
-  PROJECT = ${PROJECT}
-    The name of the active project. This is used to create or switch to the
-    project specific repo in the projects directory. This variable is stored
-    in the default sticky directory.
-    DEFAULT_STICKY_PATH = ${DEFAULT_STICKY_PATH}
+${help-PROJECT}
 
 Optional sticky variables:
-  PROJECTS_DIR = ${PROJECTS_DIR}
-    The name of the directory where projects are stored. This is used as part
-    of the definition of PROJECTS_PATH.
-  PROJECTS_PATH = ${PROJECTS_PATH}
-  Default: DEFAULT_PROJECTS_PATH = ${DEFAULT_PROJECTS_PATH}
-    Where the project specific configurations are stored. This is the location
-    of the collection of project git repos.
+${help-PROJECTS_DIR}
+
+${help-PROJECTS_PATH}
 
 See help-repo_attributes for additional sticky variables.
 
@@ -194,7 +259,7 @@ ${help-use-project}
 Command line goals:
   call-new-project
     Create a new project. See help-new-project for more info.
-  show-${Seg}
+  show-${SegUN}
     Display a list of projects which are in use.
   remove-projects
     Remove all project repositories. WARNING: Use with care. This is potentially
@@ -202,9 +267,10 @@ Command line goals:
     proceeding.
   help-<project>
     Display the help message for a project.
-  help-${Seg}
+  help-${SegUN}
     Display this help.
 endef
+${__h} := ${__help}
 endif
 $(call Exit-Segment)
 else

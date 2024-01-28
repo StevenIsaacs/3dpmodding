@@ -4,7 +4,7 @@
 # +++++
 $(call Last-Segment-UN)
 ifndef ${LastSegUN}.SegID
-$(call Enter-Segment)
+$(call Enter-Segment,Marlin firmware)
 # -----
 
 #+
@@ -93,8 +93,10 @@ ${mlnSeg}-firmware: ${mod_firmware}
 
 # +++++
 # Postamble
-ifneq ($(call Is-Goal,help-${Seg}),)
-define help_${SegV}_msg
+__h := $(or $(call Is-Goal,help-${SegUN}),$(call Is-Goal,help-${SegID}))
+ifneq (${__h},)
+$(call Attention,Generating help for:${Seg})
+define __help
 Make segment: ${Seg}.mk
 
 Marlin firmware is typically used to control 3D printers but can also be
@@ -147,6 +149,7 @@ Command line goals:
     Build the Marlin firmware using the mod source files.
     Display this help.
 endef
+${__h} := ${__help}
 endif
 $(call Exit-Segment)
 else

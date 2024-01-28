@@ -4,10 +4,29 @@
 # +++++
 $(call Last-Segment-UN)
 ifndef ${LastSegUN}.SegID
-$(call Enter-Segment)
+$(call Enter-Segment,Load a mod -- the mod has already been handled.)
 # -----
 
-${Seg} :=
+_var := mods
+${_var} :=
+define _help
+${_var}
+  The list of declared mods.
+endef
+
+_var := mod_attributes ${node_attributes}
+${_var} := seg_f
+define _help
+${_var}
+  A mod is basically a tree node and has the same attributes as the node.
+
+  Additional attributes:
+  <mod>.seg_f
+    The path and file name of the makefile segment for the mod.
+
+${help-node-attributes}
+endef
+help-${_var} := $(call _help)
 
 _macro := kit-name
 define _help
@@ -29,12 +48,32 @@ endef
 help-${_macro} := $(call _help)
 ${_macro} = $(word 2,$(subst ., ,$(1)))
 
+_macro := kit-path
+define _help
+${_macro}
+  Returns the path of the node containing the kit which contains the mod.
+  Parameters:
+    1 = <kit>.<mod> reference.
+endef
+help-${_macro} := $(call _help)
+${_macro} = ${${$(word 1,$(subst ., ,$(1)))}.path}
+
+_macro := mod-path
+define _help
+${_macro}
+  Returns the path of the node containing the mod.
+  Parameters:
+    1 = <kit>.<mod> reference.
+endef
+help-${_macro} := $(call _help)
+${_macro} = ${${$(word 2,$(subst ., ,$(1)))}.path}
+
 _macro := declare-mod
 define _help
 ${_macro}
   Define the attributes of a mod. A mod must be declared before any other mod
   related macros can be used. If the kit containing the mod has not been
-  declared it is automatically used.
+  declared it is automatically declared.
   Parameters:
     1 = The <kit>.<mod> reference to the mod.
 endef
@@ -63,67 +102,6 @@ $(if ${$(1).SegID},
   ,
     $(call Signal-Error,Using kit ${_k} failed.)
   )
-)
-$(call Exit-Macro)
-endef
-
-_macro := setup-mod
-define _help
-${_macro}
-  Generate a goal to create and initialize a mod in a local directory. A
-  makefile segment for the mod having the same name as the mod is also
-  generated.
-  NOTE: The new component and mod must have already been declared. Also,
-  the KIT containing the mod MUST exist and have also been declared.
-  Parameters:
-    1 = The name of the new mod (<mod>).
-endef
-help-${_macro} := $(call _help)
-define ${_macro}
-$(call Enter-Macro,$(0),$(1))
-  $(call Attention,TBD)
-$(call Exit-Macro)
-endef
-
-_macro := use-mod
-define _help
-${_macro}
-  Use a project or kit mod. If the mod doesn't exist locally a goal is
-  generated to clone the mod from a remote server.
-  NOTE: This macro is also be designed to be called by mods which are dependent
-  on the output of another component.
-  Parameters:
-    1 = The path to the mod.
-    2 = The name of the component (<mod>) corresponding to the mod. This is
-        used to name the mod directory and associated variables.
-endef
-help-${_macro} := $(call _help)
-define ${_macro}
-$(call Enter-Macro,$(0),$(1) $(2))
-$(if $(1),
-  $(if $(2),
-    $(if ${(2).seg},
-      $(call Info,Component $(2) is already in use.)
-    ,
-      $(call declare-comp,$(1),$(2))
-      $(call declare-mod,$(2))
-      $(if $(wildcard ${$(2).mod_mk}),
-        $(call Info,Using mod: $(2))
-        $(call Add-Segment-Path,${$(2).mod_path})
-        $(call Use-Segment,$(2))
-      ,
-        $(if ${$(2).REPO},
-          $(call Info,Generating goal to clone mod: $(2))
-          $(call gen-mod-goal,copy,$(2))
-        ,
-          $(call Signal-Error,\
-            use-mod:Repo $(2) is not defined. Use create-new.)
-        )
-      )
-    )
-  )
-,
-  $(call Signal-Error,The mod path has not been specified.)
 )
 $(call Exit-Macro)
 endef
@@ -196,18 +174,21 @@ endef
 _macro := use-mod
 define _help
 ${_macro}
-  Use a mod. The mod must already exist.
+  Use a mod. The mod must already exist. The kit containing the mod is
+  installed (cloned) if necessary (see use-kit).
   Parameters:
     1 = A <kit>.<mod> reference.
 endef
 help-${_macro} := $(call _help)
 define ${_macro}
-$(call Enter-Macro,$(0),$(1) $(2) $(3))
+$(call Enter-Macro,$(0),$(1))
 $(if $(1),
-  $(if ${(2).seg},
-    $(call Verbose,Kit $(2) has already been declared.)
+  $(eval _k := $(call kit-name,$(1)))
+  $(eval _m := $(call mod-name,$(1)))
+  $(if ${(_k).seg},
+    $(call Verbose,Kit ${_k} has already been declared.)
   ,
-    $(call use-kit,$(2))
+    $(call use-kit,${_k})
   )
   $(call Info,Creating new mod for: $(2))
   $(call declare-mod,$(1),$(2))
@@ -219,7 +200,7 @@ $(if $(1),
     $(call create-mod,$(1))
   )
 ,
-  $(call Signal-Error,The new mod name has not been specified.)
+  $(call Signal-Error,The mod name has not been specified.)
 )
 $(call Exit-Macro)
 endef
@@ -227,28 +208,50 @@ endef
 # +++++
 # Postamble
 # Define help only if needed.
-ifneq ($(call Is-Goal,help-${Seg}),)
-define help_${SegV}_msg
+__h := $(or \
+  $(call Is-Goal,help-${SegUN}),\
+  $(call Is-Goal,help-${SegID}),\
+  $(call Is-Goal,help-${Seg}))
+ifneq (${__h},)
+$(call Attention,Generating help for:${Seg})
+define __help
 Make segment: ${Seg}.mk
 
 A mod contains all of the variables, macros, goals, and recipes needed to build
 all of the mod deliverables. A mod is always a subdirectory in a kit repo
-making the kit the parent of the mod. This avoids name conflicts
-between kits. The <kit> portion of the reference is also a reference to the
-parent node for the mod.
+making the kit the parent of the mod.
 
-A mod can be dependent upon other mods in the same kit or different kits.
+Mods are named using a <kit>.<mod> pattern. The <mod> portion of the name is the
+name of the node containing the mod. The <kit> portion of the name is also the
+name of the parent node for the mod. This helps avoid mod name conflicts
+between kits.
+
+A mod can be dependent upon other mods in the same kit or different kits. The
+mod makefile segment (<mod>.mk) specifies such dependencies if any.
 
 Macros:
 
+$(help-kit-name)
+
+$(help-mod-name)
+
+$(help declare-mod)
+
+${help-copy-basis-to-new-mod}
+
+${help-new-mod}
+
+${help-use-mod}
+
 Command line goals:
-  show-${Seg}
+  show-${SegUN}
     Display a list of loaded mods.
   help-<kit>.<mod>
     For mod specific help.
-  help-${Seg}
+  help-${SegUN}
     Display this help.
 endef
+${__h} := ${__help}
 endif # help goal message.
 
 $(call Exit-Segment)

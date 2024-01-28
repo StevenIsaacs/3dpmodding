@@ -5,7 +5,8 @@
 # +++++
 $(call Last-Segment-UN)
 ifndef ${LastSegUN}.SegID
-$(call Enter-Segment)
+$(call Enter-Segment,\
+  MCAD - components  used in designing and mocking up mechanical designs.)
 # -----
 $(info MCAD library)
 
@@ -25,8 +26,10 @@ mcad: ${MCAD_DEP}
 # +++++
 # Postamble
 # Define help only if needed.
-ifneq ($(call Is-Goal,help-${Seg}),)
-define help_${SegV}_msg
+__h := $(or $(call Is-Goal,help-${SegUN}),$(call Is-Goal,help-${SegID}))
+ifneq (${__h},)
+$(call Attention,Generating help for:${Seg})
+define __help
 Make segment: ${Seg}.mk
 
 MCAD - components commonly used in designing and mocking up mechanical
@@ -35,9 +38,10 @@ designs.
 Command line goals:
   mcad
     Download and install mcad.
-  help-${Seg}
+  help-${SegUN}
     Display this help.
 endef
+${__h} := ${__help}
 endif
 $(call Exit-Segment)
 else

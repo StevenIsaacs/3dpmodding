@@ -4,7 +4,7 @@
 # +++++
 $(call Last-Segment-UN)
 ifndef ${LastSegUN}.SegID
-$(call Enter-Segment)
+$(call Enter-Segment,Definitions for board: Orange PI Zero.)
 # -----
 $(info Using OS board: ${GW_OS_BOARD})
 
@@ -64,8 +64,10 @@ endif
 # +++++
 # Postamble
 # Define help only if needed.
-ifneq ($(call Is-Goal,help-${Seg}),)
-define help_${SegV}_msg
+__h := $(or $(call Is-Goal,help-${SegUN}),$(call Is-Goal,help-${SegID}))
+ifneq (${__h},)
+$(call Attention,Generating help for:${Seg})
+define __help
 Make segment: ${Seg}.mk
 
 The Orange PI Zero does not have a display interface. To monitor the boot
@@ -89,9 +91,10 @@ ubuntu      Ubuntu version of the Orange PI OS.
 debian      Debian version of teh Orange PI OS.
 
 Command line goals:
-  help-${Seg}
+  help-${SegUN}
     Display this help.
 endef
+${__h} := ${__help}
 endif
 $(call Exit-Segment)
 else

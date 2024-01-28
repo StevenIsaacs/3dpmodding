@@ -4,7 +4,8 @@
 # +++++
 $(call Last-Segment-UN)
 ifndef ${LastSegUN}.SegID
-$(call Enter-Segment)
+$(call Enter-Segment,\
+  Generalizes initialization and first run of a Linux based OS image.)
 # -----
 # Restrict to command line target only.
 ifneq ($(call Is-Goal,stage-os-image),)
@@ -132,8 +133,10 @@ ${GW_OS_VARIANT}_ADMIN_TMP_PATH = ${LINUX_ADMIN_TMP_PATH}
 # +++++
 # Postamble
 # Define help only if needed.
-ifneq ($(call Is-Goal,help-${Seg}),)
-define help_${SegV}_msg
+__h := $(or $(call Is-Goal,help-${SegUN}),$(call Is-Goal,help-${SegID}))
+ifneq (${__h},)
+$(call Attention,Generating help for:${Seg})
+define __help
 Make segment: ${Seg}.mk
 
 Generalizes initialization and first run of an ${GW_OS_VARIANT} based OS image.
@@ -153,9 +156,10 @@ Defines:
 	loi.mk. This creates users and installs the first-run scripts.
 
 Command line goals:
-  help-${Seg}
+  help-${SegUN}
     Display this help.
 endef
+${__h} := ${__help}
 endif
 $(call Exit-Segment)
 else

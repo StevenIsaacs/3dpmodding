@@ -5,7 +5,7 @@
 # +++++
 $(call Last-Segment-UN)
 ifndef ${LastSegUN}.SegID
-$(call Enter-Segment)
+$(call Enter-Segment,The Belfry OpenScad Library.)
 # -----
 # BOSL - The Belfry OpenScad Library - A library of tools, shapes, and
 # helpers to make OpenScad easier to use.
@@ -26,8 +26,10 @@ ${BOSL_DEP}:
 bosl: ${BOSL_DEP}
 # +++++
 # Postamble
-ifneq ($(call Is-Goal,help-${boslSeg}),)
-define help_${boslSegN}_msg
+__h := $(or $(call Is-Goal,help-${SegUN}),$(call Is-Goal,help-${SegID}))
+ifneq (${__h},)
+$(call Attention,Generating help for:${Seg})
+define __help
 Make segment: ${boslSeg}.mk
 
 The Belfry OpenScad Library -
@@ -39,6 +41,7 @@ Command line goals:
   bosl
     Download and install BOSL.
 endef
+${__h} := ${__help}
 endif # help goal message.
 
 $(call Exit-Segment,bosl)
