@@ -68,8 +68,8 @@ define ${_macro}
     )
     $(if $(call node-exists,$(1)),
       $(call Test-Info,Node $(1) path exists.)
-      $(eval _r := $(call Run,tree $(1).path))
-      $(call Test-Info:${_r})
+      $(eval $(call Run,tree $(1).path))
+      $(call Test-Info:${Run_Output})
     ,
       $(call Test-Info,Node $(1) path does not exist.)
     )
