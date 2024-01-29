@@ -6,7 +6,6 @@ $(call Last-Segment-UN)
 ifndef ${LastSegUN}.SegID
 $(call Enter-Segment,Macros to support ModFW repos.)
 # -----
-$(call Use-Segment,comp-macros)
 
 _var := repos
 ${_var} :=
@@ -154,8 +153,8 @@ endef
 _macro := declare-repo
 define _help
 ${_macro}
-  Declare a tree node as a repo.
-  NOTE: A repo MUST have a parent node.
+  Declare a node and add the repo attributes.
+  NOTE: A repo node MUST have a parent node.
   NOTE: See help-repo_attributes for more information.
   Parameters:
     1 = <repo>: The name of the repo being declared.
@@ -176,21 +175,22 @@ $(if $(call repo-is-declared,$(1)),
   $(if $(call node-is-declared,$(1)),
     $(call Signal-Error,The node name for repo $(1) has already been declared.)
   ,
-    $(call Sticky,$(1).URL,${DEFAULT_SERVER}/$(1))
-    $(call Sticky,$(1).BRANCH,${DEFAULT_BRANCH})
-    $(eval _udef := $(call Require,$(1).URL $(1).BRANCH))
-    $(if ${_udef},
-      $(call Signal-Error,These sticky variables must be defined:${_udef})
-    ,
-      $(if $(2),
+    $(if $(call node-is-declared,$(2)),
+      $(call Sticky,$(1).URL,${DEFAULT_SERVER}/$(1))
+      $(call Sticky,$(1).BRANCH,${DEFAULT_BRANCH})
+      $(eval _udef := $(call Require,$(1).URL $(1).BRANCH))
+      $(if ${_udef},
+        $(call Signal-Error,These sticky variables must be defined:${_udef})
+      ,
         $(call Verbose,Declaring repo $(1).)
-        $(call declare-node,$(1),$(2))
+        $(call declare-child-node,$(1),$(2))
         $(eval $(1).seg_f := ${$(1).path}/$(1).mk)
         $(eval $(1).dep := ${$(1).path}/.git/HEAD)
         $(eval repos += $(1))
-      ,
-        $(call Signal-Error,Repo $(1) must have a parent node.)
       )
+    ,
+      $(call Signal-Error,\
+        Repo $(1) must have a previously declared parent node.)
     )
   )
 )
@@ -232,49 +232,6 @@ $(if $(call is-repo,$(1)),
   ,
     $(call Signal-Error,Makefile segment for repo $(1) does not exist.)
   )
-)
-$(call Exit-Macro)
-endef
-
-_macro := use-repo
-define _help
-${_macro}
-  Use a previously declared repo. If the repo doesn't exist locally the repo is
-  cloned either from a local repo or from a remote server depending upon
-  <2>.URL. Commits to the repo can be pushed to the origin repo. Once the repo
-  is in use Use-Segment should be called to load the repo makefile segment. The
-  path to the repo is added to the segment search paths to simplify the call to
-  Use-Segment. e.g. $$(call Use-Segment,<repo>)
-  Parameters:
-    1 = <repo>: The name of the repo. This is also the name of the tree node
-        for the repo.
-    2 = The branch of the repo to use. If this is empty then <repo>.BRANCH is
-        used.
-  Returns:
-    Run_Rc and Run_Output
-      See Run (help-helpers).
-endef
-help-${_macro} := $(call _help)
-define ${_macro}
-$(call Enter-Macro,$(0),$(1) $(2))
-$(if $(call node-is-declared,$(1)),
-  $(if ${(1).SegID},
-    $(call Info,Repo $(1) is already in use.)
-  ,
-    $(if $(wildcard ${$(1).seg_f}),
-      $(call Info,Using existing repo: $(1))
-    ,
-      $(if ${$(1).URL},
-        $(call Info,Cloning repo: $(1))
-        $(call clone-repo,$(1),$(2))
-      ,
-        $(call Signal-Error,Repo $(1) is not defined. Use create-new.)
-      )
-    )
-    $(call Add-Segment-Path,${$(1).path})
-  )
-,
-  $(call Signal-Error,The tree node for repo $(1) has not been declared.)
 )
 $(call Exit-Macro)
 endef
@@ -381,40 +338,6 @@ $(if $(call is-modfw-repo,$(1)),
 $(call Exit-Macro)
 endef
 
-_macro := new-repo
-define _help
-${_macro}
-  Create a new local repo. The new repo can be based on an existing repo. If the
-  new repo is based upon an existing repo, clone-basis-to-new-repo is called to
-  create the new repo.
-  Parameters:
-    1 = The name of the new repo.
-    2 = The name of the parent node which will contain the new repo.
-    3 = Optional basis repo.
-endef
-help-${_macro} := $(call _help)
-define ${_macro}
-$(call Enter-Macro,$(0),$(1) $(2) $(3))
-$(if ${$(2).REPO},
-  $(if $(call repo-is-declared,$(1)),
-    $(call Signal-Error,Repo $(1) has already been declared.)
-  ,
-    $(call Info,Creating new repo for: $(1))
-    $(call declare-repo,$(1),$(2))
-    $(if $(3),
-      $(call Verbose,Using $(3) as basis for repo $(1).)
-      $(call clone-basis-to-new-repo,$(3),$(1))
-    ,
-      $(call Verbose,Creating repo $(1).)
-      $(call init-repo,$(1))
-    )
-  )
-,
-  $(call Signal-Error,The new repo has not been defined.)
-)
-$(call Exit-Macro)
-endef
-
 _macro := remove-repo
 define _help
 ${_macro}
@@ -516,7 +439,7 @@ ${_macro}
   NOTE: This is designed to be callable from the make command line using the
   helpers call-<macro> goal.
   For example:
-    make switch-branch.PARMS=<repo>:<branch> call-$(_macro)
+    make ${_macro}.PARMS=<repo>:<branch> call-$(_macro)
   Parameters:
     1 = The repo in which to create the new branch.
     2 = The name of the branch to create.
@@ -545,7 +468,7 @@ ${_macro}
   NOTE: This is designed to be callable from the make command line using the
   helpers call-<macro> goal.
   For example:
-    make switch-branch.PARMS=<repo>:<branch> call-$(_macro)
+    make ${_macro}.PARMS=<repo>:<branch> call-$(_macro)
   Parameters:
     1 = The repo to switch the branch.
     2 = The name of the branch to create.
@@ -563,6 +486,83 @@ $(if $(call repo-is-declared,$(1)),
   )
 ,
   $(call Signal-Error,Repo $(1) has not been declared.)
+)
+$(call Exit-Macro)
+endef
+
+_macro := new-repo
+define _help
+${_macro}
+  Create a new local repo. The new repo can be based on an existing repo. If the
+  new repo is based upon an existing repo, clone-basis-to-new-repo is called to
+  create the new repo.
+  Parameters:
+    1 = The name of the new repo.
+    2 = The name of the parent node which will contain the new repo.
+    3 = Optional basis repo.
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(call Enter-Macro,$(0),$(1) $(2) $(3))
+$(if ${$(2).REPO},
+  $(if $(call repo-is-declared,$(1)),
+    $(call Signal-Error,Repo $(1) has already been declared.)
+  ,
+    $(call Info,Creating new repo for: $(1))
+    $(call declare-repo,$(1),$(2))
+    $(if $(3),
+      $(call Verbose,Using $(3) as basis for repo $(1).)
+      $(call clone-basis-to-new-repo,$(3),$(1))
+    ,
+      $(call Verbose,Creating repo $(1).)
+      $(call init-repo,$(1))
+    )
+  )
+,
+  $(call Signal-Error,The new repo has not been defined.)
+)
+$(call Exit-Macro)
+endef
+
+_macro := use-repo
+define _help
+${_macro}
+  Use a previously declared repo. If the repo doesn't exist locally the repo is
+  cloned either from a local repo or from a remote server depending upon
+  <2>.URL. Commits to the repo can be pushed to the origin repo. Once the repo
+  is in use Use-Segment should be called to load the repo makefile segment. The
+  path to the repo is added to the segment search paths to simplify the call to
+  Use-Segment. e.g. $$(call Use-Segment,<repo>)
+  Parameters:
+    1 = <repo>: The name of the repo. This is also the name of the tree node
+        for the repo.
+    2 = The branch of the repo to use. If this is empty then <repo>.BRANCH is
+        used.
+  Returns:
+    Run_Rc and Run_Output
+      See Run (help-helpers).
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+$(call Enter-Macro,$(0),$(1) $(2))
+$(if $(call node-is-declared,$(1)),
+  $(if ${(1).SegID},
+    $(call Info,Repo $(1) is already in use.)
+  ,
+    $(if $(wildcard ${$(1).seg_f}),
+      $(call Info,Using existing repo: $(1))
+    ,
+      $(if ${$(1).URL},
+        $(call Info,Cloning repo: $(1))
+        $(call clone-repo,$(1),$(2))
+      ,
+        $(call Signal-Error,Repo $(1) is not defined. Use create-new.)
+      )
+    )
+    $(call Add-Segment-Path,${$(1).path})
+  )
+,
+  $(call Signal-Error,The tree node for repo $(1) has not been declared.)
 )
 $(call Exit-Macro)
 endef
@@ -627,8 +627,6 @@ These are the primary API macros:
 ${help-new-repo}
 
 ${help-use-repo}
-
-${help-activate-repo}
 
 Command line goals:
   help-${SegUN}   Display this help.
