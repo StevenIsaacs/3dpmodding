@@ -10,110 +10,10 @@ $(call Use-Segment,nodes)
 
 $(call Declare-Suite,${Seg},Verify the node macros.)
 
-root_path := ${TESTING_PATH}/${Seg}
-
-_macro := display-node
-define _help
-${_macro}
-  Display node attributes.
-  Parameters:
-    1 = The name of the node.
-endef
-help-${_macro} := $(call _help)
-define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
-  $(if $(call node-is-declared,$(1))
-    $(call Display-Vars,\
-      $(foreach _a,${node_attributes},$(1).${_a})
-    )
-    $(if ${$(1).path},
-      $(call Test-Info,Node $(1) can be a node.)
-    ,
-      $(call Test-Info,Node $(1) is NOT a valid node.)
-    )
-    $(if ${$(1).parent},
-      $(call Test-Info,Node $(1) is a child node.)
-    ,
-      $(call Test-Info,Node $(1) is a root node.)
-    )
-    $(if $(call node-exists,$(1)),
-      $(call Test-Info,Node $(1) path exists.)
-    ,
-      $(call Test-Info,Node $(1) path does not exist.)
-    )
-  ,
-    $(call Test-Info,Node $(1) is not a member of ${nodes})
-  )
-  $(call Exit-Macro)
-endef
-
-_macro := display-tree
-define _help
-${_macro}
-  Display a tree starting with a node.
-  Parameters:
-    1 = The name of the node.
-endef
-help-${_macro} := $(call _help)
-define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
-  $(if $(call node-is-declared,$(1))
-    $(call Display-Vars,\
-      $(foreach _a,${node_attributes},$(1).${_a})
-    )
-    $(if ${$(1).path},
-      $(call Test-Info,Node $(1) can be a node.)
-    ,
-      $(call Test-Info,Node $(1) is NOT a valid node.)
-    )
-    $(if $(call node-exists,$(1)),
-      $(call Test-Info,Node $(1) path exists.)
-      $(eval $(call Run,tree $(1).path))
-      $(call Test-Info:${Run_Output})
-    ,
-      $(call Test-Info,Node $(1) path does not exist.)
-    )
-  ,
-    $(call Test-Info,Node $(1) is not a member of ${nodes})
-  )
-  $(call Exit-Macro)
-endef
-
-$(call Declare-Test,nonexistent-nodes)
-define _help
-${.TestUN}
-  Verify messages, warnings and, errors for when nodes do not exist.
-endef
-help-${.TestUN} := ${_help}
-${.TestUN}.Prereqs :=
-define ${.TestUN}
-  $(call Enter-Macro,$(0))
-  $(call Begin-Test,$(0))
-
-  $(call Test-Info,Testing node has not been declared.)
-  $(eval _node := does-not-exist)
-  $(if $(call node-is-declared,${_node}),
-    $(call FAIL,Node ${_node} should NOT be declared.)
-    $(call display-node,${_node})
-  ,
-    $(call PASS,Class ${_node} is not declared.)
-  )
-  $(call Test-Info,Testing node does not exist.)
-  $(if $(call node-exists,${_node}),
-    $(call FAIL,Node directory ${_node} should NOT exist.)
-    $(call display-node,${_node})
-  ,
-    $(call PASS,Class ${_node} is not declared.)
-  )
-
-  $(call End-Test)
-  $(call Exit-Macro)
-endef
-
 _macro := verify-node-not-declared
 define _help
 ${_macro}
-  Verify a node is not declared.
+  Verify a node is not declared and its attributes are not defined.
   Parameters:
     1 = The node to verify.
 endef
@@ -138,7 +38,7 @@ endef
 _macro := verify-node-is-declared
 define _help
 ${_macro}
-  Verify that a node is declared.
+  Verify that a node is declared and its attributes are defined.
   Parameters:
     1 = The node to verify.
 endef
@@ -315,6 +215,28 @@ define ${_macro}
   $(call Exit-Macro)
 endef
 
+$(call Declare-Test,nonexistent-nodes)
+define _help
+${.TestUN}
+  Verify messages, warnings and, errors for when nodes do not exist.
+endef
+help-${.TestUN} := ${_help}
+${.TestUN}.Prereqs :=
+define ${.TestUN}
+  $(call Enter-Macro,$(0))
+  $(call Begin-Test,$(0))
+
+  $(call Test-Info,Testing node has not been declared.)
+  $(eval _node := does-not-exist)
+  $(call verify-node-not-declared,${_node})
+
+  $(call Test-Info,Testing node does not exist.)
+  $(call verify-node-does-not-exist,${_node})
+
+  $(call End-Test)
+  $(call Exit-Macro)
+endef
+
 $(call Declare-Test,declare-root-nodes)
 define _help
 ${.TestUN}
@@ -340,7 +262,7 @@ define ${.TestUN}
   $(call Test-Info,Verify root node can be declared.)
 
   $(call Expect-No-Error)
-  $(call declare-root-node,${_rn},${root_path})
+  $(call declare-root-node,${_rn},${TESTING_PATH})
   $(call Verify-No-Error)
 
   $(call verify-node-is-declared,${_rn})
@@ -374,13 +296,13 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(eval _rn := crn1)
+  $(eval _rn := ${Seg}.crn1)
 
   $(call Test-Info,Testing node is not declared.)
   $(call verify-node-not-declared,${_rn})
 
   $(call Test-Info,Testing node does not exist.)
-  $(call declare-root-node,${_rn},${root_path})
+  $(call declare-root-node,${_rn},${TESTING_PATH})
   $(call verify-node-does-not-exist,${_rn})
 
   $(call Test-Info,Testing node can be created.)
@@ -407,7 +329,7 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(eval _rn := dcnr1)
+  $(eval _rn := ${Seg}.dcnr1)
   $(eval _cn := dcnc1)
 
   $(call verify-node-not-declared,${_rn})
@@ -429,7 +351,7 @@ define ${.TestUN}
 
   $(call Test-Info,Verify child node can be declared.)
 
-  $(call declare-root-node,${_rn},${root_path})
+  $(call declare-root-node,${_rn},${TESTING_PATH})
 
   $(call Expect-No-Error)
   $(call declare-child-node,${_cn},${_rn})
@@ -476,7 +398,7 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(eval _rn := dgcnr1)
+  $(eval _rn := ${Seg}.dgcnr1)
   $(eval _cn := dgcnc1)
   $(eval _gcn := dgcngc1)
 
@@ -484,7 +406,7 @@ define ${.TestUN}
   $(call verify-node-not-declared,${_cn})
   $(call verify-node-not-declared,${_gcn})
 
-  $(call declare-root-node,${_rn},${root_path})
+  $(call declare-root-node,${_rn},${TESTING_PATH})
   $(call declare-child-node,${_cn},${_rn})
 
   $(call Expect-No-Error)
@@ -535,14 +457,14 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(eval _rn := ccnr1)
+  $(eval _rn := ${Seg}.ccnr1)
   $(eval _cn := ccnc1)
 
   $(call Test-Info,Testing node is not declared.)
   $(call verify-node-not-declared,${_rn})
 
   $(call Test-Info,Creating test root node.)
-  $(call declare-root-node,${_rn},${root_path})
+  $(call declare-root-node,${_rn},${TESTING_PATH})
   $(call create-node,${_rn})
 
   $(call Test-Info,Creating test child node.)
@@ -577,7 +499,7 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(eval _rn := cgcnr1)
+  $(eval _rn := ${Seg}.cgcnr1)
   $(eval _cn := cgcnc1)
   $(eval _gcn := cgcngc1)
 
@@ -585,7 +507,7 @@ define ${.TestUN}
   $(call verify-node-not-declared,${_rn})
 
   $(call Test-Info,Creating test root node.)
-  $(call declare-root-node,${_rn},${root_path})
+  $(call declare-root-node,${_rn},${TESTING_PATH})
   $(call create-node,${_rn})
 
   $(call Test-Info,Creating test child node.)
@@ -597,12 +519,12 @@ define ${.TestUN}
   $(call create-node,${_gcn})
   $(call verify-node-exists,${_gcn})
 
-  $(call display-tree,${_rn})
+  $(call display-node-tree,${_rn})
 
   $(call destroy-node,${_gcn})
   $(call verify-node-does-not-exist,${_gcn})
 
-  $(call display-tree,${_rn})
+  $(call display-node-tree,${_rn})
 
   $(call destroy-node,${_cn})
   $(call verify-node-does-not-exist,${_cn})
@@ -635,7 +557,7 @@ This test suite verifies the macros related to managing nodes.
 Defines the macros:
 
 ${help-display-node}
-${help-display-tree}
+${help-display-node-tree}
 
 $(foreach _t,${${.TestUN}.TestL},
 ${help-${_t}})

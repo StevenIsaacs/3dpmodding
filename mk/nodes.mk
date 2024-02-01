@@ -33,6 +33,73 @@ ${_var}
 endef
 help-${_var} := $(call _help)
 
+_macro := display-node
+define _help
+${_macro}
+  Display node attributes.
+  Parameters:
+    1 = The name of the node.
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+  $(call Enter-Macro,$(0),$(1))
+  $(if $(call node-is-declared,$(1))
+    $(call Display-Vars,\
+      $(foreach _a,${node_attributes},$(1).${_a})
+    )
+    $(if ${$(1).path},
+      $(call Test-Info,Node $(1) can be a node.)
+    ,
+      $(call Test-Info,Node $(1) is NOT a valid node.)
+    )
+    $(if ${$(1).parent},
+      $(call Test-Info,Node $(1) is a child node.)
+    ,
+      $(call Test-Info,Node $(1) is a root node.)
+    )
+    $(if $(call node-exists,$(1)),
+      $(call Test-Info,Node $(1) path exists.)
+    ,
+      $(call Test-Info,Node $(1) path does not exist.)
+    )
+  ,
+    $(call Test-Info,Node $(1) is not a member of ${nodes})
+  )
+  $(call Exit-Macro)
+endef
+
+_macro := display-node-tree
+define _help
+${_macro}
+  Display a tree starting with a node.
+  Parameters:
+    1 = The name of the node.
+endef
+help-${_macro} := $(call _help)
+define ${_macro}
+  $(call Enter-Macro,$(0),$(1))
+  $(if $(call node-is-declared,$(1))
+    $(call Display-Vars,\
+      $(foreach _a,${node_attributes},$(1).${_a})
+    )
+    $(if ${$(1).path},
+      $(call Test-Info,Node $(1) can be a node.)
+    ,
+      $(call Test-Info,Node $(1) is NOT a valid node.)
+    )
+    $(if $(call node-exists,$(1)),
+      $(call Test-Info,Node $(1) path exists.)
+      $(eval $(call Run,tree $(1).path))
+      $(call Test-Info:${Run_Output})
+    ,
+      $(call Test-Info,Node $(1) path does not exist.)
+    )
+  ,
+    $(call Test-Info,Node $(1) is not a member of ${nodes})
+  )
+  $(call Exit-Macro)
+endef
+
 _macro := node-is-declared
 define _help
 ${_macro}
@@ -118,7 +185,7 @@ define ${_macro}
     ,
       $(eval ${$(1).parent}.children := \
         $(filter-out $(1),${${$(1).parent}.children}))
-      $(foreach _a,${node-attributes},
+      $(foreach _a,${node_attributes},
         $(eval undefine $(1).${_a})
       )
       $(eval nodes := $(filter-out $(1),${nodes}))
@@ -175,7 +242,7 @@ define ${_macro}
     $(if ${$(1).children},
       $(call Signal-Error,Root node $(1) has children -- NOT undeclaring.)
     ,
-      $(foreach _a,${node-attributes},
+      $(foreach _a,${node_attributes},
         $(eval undefine $(1).${_a})
       )
     $(eval nodes := $(filter-out $(1),${nodes}))
@@ -224,13 +291,19 @@ ${_macro}
   WARNING: All components within the node are also deleted.
   Parameters:
     1 = The node name.
+    2 = An optional prompt for Confirm.
 endef
 help-${_macro} := $(call _help)
 define ${_macro}
   $(call Enter-Macro,$(0),$(1))
   $(if $(call node-is-declared),
     $(if $(call node-exists,$(1)),
-      $(if $(call Confirm,Remove repo:$(1)?,y),
+      $(if $(2),
+        $(eval ${_p} := $(2))
+      ,
+        $(eval ${_p} := Destroy node:$(1)?)
+      )
+      $(if $(call Confirm,${_p},y),
         $(call Run,rm -r ${$(1).path})
       ,
         $(call Info,Declined -- not deleting $(1).)
