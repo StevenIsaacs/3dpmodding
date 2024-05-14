@@ -6,7 +6,21 @@ $(call Last-Segment-UN)
 ifndef ${LastSegUN}.SegID
 $(call Enter-Segment,ModFW - node test suite.)
 # -----
+define _help
+Make segment: ${Seg}.mk
+
+This test suite verifies the macros related to managing nodes.
+
+Command line goals:
+  help-${Seg} or help-${SegUN} or help-${SegID}
+    Display this help.
+endef
+help-${SegID} := $(call _help)
+$(call Add-Help,${SegID})
+
 $(call Use-Segment,nodes)
+
+$(call Add-Help-Section,verifiers,Macros for verifying nodes.)
 
 $(call Declare-Suite,${Seg},Verify the node macros.)
 
@@ -17,7 +31,8 @@ ${_macro}
   Parameters:
     1 = The node to verify.
 endef
-help-${_macro} := ${_help}
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0),$(1))
   $(if $(call node-is-declared,$(1)),
@@ -42,7 +57,8 @@ ${_macro}
   Parameters:
     1 = The node to verify.
 endef
-help-${_macro} := ${_help}
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0),$(1))
   $(if $(call node-is-declared,$(1)),
@@ -68,7 +84,8 @@ ${_macro}
   Parameters:
     1 = The node to verify.
 endef
-help-${_macro} := ${_help}
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0),$(1))
   $(call verify-node-is-declared,$(1))
@@ -89,7 +106,8 @@ ${_macro}
   Parameters:
     1 = The node to verify.
 endef
-help-${_macro} := ${_help}
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0),$(1))
   $(call verify-node-is-declared,$(1))
@@ -109,7 +127,8 @@ ${_macro}
   Parameters:
     1 = The node to verify.
 endef
-help-${_macro} := ${_help}
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0),$(1))
   $(call verify-node-is-declared,$(1))
@@ -129,7 +148,8 @@ ${_macro}
   Parameters:
     1 = The node to verify.
 endef
-help-${_macro} := ${_help}
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0),$(1))
   $(call verify-node-is-declared,$(1))
@@ -150,7 +170,8 @@ ${_macro}
   Parameters:
     1 = The node to verify.
 endef
-help-${_macro} := ${_help}
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0),$(1))
   $(call verify-node-is-declared,$(1))
@@ -175,7 +196,8 @@ ${_macro}
     1 = The node to verify.
     2 = The parent node.
 endef
-help-${_macro} := ${_help}
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0),$(1))
   $(call verify-node-is-declared,$(1))
@@ -202,7 +224,8 @@ ${_macro}
     1 = The node to verify.
     2 = The parent node.
 endef
-help-${_macro} := ${_help}
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0),$(1) $(2))
   $(call verify-node-not-declared,$(1))
@@ -215,12 +238,15 @@ define ${_macro}
   $(call Exit-Macro)
 endef
 
+$(call Add-Help-Section,test_list,Tests for verifying nodes.)
+
 $(call Declare-Test,nonexistent-nodes)
 define _help
 ${.TestUN}
   Verify messages, warnings and, errors for when nodes do not exist.
 endef
-help-${.TestUN} := ${_help}
+help-${.TestUN} := $(call _help)
+$(call Add-Help,${.TestUN})
 ${.TestUN}.Prereqs :=
 define ${.TestUN}
   $(call Enter-Macro,$(0))
@@ -242,7 +268,8 @@ define _help
 ${.TestUN}
   Verify declaring and undeclaring root nodes.
 endef
-help-${.TestUN} := ${_help}
+help-${.TestUN} := $(call _help)
+$(call Add-Help,${.TestUN})
 ${.TestUN}.Prereqs := ${.SuiteN}.nonexistent-nodes
 define ${.TestUN}
   $(call Enter-Macro,$(0))
@@ -262,7 +289,7 @@ define ${.TestUN}
   $(call Test-Info,Verify root node can be declared.)
 
   $(call Expect-No-Error)
-  $(call declare-root-node,${_rn},${TESTING_PATH})
+  $(call declare-root-node,${_rn},${PROJECTS_PATH})
   $(call Verify-No-Error)
 
   $(call verify-node-is-declared,${_rn})
@@ -285,12 +312,13 @@ define ${.TestUN}
   $(call Exit-Macro)
 endef
 
-$(call Declare-Test,create-root-nodes)
+$(call Declare-Test,mk-root-nodes)
 define _help
 ${.TestUN}
   Verify creating and destroying root nodes.
 endef
-help-${.TestUN} := ${_help}
+help-${.TestUN} := $(call _help)
+$(call Add-Help,${.TestUN})
 ${.TestUN}.Prereqs := ${.SuiteN}.declare-root-nodes
 define ${.TestUN}
   $(call Enter-Macro,$(0))
@@ -302,14 +330,14 @@ define ${.TestUN}
   $(call verify-node-not-declared,${_rn})
 
   $(call Test-Info,Testing node does not exist.)
-  $(call declare-root-node,${_rn},${TESTING_PATH})
+  $(call declare-root-node,${_rn},${PROJECTS_PATH})
   $(call verify-node-does-not-exist,${_rn})
 
   $(call Test-Info,Testing node can be created.)
-  $(call create-node,${_rn})
+  $(call mk-node,${_rn})
   $(call verify-node-exists,${_rn})
 
-  $(call destroy-node,${_rn})
+  $(call rm-node,${_rn})
   $(call verify-node-does-not-exist,${_rn})
 
   $(call undeclare-root-node,${_rn})
@@ -323,7 +351,8 @@ define _help
 ${.TestUN}
   Verify declaring and undeclaring child nodes.
 endef
-help-${.TestUN} := ${_help}
+help-${.TestUN} := $(call _help)
+$(call Add-Help,${.TestUN})
 ${.TestUN}.Prereqs := ${.SuiteN}.declare-root-nodes
 define ${.TestUN}
   $(call Enter-Macro,$(0))
@@ -351,7 +380,7 @@ define ${.TestUN}
 
   $(call Test-Info,Verify child node can be declared.)
 
-  $(call declare-root-node,${_rn},${TESTING_PATH})
+  $(call declare-root-node,${_rn},${PROJECTS_PATH})
 
   $(call Expect-No-Error)
   $(call declare-child-node,${_cn},${_rn})
@@ -390,10 +419,11 @@ define _help
 ${.TestUN}
   Verify declaring and undeclaring grandchild nodes.
 endef
-help-${.TestUN} := ${_help}
+help-${.TestUN} := $(call _help)
+$(call Add-Help,${.TestUN})
 ${.TestUN}.Prereqs := \
-${.SuiteN}.declare-root-nodes \
-${.SuiteN}.declare-child-nodes
+  ${.SuiteN}.declare-root-nodes \
+  ${.SuiteN}.declare-child-nodes
 define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
@@ -406,7 +436,7 @@ define ${.TestUN}
   $(call verify-node-not-declared,${_cn})
   $(call verify-node-not-declared,${_gcn})
 
-  $(call declare-root-node,${_rn},${TESTING_PATH})
+  $(call declare-root-node,${_rn},${PROJECTS_PATH})
   $(call declare-child-node,${_cn},${_rn})
 
   $(call Expect-No-Error)
@@ -444,15 +474,16 @@ define ${.TestUN}
   $(call Exit-Macro)
 endef
 
-$(call Declare-Test,create-child-nodes)
+$(call Declare-Test,mk-child-nodes)
 define _help
 ${.TestUN}
   Verify creating and destroying child nodes.
 endef
-help-${.TestUN} := ${_help}
+help-${.TestUN} := $(call _help)
+$(call Add-Help,${.TestUN})
 ${.TestUN}.Prereqs := \
   ${.SuiteN}.declare-child-nodes \
-  ${.SuiteN}.create-root-nodes
+  ${.SuiteN}.mk-root-nodes
 define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
@@ -464,21 +495,21 @@ define ${.TestUN}
   $(call verify-node-not-declared,${_rn})
 
   $(call Test-Info,Creating test root node.)
-  $(call declare-root-node,${_rn},${TESTING_PATH})
-  $(call create-node,${_rn})
+  $(call declare-root-node,${_rn},${PROJECTS_PATH})
+  $(call mk-node,${_rn})
 
   $(call Test-Info,Creating test child node.)
   $(call declare-child-node,${_cn},${_rn})
-  $(call create-node,${_cn})
+  $(call mk-node,${_cn})
   $(call verify-node-exists,${_cn})
 
-  $(call destroy-node,${_cn})
+  $(call rm-node,${_cn})
   $(call verify-node-does-not-exist,${_cn})
 
   $(call undeclare-child-node,${_cn})
 
   $(call Test-Info,Destroying test child node.)
-  $(call destroy-node,${_rn})
+  $(call rm-node,${_rn})
   $(call undeclare-root-node,${_rn})
 
 
@@ -486,15 +517,16 @@ define ${.TestUN}
   $(call Exit-Macro)
 endef
 
-$(call Declare-Test,create-grandchild-nodes)
+$(call Declare-Test,mk-grandchild-nodes)
 define _help
 ${.TestUN}
   Verify creating and destroying grandchild nodes.
 endef
-help-${.TestUN} := ${_help}
+help-${.TestUN} := $(call _help)
+$(call Add-Help,${.TestUN})
 ${.TestUN}.Prereqs := \
   ${.SuiteN}.declare-grandchild-nodes \
-  ${.SuiteN}.create-root-nodes
+  ${.SuiteN}.mk-root-nodes
 define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
@@ -507,32 +539,32 @@ define ${.TestUN}
   $(call verify-node-not-declared,${_rn})
 
   $(call Test-Info,Creating test root node.)
-  $(call declare-root-node,${_rn},${TESTING_PATH})
-  $(call create-node,${_rn})
+  $(call declare-root-node,${_rn},${PROJECTS_PATH})
+  $(call mk-node,${_rn})
 
   $(call Test-Info,Creating test child node.)
   $(call declare-child-node,${_cn},${_rn})
-  $(call create-node,${_cn})
+  $(call mk-node,${_cn})
 
   $(call Test-Info,Creating test child node.)
   $(call declare-child-node,${_gcn},${_cn})
-  $(call create-node,${_gcn})
+  $(call mk-node,${_gcn})
   $(call verify-node-exists,${_gcn})
 
   $(call display-node-tree,${_rn})
 
-  $(call destroy-node,${_gcn})
+  $(call rm-node,${_gcn})
   $(call verify-node-does-not-exist,${_gcn})
 
   $(call display-node-tree,${_rn})
 
-  $(call destroy-node,${_cn})
+  $(call rm-node,${_cn})
   $(call verify-node-does-not-exist,${_cn})
 
   $(call undeclare-child-node,${_cn})
 
   $(call Test-Info,Destroying test child node.)
-  $(call destroy-node,${_rn})
+  $(call rm-node,${_rn})
   $(call undeclare-root-node,${_rn})
 
 
@@ -543,40 +575,19 @@ endef
 # +++++
 # Postamble
 # Define help only if needed.
-_h := \
-  $(or \
-    $(call Is-Goal,help-${Seg}),\
-    $(call Is-Goal,help-${SegUN}),\
-    $(call Is-Goal,help-${SegID}))
-ifneq (${_h},)
-define _help
-Make segment: ${Seg}.mk
-
-This test suite verifies the macros related to managing nodes.
-
-Defines the macros:
-
-${help-display-node}
-${help-display-node-tree}
-
-$(foreach _t,${${.TestUN}.TestL},
-${help-${_t}})
-
-Uses:
-  TESTING_PATH
-    Where the test nodes are stored.
-
-Command line goals:
-  help-${Seg} or help-${SegUN} or help-${SegID}
-    Display this help.
+__h := $(or \
+  $(call Is-Goal,help-${SegUN}),\
+  $(call Is-Goal,help-${SegID}),\
+  $(call Is-Goal,help-${Seg}))
+ifneq (${__h},)
+define __help
+$(call Display-Help-List,${SegID})
 endef
-${_h} := ${_help}
+${__h} := ${__help}
 endif # help goal message.
 
-$(call End-Declare-Suite)
-
 $(call Exit-Segment)
-else # <u>SegId exists
+else # SegId exists
 $(call Check-Segment-Conflicts)
-endif # <u>SegId
+endif # SegId
 # -----

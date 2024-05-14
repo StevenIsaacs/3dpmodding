@@ -3,10 +3,6 @@
 # NOTE: ModFW is not a build tool. Rather it is a framework for integrating
 # a variety of build and development tools.
 #----------------------------------------------------------------------------
-# Using a conditional here because of needing to include overrides.mk only if
-# it exists.
--include overrides.mk
-
 # Which branch of the helpers to use. Once the helpers have been cloned
 # this is ignored.
 HELPERS_BRANCH ?= main
@@ -37,59 +33,13 @@ _null := $(shell \
 MakeD := ModFW -- A modding framework.
 include ${_helpers}
 
-ifneq ($(call Is-Goal,help),help)
+# Using a conditional here because of needing to include overrides.mk only if
+# it exists.
+-include overrides.mk
 
-# Config will change the sticky directory to be PROJECT specific.
 $(call Use-Segment,config)
+$(call Add-Segment-Path,${MK_NODE})
 
-# Search path for loading segments. This can be extended by kits and mods.
-$(call Add-Segment-Path,${MK_PATH})
-
-# Common macros for ModFW segments.
-$(call Use-Segment,nodes)
-$(call Use-Segment,repos)
-
-$(call Debug,STICKY_PATH = ${STICKY_PATH})
-
-ifdef PREPEND
-  $(call Use-Segment,${PREPEND})
-endif
-
-# Testing takes control of when projects, kits, and mods are loaded.
-ifeq (${TESTING},)
-  # Setup PROJECT specific variables and goals. A project changes the
-  # STICKY_PATH to point to the project repo. This way sticky options are also # under revision control.
-  $(call Use-Segment,projects)
-endif # TESTING
-
-ifdef APPEND
-  $(call Use-Segment,${APPEND})
-endif
-$(call Display-Segs)
-
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# The entire project.
-#----------------------------------------------------------------------------
-
-# mod_deps is defined by the mod.
-all: ${MAKEFILE_LIST} ${mod_deps}
-
-# TODO: Remove this?
-create-new: ${repo_goals}
-
-# cleaners is defined by the kit and the mod.
-.PHONY: clean
-clean: ${cleaners}
-> rm -rf ${BUILD_PATH}
-> rm -rf ${STAGING_PATH}
-
-endif # Not help.
-
-_h := $(or \
-  $(call Is-Goal,help-${SegUN}), \
-  $(call Is-Goal,help-${SegID}))
-ifneq (${_h},)
-$(call Attention,Defining ${_h} for:${Seg})
 define _help
 Makefile: ${Seg}
 Usage: make [<option>=<value> ...] [<goal>]
@@ -147,6 +97,9 @@ Definitions:
   is specified using the PROJECT variable. See help-projects for more
   information.
 
+  comp: A ModFW component. A component can be a mod, kit, or project. All
+  ModFW components contain at minimum a makefile segment having the same name.
+
   tree: ModFW uses a tree structure to organize components needed to assemble
   deliverables. This structure is similar to a classic tree structure as
   described here: https://en.wikipedia.org/wiki/Tree_(data_structure)
@@ -186,9 +139,9 @@ Naming conventions:
                 contain a preamble and postamble. See help-helpers for more
                 information.
 GLOBAL_VARIABLE Can be overridden on the command line. Sticky variables should
-                have this form unless they are for a component in which case
-                the should use the <seg>.VARIABLE form (below). See
-                help-helpers for more information about sticky variables.
+                have this form unless they are for a particular context in
+                which case the should use the <ctx>.VARIABLE form (below). See
+                help-Sticky for more information about sticky variables.
 global_variable Available to all segments but should not be overridden on the
                 command line. Attempts to override can have unpredictable
                 results.
@@ -210,11 +163,13 @@ Global_Variable This form is also used by the helpers to bring more attention
 Callable-Macro  The name of a helper defined callable macro.
 
 WARNING: Even though make allows variable names to begin with a numeric
-character this must be avoided for all variable names since they may be
+character this must be avoided for all variable names which could be
 exported to the environment to be passed to a shell. If a numeric character is
-used as the first character of a variable name unpredictable behavior can
-occur. This is particularly important for PROJECT, KIT, MOD, and segment
-names.
+used as the first character of an exported variable name unpredictable behavior
+can occur. This is particularly important for PROJECT, KIT, MOD, and segment
+names. To help avoid this problem use the helpers provided macro To-Shell-Var
+to convert a name to a shell compatible name which can then safely be exported
+to the shell environment.
 
 Overriding variables:
 An overrides file, overrides.mk, is supported where the developer can preset
@@ -233,9 +188,7 @@ execute.
 During the pre-process phase nearly all macros are executed and makefile
 segments are loaded. Any repos that are referenced are cloned or setup during
 this phase. Because of this, variables should be declared using the := form. New
-components (project, kit, or mod) are created during this phase. The PROJECT
-component is processed first followed by the KIT component and finally the MOD
-component.
+components (project, kit, or mod) are created during this phase.
 
 The execute phase is where the typical make behavior occurs. Dependencies are
 examined and resolved in this phase.
@@ -328,14 +281,8 @@ Before any actual mods can be built it is necessary to declare which project
 is active,
 
 For example:
-  make PROJECT=<project> PROJECT.URL=<url> all
-    Will install the project repo and activate it. Once a project is activated
-    a kit can then be activated.
-
-The active project, kit, and mod are the top level or focus. Mods can then
-"use" additional mods and even mods from other kits to build components they
-may be dependent upon. Dependency trees should always begin with the active
-mod.
+  make PROJECT=<project> <project>.URL=<url> all
+    Will install the project repo and activate it.
 
 Command line options:
   Required sticky options:
@@ -345,35 +292,10 @@ Command line options:
   For automated builds it is possible to preset options in another directory
   then overriding STICKY_PATH either in overrides.mk or on the command line.
 
-  PREPEND = ${PREPEND}
-    When defined on the command line this triggers the inclusion of a makefile
-    segment named by PREPEND. This segment is loaded after loading the helpers,
-    overrides, and config but before loading the project makefile segments. The
-    Use-Segment macro is used to find and load the segment so segment search
-    paths will be used (see help-helpers for more information).
-    For example: "make PREPEND=test" will load the makefile segment named
-    test.mk immediately before loading projects.mk.
-
-  APPEND = ${APPEND}
-    When defined on the command line this triggers the inclusion of a makefile
-    segment named by APPEND. This segment is loaded last after all other
-    segments have been loaded. The Use-Segment macro is used to find and load
-    the segment so segment search paths will be used (see help-helpers for more
-    information).
-    For example: "make APPEND=test" will load the makefile segment named
-    test.mk.
-
-Testing the process.
-  TESTING = ${TESTING}
-    When this variable is not empty then the normal project processing does not
-    occur. Instead, PREPEND should be used to initiate a testing process.
 
 Command line goals:
   all             All mods for the active project are built. Use show-mod_deps
                   for a list of goals.
-  create-new      Create all of the new components indicated by NEW_PROJECT,
-                  NEW_KIT, and NEW_MOD (see help-projects, help-kits, or
-                  help-mods).
   clean           Remove all of the build artifacts. This removes the build
                   and staging directories.
 
@@ -393,11 +315,177 @@ Command line goals:
 
   Help and debug:
   help            Display this help message (default).
-  show-mod_deps   Display the list of goals a mod is dependent upon.
+  show-project_deps
+                  Display the list of goals a project is dependent upon.
   show-<variable> This is a special goal which can be used to display
                   any makefile variable and exit.
   help-<seg>      Display a make segment specific help.
+  See help-helpers for more information.
 
+endef
+help-${SegID} := $(call _help)
+$(call Add-Help,${SegID})
+
+$(call Add-Help-Section,root_node,ModFW root node.)
+
+_var := ModFW_path
+${_var} := ${WorkingPath}
+define _help
+${_var} := ${${_var}}
+  This is the path to the directory containing the ModFW directory. This is used as the path to the root node for the ModFW node tree.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+
+_var := ModFW_node
+${_var} := ${WorkingDir}
+define _help
+${_var} := ${${_var}}
+  This is the name of the ModFW directory and is equal to the helper variable
+  WorkingDir. This is used to name the root node for the ModFW node tree.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+
+$(call Add-Help-Section,prepended,Prepended make segment.)
+
+_var := PREPEND
+define _help
+${_var} = ${${_var}}
+  When defined on the command line this triggers the inclusion of a makefile
+  segment named by ${_var}. This segment is loaded after loading the helpers,
+  overrides, and config but before loading the project makefile segments. The
+  Use-Segment macro is used to find and load the segment so segment search
+  paths will be used (see help-helpers for more information).
+  For example: "make ${_var}=test" will load the makefile segment named
+  test.mk immediately before loading projects.mk.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+ifdef ${_var}
+  $(call Use-Segment,${${_var}})
+endif
+
+# Testing takes control of when projects, kits, and mods are loaded.
+_var := TESTING
+define _help
+${_var} = ${${_var}}
+  When this variable is not empty then the normal project processing does not
+  occur. Instead, PREPEND should be used to initiate a testing process.
+  NOTE: The sticky variable PROJECT is not required when ${_var} is defined.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+
+ifeq (${TESTING},)
+  $(call Add-Help-Section,sticky,Sticky command line variables.)
+
+  _var := PROJECT
+  $(call Sticky,${_var})
+  define _help
+  ${_var} = ${${_var}} REQUIRED STICKY VARIABLE
+      The name of the active project. Only one project can be the active project
+      and no two projects can have the same name.
+  endef
+  help-${_var} := $(call _help)
+  $(call Add-Help,${_var})
+
+  _var := ${PROJECT}.URL
+  $(call Sticky,${_var},${DEFAULT_URL}/${PROJECT})
+  define _help
+  ${_var} = ${${_var}}
+      The URL to clone the project from.
+  endef
+  help-${_var} := $(call _help)
+  $(call Add-Help,${_var})
+
+  _var := ${PROJECT}.BRANCH
+  $(call Sticky,${_var},${DEFAULT_BRANCH})
+  define _help
+  ${_var} = ${${_var}}
+      The repo branch to switch to after cloning the project repo.
+  endef
+  help-${_var} := $(call _help)
+  $(call Add-Help,${_var})
+
+_macro := init-modfw
+define _help
+${_macro}
+  Initialize the ModFW makefiles. Among other things this declares the
+  project root node and its top level children.
+endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
+define ${_macro}
+  $(call Enter-Macro,$(0))
+
+  $(call Add-Segment-Path,${MK_NODE})
+  $(call Use-Segment,nodes)
+
+  $(call declare-root-node,${ModFW_node},${ModFW_path})
+
+  $(foreach _child,STICKY_NODE MK_NODE DOWNLOADS_NODE,
+   $(call declare-child-node,${${_child}},${ModFW_node})
+   $(call mk-node,${${_child}})
+  )
+
+  $(call declare-child-node,${PROJECTS_NODE},${ModFW_node})
+  $(call mk-node,${PROJECTS_NODE})
+  $(call declare-child-node,${DOWNLOADS_NODE},${ModFW_node})
+  $(call mk-node,${DOWNLOADS_NODE})
+  $(call Exit-Macro)
+endef
+
+$(call init-modfw)
+
+  ifeq (${PROJECT},)
+    $(call Signal-Error,PROJECT must be defined.)
+  else
+    $(call Use-Segment,projects)
+
+    $(call use-project,${PROJECT})
+    endif # PROJECT defined
+endif # not TESTING
+
+$(call Add-Help-Section,appended,Appended make segment.)
+
+_var := APPEND
+define _help
+${_var} = ${${_var}}
+  When defined on the command line this triggers the inclusion of a makefile
+  segment named by ${_var}. This segment is loaded last after all other
+  segments have been loaded. The Use-Segment macro is used to find and load
+  the segment so segment search paths will be used (see help-helpers for more
+  information).
+  For example: "make ${_var}=test" will load the makefile segment named
+  test.mk.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+ifdef ${_var}
+  $(call Use-Segment,${${_var}})
+endif
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# The entire project.
+#----------------------------------------------------------------------------
+
+# mod_deps is defined by the mod.
+all: ${MAKEFILE_LIST} ${project_deps}
+
+# cleaners is defined by the kit and the mod.
+.PHONY: clean
+clean: ${cleaners}
+> rm -rf ${BUILD_PATH}
+> rm -rf ${STAGING_PATH}
+
+_h := $(or \
+  $(call Is-Goal,help-${SegUN}), \
+  $(call Is-Goal,help-${SegID}))
+ifneq (${_h},)
+$(call Attention,Defining ${_h} for:${Seg})
+define _help
+$(call Display-Help-List,${SegID})
 endef
 ${_h} := ${_help}
 endif
