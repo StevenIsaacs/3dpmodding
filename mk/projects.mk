@@ -110,17 +110,17 @@ endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
-_var := project-inc-list
+_var := project_inc_list
 ${_var} := repos kits mods
 define _help
 ${_var} := ${${_var}}
-  This is the list of segments used by ${Seg} to .
+  This is the list of segments used by ${Seg}.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
-$(foreach _s,${project-inc-list},
-  $(call Use-Segment,${_s})
+$(foreach _s,${project_inc_list}, \
+  $(call Use-Segment,${_s}) \
 )
 
 $(call Add-Help-Section,project-ifs,Macros for checking project status.)

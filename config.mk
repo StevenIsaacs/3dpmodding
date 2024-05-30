@@ -5,6 +5,9 @@
 $(call Last-Segment-UN)
 ifndef ${LastSegUN}.SegID
 $(call Enter-Segment,ModFW config variables.)
+$(call Display-Segs)
+$(call Display-Seg-Attributes,${SegUN})
+
 # -----
 define _help
 Make segment: ${Seg}.mk
@@ -150,7 +153,16 @@ _var := TESTS_NODE
 $(call Sticky,${_var},test)
 define _help
 ${_var} = ${${_var}}
-  The name of the directory where downloaded files are stored.
+  The name of the directory where the testing segment is stored.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+
+_var := SUITES_NODE
+$(call Sticky,${_var},suites)
+define _help
+${_var} = ${${_var}}
+  The name of the directory where test suite segments are stored.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
@@ -317,16 +329,21 @@ $(call Add-Help,${_h})
 # +++++
 # Postamble
 # Define help only if needed.
-_h := $(or $(call Is-Goal,help-${SegUN}),$(call Is-Goal,help-${SegID}))
-ifneq (${_h},)
-$(call Attention,Generating help for:${Seg})
-define _help
+$(call Verbose,Seg=${Seg} SegUN=${SegUN} SegID=${SegID})
+__h := \
+  $(or \
+    $(call Is-Goal,help-${Seg}),\
+    $(call Is-Goal,help-${SegUN}),\
+    $(call Is-Goal,help-${SegID}))
+ifneq (${__h},)
+define __help
 $(call Display-Help-List,${SegID})
 endef
 ${__h} := ${__help}
-endif
+endif # help goal message.
+
 $(call Exit-Segment)
-else
+else # <u>SegID exists
 $(call Check-Segment-Conflicts)
-endif # SegId
+endif # <u>SegID
 # -----

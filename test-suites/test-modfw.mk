@@ -31,12 +31,11 @@ TESTING := 1
 PROJECTS_NODE := test-bed
 PROJECT = testing
 
-$(call Use-Segment,test-helpers)
+$(call Use-Segment,$(HELPERS_PATH)/test-helpers.mk)
 
-$(call Add-Segment-Path,$(MK_NODE))
+$(call Info,Running test cases:${CASES})
 
-$(call Run-Suites,${TESTS_NODE},${CASES})
-
+$(call Run-Suites,${TESTS_NODE}/${SUITES_NODE},${CASES})
 
 # +++++
 # Postamble

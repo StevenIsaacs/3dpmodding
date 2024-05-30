@@ -35,7 +35,8 @@ include ${_helpers}
 
 # Using a conditional here because of needing to include overrides.mk only if
 # it exists.
--include overrides.mk
+
+$(call Use-Segment,overrides,Info)
 
 $(call Use-Segment,config)
 $(call Add-Segment-Path,${MK_NODE})
