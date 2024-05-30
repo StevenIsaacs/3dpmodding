@@ -150,19 +150,10 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := TESTS_NODE
-$(call Sticky,${_var},test)
+$(call Sticky,${_var},test-suites)
 define _help
 ${_var} = ${${_var}}
   The name of the directory where the testing segment is stored.
-endef
-help-${_var} := $(call _help)
-$(call Add-Help,${_var})
-
-_var := SUITES_NODE
-$(call Sticky,${_var},suites)
-define _help
-${_var} = ${${_var}}
-  The name of the directory where test suite segments are stored.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})

@@ -250,22 +250,26 @@ define ${_macro}
   $(if $(call node-is-declared,$(1)),
     $(call Signal-Error,Node $(1) has already been declared.)
   ,
-    $(if $(call node-is-declared,$(2)),
-      $(call Info,Declaring child node:$(1))
-      $(eval $(1).name := $(1))
-      $(eval $(1).var := $(call To-Shell-Var,$(1)))
-      $(if $(3),
-        $(call Info,Using $(3) as node directory name.)
-        $(eval $(1).path := ${$(2).path}/$(3))
+    $(if $(2),
+      $(if $(call node-is-declared,$(2)),
+        $(call Info,Declaring child node:$(1))
+        $(eval $(1).name := $(1))
+        $(eval $(1).var := $(call To-Shell-Var,$(1)))
+        $(if $(3),
+          $(call Info,Using $(3) as node directory name.)
+          $(eval $(1).path := ${$(2).path}/$(3))
+        ,
+          $(eval $(1).path := ${$(2).path}/$(1))
+        )
+        $(eval $(1).parent := $(2))
+        $(eval $(1).children := )
+        $(eval $(2).children += $(1))
+        $(eval nodes += $(1))
       ,
-        $(eval $(1).path := ${$(2).path}/$(1))
+        $(call Signal-Error,Parent node $(2) has not been declared.)
       )
-      $(eval $(1).parent := $(2))
-      $(eval $(1).children := )
-      $(eval $(2).children += $(1))
-      $(eval nodes += $(1))
     ,
-      $(call Signal-Error,Parent node $(2) has not been declared.)
+      $(call Signal-Error,The parent node has not been specified.)
     )
   )
   $(call Exit-Macro)
@@ -349,14 +353,16 @@ help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0),$(1))
-  $(if $(call node-is-declared),
+  $(if $(call node-is-declared,$(1)),
     $(if $(call node-exists,$(1)),
       $(if $(2),
-        $(eval ${_p} := $(2))
+        $(eval _p := $(2))
       ,
-        $(eval ${_p} := Destroy node:$(1)?)
+        $(eval _p := Destroy node:$(1)?)
       )
-      $(call Run,rm -r ${$(1).path})
+      $(if $(call Confirm,${_p},y),
+        $(call Run,rm -r ${$(1).path})
+      )
     ,
       $(call Verbose,Node $(1) does not exist -- not removing.)
     )

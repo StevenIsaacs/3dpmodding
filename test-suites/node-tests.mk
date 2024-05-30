@@ -41,10 +41,10 @@ define ${_macro}
     $(call PASS,Node $(1) is not declared.)
   )
   $(foreach _a,${node_attributes},
-    $(if $(call Is-Not-Defined,${_a}),
-      $(call PASS,Node attribute ${_a} is not defined.)
+    $(if $(call Is-Not-Defined,$(1).${_a}),
+      $(call PASS,Node attribute $(1).${_a} is not defined.)
     ,
-      $(call FAIL,Node attribute ${_a} is defined.)
+      $(call FAIL,Node attribute $(1).${_a} is defined.)
     )
   )
   $(call Exit-Macro)
@@ -64,13 +64,13 @@ define ${_macro}
   $(if $(call node-is-declared,$(1)),
     $(call PASS,Node $(1) is declared.)
   ,
-    $(call FAIL,Node $(1) is not be declared.)
+    $(call FAIL,Node $(1) is not declared.)
   )
   $(foreach _a,${node_attributes},
-    $(if $(call Is-Not-Defined,${_a}),
-      $(call FAIL,Node attribute ${_a} is not defined.)
+    $(if $(call Is-Not-Defined,$(1).${_a}),
+      $(call FAIL,Node attribute $(1).${_a} is not defined.)
     ,
-      $(call PASS,Node attribute ${_a} is defined.)
+      $(call PASS,Node attribute $(1).${_a} is defined.)
     )
   )
   $(call Exit-Macro)
@@ -177,7 +177,7 @@ define ${_macro}
   $(call verify-node-is-declared,$(1))
   $(if ${$(1).parent},
     $(call PASS,Node $(1) is a child node.)
-    $(if $(filter $(1),${${$(1).parent}.children})
+    $(if $(filter $(1),${${$(1).parent}.children}),
       $(call PASS,Node $(1) is a child of ${$(1).parent}.)
     ,
       $(call FAIL,Node $(1) is NOT a child of ${$(1).parent}.)
@@ -204,7 +204,7 @@ define ${_macro}
   $(call verify-node-is-declared,$(2))
   $(if ${$(1).parent},
     $(call PASS,Node $(1) is a child node.)
-    $(if $(filter $(1),${$(2).children})
+    $(if $(filter $(1),${$(2).children}),
       $(call PASS,Node $(1) is a child of $(2).)
     ,
       $(call FAIL,Node $(1) is NOT a child of $(2).)
@@ -228,7 +228,6 @@ help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0),$(1) $(2))
-  $(call verify-node-not-declared,$(1))
   $(call verify-node-is-declared,$(2))
   $(if $(call is-a-child-of,$(1),$(2)),
     $(call FAIL,Node $(1) is a child of $(2).)
@@ -240,10 +239,10 @@ endef
 
 $(call Add-Help-Section,test_list,Tests for verifying nodes.)
 
-$(call Declare-Test,nonexistent-nodes)
+$(call Declare-Test,declare-root-nodes)
 define _help
 ${.TestUN}
-  Verify messages, warnings and, errors for when nodes do not exist.
+  Verify declaring and undeclaring root nodes.
 endef
 help-${.TestUN} := $(call _help)
 $(call Add-Help,${.TestUN})
@@ -252,30 +251,7 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(call Test-Info,Testing node has not been declared.)
-  $(eval _node := does-not-exist)
-  $(call verify-node-not-declared,${_node})
-
-  $(call Test-Info,Testing node does not exist.)
-  $(call verify-node-does-not-exist,${_node})
-
-  $(call End-Test)
-  $(call Exit-Macro)
-endef
-
-$(call Declare-Test,declare-root-nodes)
-define _help
-${.TestUN}
-  Verify declaring and undeclaring root nodes.
-endef
-help-${.TestUN} := $(call _help)
-$(call Add-Help,${.TestUN})
-${.TestUN}.Prereqs := ${.SuiteN}.nonexistent-nodes
-define ${.TestUN}
-  $(call Enter-Macro,$(0))
-  $(call Begin-Test,$(0))
-
-  $(eval _node := drn1)
+  $(eval _rn := drn1)
   $(call verify-node-not-declared,${_rn})
 
   $(call Test-Info,Verify root node must have a path.)
@@ -312,6 +288,31 @@ define ${.TestUN}
   $(call Exit-Macro)
 endef
 
+$(call Declare-Test,nonexistent-nodes)
+define _help
+${.TestUN}
+  Verify messages, warnings and, errors for when nodes do not exist.
+endef
+help-${.TestUN} := $(call _help)
+$(call Add-Help,${.TestUN})
+${.TestUN}.Prereqs := ${.SuiteN}.declare-root-nodes
+define ${.TestUN}
+  $(call Enter-Macro,$(0))
+  $(call Begin-Test,$(0))
+
+  $(call Test-Info,Testing node has not been declared.)
+  $(eval _node := does-not-exist)
+  $(call verify-node-not-declared,${_node})
+
+  $(call Test-Info,Testing node does not exist.)
+  $(call declare-root-node,${_node},${PROJECTS_PATH})
+  $(call verify-node-does-not-exist,${_node})
+  $(call undeclare-root-node,${_node})
+
+  $(call End-Test)
+  $(call Exit-Macro)
+endef
+
 $(call Declare-Test,mk-root-nodes)
 define _help
 ${.TestUN}
@@ -319,7 +320,7 @@ ${.TestUN}
 endef
 help-${.TestUN} := $(call _help)
 $(call Add-Help,${.TestUN})
-${.TestUN}.Prereqs := ${.SuiteN}.declare-root-nodes
+${.TestUN}.Prereqs := ${.SuiteN}.nonexistent-nodes
 define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
@@ -366,12 +367,11 @@ define ${.TestUN}
 
   $(call Test-Info,Verify root node must have a path.)
 
-  $(call Expect-Error,The parent for node ${_cn} has not been specified.)
+  $(call Expect-Error,The parent node has not been specified.)
   $(call declare-child-node,${_cn})
   $(call Verify-Error)
 
   $(call Test-Info,Verify parent node must have been declared.)
-
   $(call Expect-Error,Parent node ${_rn} has not been declared.)
   $(call declare-child-node,${_cn},${_rn})
   $(call Verify-Error)
@@ -379,7 +379,6 @@ define ${.TestUN}
   $(call verify-node-not-declared,${_cn})
 
   $(call Test-Info,Verify child node can be declared.)
-
   $(call declare-root-node,${_rn},${PROJECTS_PATH})
 
   $(call Expect-No-Error)
@@ -388,12 +387,12 @@ define ${.TestUN}
 
   $(call verify-node-is-declared,${_cn})
 
+  $(call Test-Info,Verify child is a child of its parent.)
   $(call verify-is-child-of-parent,${_cn})
 
   $(call verify-is-child-of-node,${_cn},${_rn})
 
   $(call Test-Info,Verify child node can be undeclared.)
-
   $(call Expect-No-Error)
   $(call undeclare-child-node,${_cn})
   $(call Verify-No-Error)
@@ -403,7 +402,6 @@ define ${.TestUN}
   $(call verify-is-not-child-of-node,${_cn},${_rn})
 
   $(call Test-Info,Verify child node cannot be undeclared more than once.)
-
   $(call Expect-Error,Node ${_cn} is NOT declared -- NOT undeclaring.)
   $(call undeclare-child-node,${_cn})
   $(call Verify-Error)
@@ -422,7 +420,6 @@ endef
 help-${.TestUN} := $(call _help)
 $(call Add-Help,${.TestUN})
 ${.TestUN}.Prereqs := \
-  ${.SuiteN}.declare-root-nodes \
   ${.SuiteN}.declare-child-nodes
 define ${.TestUN}
   $(call Enter-Macro,$(0))
@@ -450,7 +447,7 @@ define ${.TestUN}
   $(call verify-is-not-child-of-node,${_gcn},${_rn})
 
   $(call Test-Info,Verify child node cannot be undeclared.)
-  $(call Expect-Error,Child node $(1) has children -- NOT undeclaring.)
+  $(call Expect-Error,Child node ${_cn} has children -- NOT undeclaring.)
   $(call undeclare-child-node,${_cn})
   $(call Verify-Error)
 
