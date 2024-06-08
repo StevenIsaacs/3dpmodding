@@ -34,13 +34,18 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := node_attributes
-${_var} := name var parent children path
+${_var} := name node_un var parent children path
 define _help
 ${_var}
   ModFW components are organized into a classic tree structure. Each node of a
   ModFW tree has the following attributes:
   <node>.name
     The name of the node.
+  <node>.node_un
+    The unique name of the node in dot notation. In the case of a root node
+    this is the directory of the node and the name (e.g. <dir>.<node>). In the
+    case of a child node this is the name of the parent and the node
+    (e.g. <parent>.<node>).
   <node>.var
     A shell variable compatible form of the node name.
   <node>.parent
@@ -86,7 +91,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
-${_macro} = $(if ${$(1),parent},1,)
+${_macro} = $(if ${$(1).parent},1,)
 
 _macro := is-a-child-of
 define _help
@@ -195,7 +200,8 @@ define ${_macro}
       $(eval nodes += $(1))
       $(eval $(1).name := $(1))
       $(eval $(1).var := $(call To-Shell-Var,$(1)))
-      $(eval $(1).path := $(abspath $(2)/$(1)))
+      $(eval $(1).path := $(2)/$(1))
+      $(call Path-To-UN,${$(1).path},$(1).node_un)
       $(eval $(1).parent := )
       $(eval $(1).children := )
     ,
@@ -261,6 +267,7 @@ define ${_macro}
         ,
           $(eval $(1).path := ${$(2).path}/$(1))
         )
+        $(call Path-To-UN,${$(1).path},$(1).node_un)
         $(eval $(1).parent := $(2))
         $(eval $(1).children := )
         $(eval $(2).children += $(1))
@@ -358,10 +365,10 @@ define ${_macro}
       $(if $(2),
         $(eval _p := $(2))
       ,
-        $(eval _p := Destroy node:$(1)?)
+        $(eval _p := Destroy node $(1)?)
       )
       $(if $(call Confirm,${_p},y),
-        $(call Run,rm -r ${$(1).path})
+        $(call Run,rm -rf ${$(1).path})
       )
     ,
       $(call Verbose,Node $(1) does not exist -- not removing.)

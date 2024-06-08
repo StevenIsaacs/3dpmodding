@@ -39,8 +39,8 @@ $(call Add-Help,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0))
 
-$(if ${PROJECTS_PATH},
-  $(call PASS,PROJECTS_PATH=${PROJECTS_PATH})
+$(if ${TESTING_PATH},
+  $(call PASS,PROJECTS_PATH=${TESTING_PATH})
 ,
   $(call FAIL,PROJECTS_PATH is not defined.)
 )
@@ -52,7 +52,7 @@ $(foreach _v,PROJECTS_NODE PROJECT,
       $(call FAIL,The node ${_v} should NOT be declared.)
     ,
       $(call PASS,The node ${_v} is not declared.)
-      $(if $(wildcard ${PROJECTS_PATH}/${PROJECTS_NODE}),
+      $(if $(wildcard ${TESTING_PATH}/${PROJECTS_NODE}),
         $(call FAIL,The PROJECTS_NODE directory should NOT exist.)
       ,
         $(call PASS,The PROJECTS_NODE directory does not exist.)
@@ -179,7 +179,7 @@ define ${.TestUN}
     $(call verify-kit-attributes,${PROJECT})
     $(call verify-kit-nodes,${PROJECT})
 
-    $(call declare-root-node,${PROJECTS_NODE},${PROJECTS_PATH})
+    $(call declare-root-node,${PROJECTS_NODE},${TESTING_PATH})
 
     $(call Expect-No-Error)
     $(call declare-kit,${PROJECT},${PROJECTS_NODE})
@@ -278,7 +278,7 @@ define ${.TestUN}
     $(eval ${PROJECT}.URL := local)
     $(eval ${PROJECT}.BRANCH := main)
 
-    $(call declare-root-node,${PROJECTS_NODE},${PROJECTS_PATH})
+    $(call declare-root-node,${PROJECTS_NODE},${TESTING_PATH})
 
     $(call Expect-No-Error)
     $(call mk-kit,${PROJECT})
@@ -356,7 +356,7 @@ define ${.TestUN}
   $(if ${.Failed},
     $(call FAIL,Preconditions for ${.TestUN} are not correct.)
   ,
-    $(call declare-root-node,${PROJECTS_NODE},${PROJECTS_PATH})
+    $(call declare-root-node,${PROJECTS_NODE},${TESTING_PATH})
 
     $(eval ${PROJECT}.URL := local)
     $(eval ${PROJECT}.BRANCH := main)
@@ -411,7 +411,7 @@ define ${.TestUN}
     $(eval ${PROJECT}.URL := local)
     $(eval ${PROJECT}.BRANCH := main)
 
-    $(call declare-root-node,${PROJECTS_NODE},${PROJECTS_PATH})
+    $(call declare-root-node,${PROJECTS_NODE},${TESTING_PATH})
     $(call mk-node,${PROJECTS_NODE})
 
     $(call declare-kit,${_srcPROJECT},${PROJECTS_NODE})

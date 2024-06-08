@@ -45,6 +45,16 @@ endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
+_var := TESTING_PATH
+$(call Sticky,${_var},${TmpPath}/testing)
+define _help
+${_var} = ${${_var}}
+    The path to the root node which will contain test nodes. This is used to
+    avoid polluting the projects directory.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+
 _var := PROJECTS_PATH
 $(call Sticky,${_var},${ModFW_path})
 define _help
@@ -179,7 +189,7 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := GIT_SERVER
-$(call Sticky,${_var},git@github.com/StevenIsaacs)
+$(call Sticky,${_var},git@github.com)
 define _help
 ${_var} = ${${_var}}
   The default server to use when installing or creating a repo.

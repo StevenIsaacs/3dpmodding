@@ -265,7 +265,7 @@ define ${.TestUN}
   $(call Test-Info,Verify root node can be declared.)
 
   $(call Expect-No-Error)
-  $(call declare-root-node,${_rn},${PROJECTS_PATH})
+  $(call declare-root-node,${_rn},${TESTING_PATH})
   $(call Verify-No-Error)
 
   $(call verify-node-is-declared,${_rn})
@@ -305,7 +305,7 @@ define ${.TestUN}
   $(call verify-node-not-declared,${_node})
 
   $(call Test-Info,Testing node does not exist.)
-  $(call declare-root-node,${_node},${PROJECTS_PATH})
+  $(call declare-root-node,${_node},${TESTING_PATH})
   $(call verify-node-does-not-exist,${_node})
   $(call undeclare-root-node,${_node})
 
@@ -325,13 +325,13 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(eval _rn := ${Seg}.crn1)
+  $(eval _rn := $(0).crn1)
 
   $(call Test-Info,Testing node is not declared.)
   $(call verify-node-not-declared,${_rn})
 
   $(call Test-Info,Testing node does not exist.)
-  $(call declare-root-node,${_rn},${PROJECTS_PATH})
+  $(call declare-root-node,${_rn},${TESTING_PATH})
   $(call verify-node-does-not-exist,${_rn})
 
   $(call Test-Info,Testing node can be created.)
@@ -359,7 +359,7 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(eval _rn := ${Seg}.dcnr1)
+  $(eval _rn := $(0).dcnr1)
   $(eval _cn := dcnc1)
 
   $(call verify-node-not-declared,${_rn})
@@ -379,7 +379,7 @@ define ${.TestUN}
   $(call verify-node-not-declared,${_cn})
 
   $(call Test-Info,Verify child node can be declared.)
-  $(call declare-root-node,${_rn},${PROJECTS_PATH})
+  $(call declare-root-node,${_rn},${TESTING_PATH})
 
   $(call Expect-No-Error)
   $(call declare-child-node,${_cn},${_rn})
@@ -425,7 +425,7 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(eval _rn := ${Seg}.dgcnr1)
+  $(eval _rn := $(0).dgcnr1)
   $(eval _cn := dgcnc1)
   $(eval _gcn := dgcngc1)
 
@@ -433,7 +433,7 @@ define ${.TestUN}
   $(call verify-node-not-declared,${_cn})
   $(call verify-node-not-declared,${_gcn})
 
-  $(call declare-root-node,${_rn},${PROJECTS_PATH})
+  $(call declare-root-node,${_rn},${TESTING_PATH})
   $(call declare-child-node,${_cn},${_rn})
 
   $(call Expect-No-Error)
@@ -485,14 +485,14 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(eval _rn := ${Seg}.ccnr1)
+  $(eval _rn := $(0).ccnr1)
   $(eval _cn := ccnc1)
 
   $(call Test-Info,Testing node is not declared.)
   $(call verify-node-not-declared,${_rn})
 
   $(call Test-Info,Creating test root node.)
-  $(call declare-root-node,${_rn},${PROJECTS_PATH})
+  $(call declare-root-node,${_rn},${TESTING_PATH})
   $(call mk-node,${_rn})
 
   $(call Test-Info,Creating test child node.)
@@ -528,7 +528,7 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(eval _rn := ${Seg}.cgcnr1)
+  $(eval _rn := $(0).cgcnr1)
   $(eval _cn := cgcnc1)
   $(eval _gcn := cgcngc1)
 
@@ -536,7 +536,7 @@ define ${.TestUN}
   $(call verify-node-not-declared,${_rn})
 
   $(call Test-Info,Creating test root node.)
-  $(call declare-root-node,${_rn},${PROJECTS_PATH})
+  $(call declare-root-node,${_rn},${TESTING_PATH})
   $(call mk-node,${_rn})
 
   $(call Test-Info,Creating test child node.)

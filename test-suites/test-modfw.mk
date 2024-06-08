@@ -29,7 +29,7 @@ TESTING := 1
 
 # Reroute all output to the testing directory.
 PROJECTS_NODE := test-bed
-PROJECT = test-project
+PROJECT := test-project
 
 $(call Use-Segment,$(HELPERS_PATH)/test-helpers.mk)
 

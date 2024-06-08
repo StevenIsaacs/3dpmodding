@@ -75,6 +75,84 @@ help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 ${_macro} = $(if $(filter $(1),${repos}),1)
 
+_macro := declare-repo
+define _help
+${_macro}
+  Declare a previously declared node to be a repo and define the repo
+  attributes.
+  Parameters:
+    1 = <repo>: The name of the node which will contain the repo.
+    2 = The URL for cloning the repo. This can reference either a remote
+        server (e.g. https://<server>/<repo> or git@<server>/<repo>) or full
+        path to an existing local repo.
+        If this is empty and <repo>.URL is empty then DEFAULT_URL/<repo> is
+        used.
+    3 = The repo branch to switch to when cloning or creating the repo.
+        If this is empty and <repo>.repo_branch is empty then DEFAULT_BRANCH is used.
+${help-repo_attributes}
+endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
+define ${_macro}
+$(call Enter-Macro,$(0),$(1) $(2) $(3))
+$(if $(call repo-is-declared,$(1)),
+  $(call Warn,Repo $(1) has already been declared.)
+,
+  $(if $(call node-is-declared,$(1)),
+    $(call Verbose,Declaring repo $(1).)
+    $(if $(2),
+      $(eval $(1).repo_url := $(2))
+    ,
+      $(if ${$(1).URL},
+        $(eval $(1).repo_url := ${$(1).URL})
+      ,
+        $(eval $(1).repo_url := ${DEFAULT_URL}/$(1))
+      )
+    )
+    $(if $(3),
+      $(eval $(1).repo_branch := $(3))
+    ,
+      $(if ${$(1).BRANCH},
+        $(eval $(1).repo_branch := ${$(1).BRANCH})
+      ,
+        $(eval $(1).repo_branch := ${DEFAULT_BRANCH})
+      )
+    )
+    $(eval $(1).seg_f := ${$(1).path}/$(1).mk)
+    $(call Path-To-UN,${$(1).seg_f},$(1).seg_un)
+    $(eval repos += $(1))
+  ,
+    $(call Signal-Error,The node for repo $(1) has not been declared.)
+  )
+)
+$(call Exit-Macro)
+endef
+
+_macro := undeclare-repo
+define _help
+${_macro}
+  Undeclare node as a repo and undefine the repo attributes.
+  NOTE: The node containing the repo is not affected.
+  NOTE: See help-repo_attributes for more information.
+  Parameters:
+    1 = <repo>: The name of the node previously declared as a repo.
+${help-repo_attributes}
+endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
+define ${_macro}
+$(call Enter-Macro,$(0),$(1))
+$(if $(call repo-is-declared,$(1)),
+  $(foreach _a_,${repo_attributes},
+    $(eval undefine $(1).${_a_})
+  )
+  $(eval repos := $(filter-out $(1),${repos}))
+,
+  $(call Signal-Error,Repo $(1) has not been declared.)
+)
+$(call Exit-Macro)
+endef
+
 _macro := repo-exists
 define _help
 ${_macro}
@@ -218,18 +296,20 @@ ${_macro}
     Run_Rc and Run_Output
       See Run (help-helpers).
 endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
 define ${_macro}
 $(strip
   $(call Enter-Macro,$(0),$(1) $(2))
   $(if $(call repo-is-declared,$(1)),
     $(if $(call repo-exists,$(1)),
       $(if $(2),
-        $(eval _b := $(2)),
+        $(eval _b_ := $(2)),
       ,
-        $(eval _b := ${$(1).repo_branch})
+        $(eval _b_ := ${$(1).repo_branch})
       )
-      $(call Run,cd ${$(1).path} && git branch --list ${_b})
-      ${Run_Output}
+      $(call Run,cd ${$(1).path} && git branch --list ${_b_})
+      $(filter $(2),${Run_Output})
     ,
       $(call Signal-Error,$(1) is NOT a repo.)
     )
@@ -252,6 +332,8 @@ ${_macro}
   Parameters:
     1 = The repo for which to display the branches.
 endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
 define ${_macro}
 $(strip
   $(call Enter-Macro,$(0),$(1))
@@ -290,26 +372,28 @@ ${_macro}
     2 = The name of the branch to switch to. If this is empty then
         <repo>.BRANCH is used.
 endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),$(1) $(2))
 $(if $(call repo-is-declared,$(1)),
   $(if $(call repo-exists,$(1)),
     $(if $(2),
-      $(eval _b := $(2)),
+      $(eval _b_ := $(2)),
     ,
-      $(eval _b := ${$(1).BRANCH})
+      $(eval _b_ := ${$(1).BRANCH})
     )
-    $(eval _ab := $(call get-active-branch,$(1)))
-    $(if $(filter ${_b},${_ab}),
-      $(call Attention,Branch ${_ab} is already active.)
+    $(eval _ab_ := $(call get-active-branch,$(1)))
+    $(if $(filter ${_b_},${_ab_}),
+      $(call Attention,Branch ${_ab_} is already active.)
     ,
-      $(if $(call repo-branch-exists,$(1),${_b}),
-        $(call Run,cd ${$(1).path} && git switch ${_b})
+      $(if $(call repo-branch-exists,$(1),${_b_}),
+        $(call Run,cd ${$(1).path} && git switch ${_b_})
         $(if ${Run_Rc},
-          $(call Signal-Error,Switch to branch ${_b} failed.)
+          $(call Signal-Error,Switch to branch ${_b_} failed.)
           $(call Info,${Run_Output})
         ,
-          $(eval $(1).repo_branch := ${_b})
+          $(eval $(1).repo_branch := ${_b_})
         )
       ,
         $(call Signal-Error,Repo $(1) does not have a branch named $(2).)
@@ -337,6 +421,8 @@ ${_macro}
     1 = The repo in which to create the new branch.
     2 = The name of the branch to create.
 endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),$(1) $(2))
 $(if $(call repo-is-declared,$(1)),
@@ -373,13 +459,17 @@ ${_macro}
     1 = The repo to switch the branch.
     2 = The name of the branch to create.
 endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),$(1) $(2))
 $(if $(call repo-is-declared,$(1)),
   $(if $(call repo-exists,$(1)),
     $(if $(call repo-branch-exists,$(1),$(2)),
-      $(call Run,cd ${$(1).repo_path} && git branch -d $(2))
+      $(call Run,cd ${$(1).path} && git branch -d $(2))
       $(call Info,${Run_Output})
+    ,
+      $(call Signal-Error,Repo $(1) does not contain branch $(2).)
     )
   ,
     $(call Signal-Error,$(1) is NOT a repo.)
@@ -391,84 +481,6 @@ $(call Exit-Macro)
 endef
 
 $(call Add-Help-Section,repo-decl,Macros for declaring repos.)
-
-_macro := declare-repo
-define _help
-${_macro}
-  Declare a previously declared node to be a repo and define the repo
-  attributes.
-  Parameters:
-    1 = <repo>: The name of the node which will contain the repo.
-    2 = The URL for cloning the repo. This can reference either a remote
-        server (e.g. https://<server>/<repo> or git@<server>/<repo>) or full
-        path to an existing local repo.
-        If this is empty and <repo>.URL is empty then DEFAULT_URL/<repo> is
-        used.
-    3 = The repo branch to switch to when cloning or creating the repo.
-        If this is empty and <repo>.repo_branch is empty then DEFAULT_BRANCH is used.
-${help-repo_attributes}
-endef
-help-${_macro} := $(call _help)
-$(call Add-Help,${_macro})
-define ${_macro}
-$(call Enter-Macro,$(0),$(1) $(2) $(3))
-$(if $(call repo-is-declared,$(1)),
-  $(call Warn,Repo $(1) has already been declared.)
-,
-  $(if $(call node-is-declared,$(1)),
-    $(call Verbose,Declaring repo $(1).)
-    $(if $(2),
-      $(eval $(1).repo_url := $(2))
-    ,
-      $(if ${$(1).URL},
-        $(eval $(1).repo_url := $(1).URL)
-      ,
-        $(eval $(1).repo_url := ${DEFAULT_URL}/$(1))
-      )
-    )
-    $(if $(3),
-      $(eval $(1).repo_branch := $(3))
-    ,
-      $(if ${$(1).BRANCH},
-        $(eval $(1).repo_branch := $(1).BRANCH)
-      ,
-        $(eval $(1).repo_branch := ${DEFAULT_BRANCH})
-      )
-    )
-    $(eval $(1).seg_f := ${$(1).path}/$(1).mk)
-    $(call Path-To-UN,${(1).seg_f},$(1).seg_un)
-    $(eval repos += $(1))
-  ,
-    $(call Signal-Error,The node for repo $(1) has not been declared.)
-  )
-)
-$(call Exit-Macro)
-endef
-
-_macro := undeclare-repo
-define _help
-${_macro}
-  Undeclare node as a repo and undefine the repo attributes.
-  NOTE: The node containing the repo is not affected.
-  NOTE: See help-repo_attributes for more information.
-  Parameters:
-    1 = <repo>: The name of the node previously declared as a repo.
-${help-repo_attributes}
-endef
-help-${_macro} := $(call _help)
-$(call Add-Help,${_macro})
-define ${_macro}
-$(call Enter-Macro,$(0),$(1))
-$(if $(call repo-is-declared,$(1)),
-  $(foreach _a,${repo_attributes},
-    $(eval undefine $(1).${_a})
-  )
-  $(eval repos := $(filter-out $(1),${repos}))
-,
-  $(call Signal-Error,Repo $(1) has not been declared.)
-)
-$(call Exit-Macro)
-endef
 
 $(call Add-Help-Section,repo-install,Macros for cloning and creating repos.)
 
@@ -522,39 +534,35 @@ help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),$(1) $(2))
-$(if $(call is-modfw-repo,$(1)),
-  $(call Warn,Using existing ModFW repo $(1).)
+$(if $(call node-exists,$(1)),
+  $(call Signal-Error,The repo node $(1) already exists -- not cloning.)
 ,
-  $(if $(call repo-exists,$(1)),
-    $(call Warn,Non-ModFW repo $(1) exists -- not cloning.)
-  ,
-    $(if $(call repo-exists,$(2)),
-      $(if $(call is-modfw-repo,$(2)),
-        $(eval $(1).repo_url := ${$(2).path})
-        $(call clone-repo,$(1))
-        $(call Run,cd ${$(1).path} && git remote remove origin)
-        $(call Debug,Git RC:(${Run_Rc}))
-        $(if ${Run_Rc},
-          $(call Signal-Error,Error removing template origin from $(2).)
-        ,
-          $(call Verbose,Deriving:${$(1).seg_f})
-          $(call Derive-Segment-File,$(2),${$(2).seg_f},$(1),${$(1).seg_f})
-          $(call Run, \
-            cd ${$(2).path} && \
-            git add . && \
-            git commit . -m "New repo $(1) derived from $(2)." \
-          )
-          $(call Debug,Edit RC:(${Run_Rc}))
-          $(if ${Run_Rc},
-            $(call Signal-Error,Error during edit of $(1) segment file.)
-          )
-        )
+  $(if $(call repo-exists,$(2)),
+    $(if $(call is-modfw-repo,$(2)),
+      $(eval $(1).repo_url := ${$(2).path})
+      $(call clone-repo,$(1))
+      $(call Run,cd ${$(1).path} && git remote remove origin)
+      $(call Debug,Git RC:(${Run_Rc}))
+      $(if ${Run_Rc},
+        $(call Signal-Error,Error removing template origin from $(2).)
       ,
-        $(call Signal-Error,Template repo $(2) is not a ModFW repo.)
+        $(call Verbose,Deriving:${$(1).seg_f})
+        $(call Derive-Segment-File,$(2),${$(2).seg_f},$(1),${$(1).seg_f})
+        $(call Run, \
+          cd ${$(1).path} && \
+          git add . && \
+          git commit . -m "New repo $(1) derived from $(2)." \
+        )
+        $(call Debug,Edit RC:(${Run_Rc}))
+        $(if ${Run_Rc},
+          $(call Signal-Error,Error during edit of $(1) segment file.)
+        )
       )
     ,
-      $(call Signal-Error,Template node $(2) is not a repo.)
+      $(call Signal-Error,Template node $(2) is not a ModFW repo.)
     )
+  ,
+    $(call Signal-Error,Template node $(2) is not a repo.)
   )
 )
 $(call Exit-Macro)
@@ -609,12 +617,12 @@ $(if $(call repo-is-declared,$(1)),
     $(if ${Run_Rc},
       $(call Signal-Error,Error when initializing repo $(1).)
     ,
-      $(if $(wildcard $(1).seg_f),
+      $(if $(wildcard ${$(1).seg_f}),
         $(call Info,Using existing makefile segment.)
       ,
         $(call Info,Generating makefile segment for repo:$(1))
         $(call Gen-Segment-File,\
-          $(1),$(1).seg_f,<edit this description for>:$(1))
+          $(1),${$(1).seg_f},<edit this description for>:$(1))
       )
       $(call Run, \
         cd ${$(1).path} && \
@@ -664,7 +672,7 @@ endef
 _macro := rm-repo
 define _help
 ${_macro}
-  Remove a repo. This deletes the repo node .git directory and leaves all
+  Remove a repo. This deletes the repo .git directory and leaves all
   other files intact.
   To completely remove the repository contents use rm-node instead.
   NOTE: Yes, in theory calling rm-node does remove the .git directory.
@@ -673,6 +681,7 @@ ${_macro}
   WARNING: Use with care! This can have serious consequences.
   Parameters:
     1 = The name of the repo to destroy.
+    2 = An optional prompt for Confirm.
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
@@ -681,7 +690,14 @@ define ${_macro}
   $(if $(call repo-is-declared,$(1)),
     $(if $(call node-exists,$(1)),
       $(if $(call repo-exists,$(1)),
-        $(call Run,rm -r ${$(1).path}/.git)
+        $(if $(2),
+          $(eval _p_ := $(2))
+        ,
+          $(eval _p_ := Destroy repo $(1)?)
+        )
+        $(if $(call Confirm,${_p_},y),
+          $(call Run,rm -rf ${$(1).path}/.git)
+        )
       ,
         $(call Signal-Error,Node $(1) is not a repo -- not removing repo.)
       )
@@ -699,10 +715,10 @@ $(call Add-Help-Section,repo-use,The primary macro for using repos.)
 _macro := install-repo
 define _help
 ${_macro}
-  Install a repo in a parent node. A repo must always have a parent node. The
+  Install a repo in a declared node. A repo must always have a parent node. The
   parent node must have been previously declared and must exist. Similarly,
   the repo must have been previously declared. If the repo doesn't exist
-  locally the repo is cloned either from a local repo or from a remote server
+  locally, the repo is cloned either from a local repo or from a remote server
   depending upon the URL. Commits to the repo can be pushed to the origin repo
   providing correct credentials are used.
   Parameters:
@@ -716,30 +732,24 @@ $(call Enter-Macro,$(0),$(1))
 
 $(if $(call repo-is-declared,$(1)),
   $(if $(call repo-exists,$(1)),
-    $(call Info,Repo $(1) already exists -- not installing.)
+    $(call Warn,Repo $(1) already exists -- not installing.)
   ,
     $(if $(call node-exists,$(1)),
       $(call Signal-Error,A node having the repo name $(1) already exists.)
     ,
-      $(if $(call node-is-declared,$(1)),
-        $(if $(call is-a-child-node,$(1)),
-          $(if $(call node-exists,${$(1).parent}),
-            $(if $(call repo-is-declared,$(1)),
-              $(call clone-repo,$(1))
-            )
-          ,
-            $(call Signal-Error,Parent node for repo $(1) does not exist.)
-          )
+      $(if ${$(1).parent},
+        $(if $(call node-exists,${$(1).parent}),
+          $(call clone-repo,$(1))
         ,
-          $(call Signal-Error,Repo $(1) is not a child node.)
+          $(call Signal-Error,Parent node for repo $(1) does not exist.)
         )
       ,
-        $(call Signal-Error,The repo node $(1) has not been declared.)
+        $(call Signal-Error,Repo $(1) is not a child node.)
       )
     )
   )
 ,
-  $(call Signal-Error,The node for repo $(1) has not been declared.)
+  $(call Signal-Error,The repo $(1) has not been declared.)
 )
 $(call Exit-Macro)
 endef
