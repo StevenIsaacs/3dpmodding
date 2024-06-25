@@ -25,7 +25,7 @@ $(call Add-Help,${SegID})
 $(call Add-Help-Section,node-vars,Variables for managing repos.)
 
 _var := nodes
-nodes :=
+${_var} :=
 define _help
 ${_var}
   The list of declared nodes.
@@ -117,8 +117,8 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
-  $(if $(call node-is-declared,$(1))
+  $(call Enter-Macro,$(0),node=$(1))
+  $(if $(call node-is-declared,$(1)),
     $(call Display-Vars,\
       $(foreach _a,${node_attributes},$(1).${_a})
     )
@@ -153,7 +153,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),node=$(1))
   $(if $(call node-is-declared,$(1))
     $(call Display-Vars,\
       $(foreach _a,${node_attributes},$(1).${_a})
@@ -191,7 +191,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1) $(2))
+  $(call Enter-Macro,$(0),node=$(1) path=$(2))
   $(if $(call node-is-declared($(1))),
     $(call Signal-Error,Node $(1) has already been declared.)
   ,
@@ -201,7 +201,7 @@ define ${_macro}
       $(eval $(1).name := $(1))
       $(eval $(1).var := $(call To-Shell-Var,$(1)))
       $(eval $(1).path := $(2)/$(1))
-      $(call Path-To-UN,${$(1).path},$(1).node_un)
+      $(eval $(1).node_un := $(1))
       $(eval $(1).parent := )
       $(eval $(1).children := )
     ,
@@ -222,7 +222,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),node=$(1))
   $(if $(call node-is-declared,$(1)),
     $(if ${$(1).children},
       $(call Signal-Error,Root node $(1) has children -- NOT undeclaring.)
@@ -252,7 +252,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),name=$(1) parent=$(2) dir=$(3))
+  $(call Enter-Macro,$(0),node=$(1) parent=$(2) dir=$(3))
   $(if $(call node-is-declared,$(1)),
     $(call Signal-Error,Node $(1) has already been declared.)
   ,
@@ -267,8 +267,8 @@ define ${_macro}
         ,
           $(eval $(1).path := ${$(2).path}/$(1))
         )
-        $(call Path-To-UN,${$(1).path},$(1).node_un)
         $(eval $(1).parent := $(2))
+        $(eval $(1).node_un := ${$(1).parent}.$(1))
         $(eval $(1).children := )
         $(eval $(2).children += $(1))
         $(eval nodes += $(1))
@@ -296,7 +296,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),node=$(1))
   $(if $(call node-is-declared,$(1)),
     $(if ${$(1).children},
       $(call Signal-Error,Child node $(1) has children -- NOT undeclaring.)
@@ -320,7 +320,7 @@ _macro := mk-node
 define _help
 ${_macro}
   Create the node path if it doesn't already exist. The node must first be
-  declared. A makefile segment is generated for the node.
+  declared.
 
   NOTE: If the parent node does not exist it too will be created.
 
@@ -330,7 +330,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),node=$(1))
   $(if $(call node-is-declared,$(1)),
     $(if $(call node-exists,$(1)),
       $(call Attention,The directory for node $(1) exists -- not creating.)
@@ -359,7 +359,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),node=$(1) Prompt=$(call To-String,$(2)))
   $(if $(call node-is-declared,$(1)),
     $(if $(call node-exists,$(1)),
       $(if $(2),
@@ -389,7 +389,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0))
+  $(call Enter-Macro,$(0),parent=$(1))
   $(if $(call node-is-declared,$(1)),
     $(if $(call node-exists,$(1)),
       $(call Info,Creating child nodes in parent node $(1).)
@@ -415,7 +415,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0))
+  $(call Enter-Macro,$(0),parent=$(1))
   $(if $(call node-is-declared,$(1)),
     $(if $(call node-exists,$(1)),
       $(call Info,Removing child nodes in parent $(1).)

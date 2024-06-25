@@ -84,7 +84,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),$(1) $(2))
+$(call Enter-Macro,$(0),project=$(1) verify-atts=$(2))
 
 $(if $(2),
   $(call Test-Info,Verifying attributes are defined.)
@@ -118,7 +118,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),$(1) $(2))
+$(call Enter-Macro,$(0),project=$(1) verify-nodes=$(2))
 
 $(if $(2),
   $(call Test-Info,Verifying attributes are defined.)

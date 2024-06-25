@@ -94,7 +94,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),$(1) $(2) $(3))
+$(call Enter-Macro,$(0),repo=$(1) url=$(2) branch=$(3))
 $(if $(call repo-is-declared,$(1)),
   $(call Warn,Repo $(1) has already been declared.)
 ,
@@ -141,7 +141,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),$(1))
+$(call Enter-Macro,$(0),repo=$(1))
 $(if $(call repo-is-declared,$(1)),
   $(foreach _a_,${repo_attributes},
     $(eval undefine $(1).${_a_})
@@ -179,7 +179,7 @@ ${_macro} = \
     $(call node-exists,$(1)),\
     $(call repo-exists,$(1)),\
     $(wildcard ${$(1).seg_f}) \
-    )
+  )
 
 $(call Add-Help-Section,repo-info,Macros for getting repo information.)
 
@@ -198,7 +198,7 @@ help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
 $(strip
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),repo=$(1))
   $(if $(call repo-is-declared,$(1)),
     $(if $(call repo-exists,$(1)),
       $(call Run,cd ${$(1).path} && git ls-remote | grep From)
@@ -233,7 +233,7 @@ help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
 $(strip
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),repo=$(1))
   $(if $(call repo-is-declared,$(1)),
     $(if $(call repo-exists,$(1)),
       $(call Run,cd ${$(1).path} && git symbolic-ref --short HEAD)
@@ -264,7 +264,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),repo=$(1))
   $(if $(call repo-is-declared,$(1))
     $(call Display-Vars,\
       $(foreach _a,${repo_attributes},$(1).${_a})
@@ -300,7 +300,7 @@ help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
 $(strip
-  $(call Enter-Macro,$(0),$(1) $(2))
+  $(call Enter-Macro,$(0),repo=$(1) branch=$(2))
   $(if $(call repo-is-declared,$(1)),
     $(if $(call repo-exists,$(1)),
       $(if $(2),
@@ -336,7 +336,7 @@ help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
 $(strip
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),repo=$(1))
   $(if $(call repo-is-declared,$(1)),
     $(if $(call repo-exists,$(1)),
       $(call Run,cd ${$(1).path} && git branch)
@@ -375,7 +375,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),$(1) $(2))
+$(call Enter-Macro,$(0),repo=$(1) branch=$(2))
 $(if $(call repo-is-declared,$(1)),
   $(if $(call repo-exists,$(1)),
     $(if $(2),
@@ -424,7 +424,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),$(1) $(2))
+$(call Enter-Macro,$(0),repo=$(1) branch=$(2))
 $(if $(call repo-is-declared,$(1)),
   $(if $(call repo-exists,$(1)),
     $(if $(call repo-branch-exists,$(1),$(2)),
@@ -462,7 +462,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),$(1) $(2))
+$(call Enter-Macro,$(0),repo=$(1) branch=$(2))
 $(if $(call repo-is-declared,$(1)),
   $(if $(call repo-exists,$(1)),
     $(if $(call repo-branch-exists,$(1),$(2)),
@@ -495,7 +495,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),$(1))
+$(call Enter-Macro,$(0),repo=$(1))
 $(if $(call node-exists,$(1)),
   $(call Verbose,The repo node $(1) already exists -- not cloning.)
 ,
@@ -533,7 +533,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),$(1) $(2))
+$(call Enter-Macro,$(0),repo=$(1) template=$(2))
 $(if $(call node-exists,$(1)),
   $(call Signal-Error,The repo node $(1) already exists -- not cloning.)
 ,
@@ -579,7 +579,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),$(1))
+$(call Enter-Macro,$(0),repo=$(1) file=$(2))
 $(if $(call is-modfw-repo,$(1)),
   $(call Run, \
     cd ${$(1).path} && \
@@ -604,7 +604,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),$(1))
+$(call Enter-Macro,$(0),repo=$(1))
 $(if $(call repo-is-declared,$(1)),
   $(if $(call is-modfw-repo,$(1)),
     $(call Info,The node $(1) is already a ModFW repo -- no init.)
@@ -651,7 +651,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),$(1) $(2))
+$(call Enter-Macro,$(0),repo=$(1))
 $(if $(call repo-is-declared,$(1)),
   $(if $(call node-exists,$(1)),
     $(if $(call repo-exists,$(1)),
@@ -686,7 +686,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),repo=$(1))
   $(if $(call repo-is-declared,$(1)),
     $(if $(call node-exists,$(1)),
       $(if $(call repo-exists,$(1)),
@@ -728,7 +728,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),$(1))
+$(call Enter-Macro,$(0),repo=$(1))
 
 $(if $(call repo-is-declared,$(1)),
   $(if $(call repo-exists,$(1)),

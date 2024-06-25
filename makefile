@@ -46,8 +46,9 @@ Makefile: ${Seg}
 Usage: make [<option>=<value> ...] [<goal>]
 
 This is the top level make file for ModFW. NOTE: ModFW is not a build system.
-Instead, ModFW is intended to integrate a variety of build systems which are
-used to build both software and hardware components and projects.
+Instead, ModFW is an integration tool. ModFW is intended to integrate a variety
+of build systems which are used to build both software and hardware components
+and projects.
 
 This make file and the included make segments define a framework for developing
 new projects or modifying existing projects. A project can consist of both

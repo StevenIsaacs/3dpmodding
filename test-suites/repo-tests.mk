@@ -29,7 +29,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),repo=$(1))
   $(if $(call repo-is-declared,$(1)),
     $(call FAIL,Repo $(1) should not be declared.)
   ,
@@ -55,7 +55,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),repo=$(1))
   $(if $(call node-is-declared,$(1)),
     $(call PASS,Node $(1) is declared.)
   ,
@@ -87,7 +87,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),repo=$(1))
   $(call verify-repo-is-declared,$(1))
   $(if $(call node-exists,$(1)),
     $(call PASS,Node for repo $(1) exists.)
@@ -113,7 +113,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),repo=$(1))
   $(call verify-repo-is-declared,$(1))
   $(if $(call node-exists,$(1)),
     $(call PASS,Node for repo $(1) exists.)
@@ -139,7 +139,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),repo=$(1))
   $(call verify-repo-is-declared,$(1))
   $(if $(call node-exists,$(1)),
     $(call PASS,Repo $(1) has a valid path.)
@@ -170,7 +170,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),repo=$(1))
   $(call verify-repo-is-declared,$(1))
   $(if $(call node-exists,$(1)),
     $(call PASS,Repo $(1) has a valid path.)
@@ -376,11 +376,11 @@ define ${.TestUN}
   $(call Verify-Error)
 
   $(call Test-Info,DECLINE deletion of the .git directory.)
-  $(call rm-repo,${_rn},DECLINE)
+  $(call rm-repo,${_rn},DECLINE - press n)
   $(call verify-repo-exists,${_rn})
 
   $(call Test-Info,ACCEPT deletion of the .git directory.)
-  $(call rm-repo,${_rn},ACCEPT)
+  $(call rm-repo,${_rn},ACCEPT - press y)
   $(call verify-repo-does-not-exist,${_rn})
 
   $(call Expect-Error,Node ${_rn} is not a repo -- not removing repo.)

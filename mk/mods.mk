@@ -168,7 +168,7 @@ help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
 $(strip
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),kit.mod=$(1))
   $(if $(call is-modfw-repo,$(1)),
     $(call Run,grep $(1) ${$(1).seg_f})
     $(if ${Run_Rc},
@@ -197,7 +197,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),$(1))
+$(call Enter-Macro,$(0),kit.mod=$(1))
 $(if $(call mod-is-declared,$(1)),
   $(call Verbose,Mod $(1) has already been declared.)
 ,
@@ -239,7 +239,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),$(1))
+$(call Enter-Macro,$(0),kit.mod=$(1))
 $(call declare-mod,$(1))
 $(if ${Errors},
   $(call Signal-Error,An error occurred when declaring mod $(1))
@@ -278,7 +278,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),$(1) $(2))
+$(call Enter-Macro,$(0),kit.mod=$(1) template=$(2))
 $(call install-mod,$(2))
 $(if ${Errors},
 ,
@@ -321,7 +321,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),$(1))
+$(call Enter-Macro,$(0),kit.mod=$(1))
 $(call declare-mod,$(1))
 $(if ${Errors},
 ,
@@ -355,7 +355,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),$(1))
+$(call Enter-Macro,$(0),kit.mod=$(1))
 $(call declare-mod,$(1))
 $(if ${Errors},
 ,

@@ -22,54 +22,82 @@ endef
 help-${SegID} := $(call _help)
 $(call Add-Help,${SegID})
 
+$(call Use-Segment,kits)
+
 $(call Add-Help-Section,verifiers,Macros to verify kit features.)
 
-_macro := verify-kit-preconditions
+_var := kit_project_node
+${_var} := ${Seg}
 define _help
-  Verify that the variables used by the kit tests are either defined or
-  undefined.
+${_var}
+  The name of the project node in which test kits are created.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
 
-  This verifies PROJECT_NODE and PROJECT have been defined. This also verifies
-  $${PROJECT}.URL and $${PROJECT}.BRANCH have not been defined.
-
-  The $${PROJECTS_NODE} directory should not exist.
+_macro := declare-kit-parents
+define _help
+  Declare the parents for a kit. The parent structure conforms to a normal
+  project structure where kits reside within projects. This basically declares
+  a test node to contain the kit testing nodes.
+  None of the parent nodes should have been previously declared.
+  If the preconditions for a kits test are not correct an error is emitted and
+  the test exits.
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0))
-
-$(if ${TESTING_PATH},
-  $(call PASS,PROJECTS_PATH=${TESTING_PATH})
-,
-  $(call FAIL,PROJECTS_PATH is not defined.)
+$(call Enter-Macro,$(0),\
+  TESTING_PATH=${TESTING_PATH}\
+  PROJECTS_NODE=${PROJECTS_NODE}\
+  kit_project_node=${kit_project_node}\
+  KITS_NODE=${KITS_NODE}\
 )
 
-$(foreach _v,PROJECTS_NODE PROJECT,
+$(if ${TESTING_PATH},
+  $(call PASS,TESTING_PATH=${TESTING_PATH})
+,
+  $(call FAIL,TESTING_PATH is not defined.)
+)
+
+$(foreach _v,PROJECTS_NODE kit_project_node KITS_NODE,
   $(if ${${_v}},
     $(call PASS,Var ${_v} = ${${_v}})
     $(if $(call node-is-declared,${_v}),
       $(call FAIL,The node ${_v} should NOT be declared.)
     ,
       $(call PASS,The node ${_v} is not declared.)
-      $(if $(wildcard ${TESTING_PATH}/${PROJECTS_NODE}),
-        $(call FAIL,The PROJECTS_NODE directory should NOT exist.)
-      ,
-        $(call PASS,The PROJECTS_NODE directory does not exist.)
-      )
     )
   ,
     $(call FAIL,Var ${_v} is NOT defined.)
   )
 )
 
-$(foreach _v,${PROJECT}.URL ${PROJECT}.BRANCH,
-  $(if ${${_v}},
-    $(call FAIL,Var ${_v} = ${${_v}})
-  ,
-    $(call PASS,Var ${_v} is NOT defined.)
-  )
+$(if $(call node-exists,${kit_project_node}),
+  $(call FAIL,The node ${kit_project_node} should NOT exist.)
+,
+  $(call PASS,The node ${kit_project_node} does not exist.)
 )
+
+$(call declare-root-node,${PROJECTS_NODE},${TESTING_PATH})
+$(call declare-child-node,${kit_project_node},${PROJECTS_NODE})
+$(call declare-child-node,${KITS_NODE},${kit_project_node})
+
+$(call Exit-Macro)
+endef
+
+_macro := undeclare-kit-parents
+define _help
+  Teardown a kit test. This reverses what was done in declare-kit-parents.
+endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
+define ${_macro}
+$(call Enter-Macro,$(0))
+
+$(call undeclare-child-node,${KITS_NODE})
+$(call undeclare-child-node,${kit_project_node})
+$(call undeclare-root-node,${PROJECTS_NODE})
 
 $(call Exit-Macro)
 endef
@@ -84,24 +112,61 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),$(1) $(2))
+$(call Enter-Macro,$(0),kit=$(1) verify-atts=$(2))
 
 $(if $(2),
   $(call Test-Info,Verifying attributes are defined.)
+  $(if $(call kit-is-declared,$(1)),
+    $(call PASS,Kit $(1) is declared.)
+  ,
+    $(call FAIL,Kit $(1) is NOT declared.)
+  )
   $(foreach _att,${kit_attributes},
-    $(if ${$(1).${_att}},
-      $(call PASS,Attribute ${$(1).${_att}} is defined.)
+    $(if $(filter undefined,$(origin $(1).${_att})),
+      $(call FAIL,Attribute $(1).${_att} is NOT defined.)
     ,
-      $(call FAIL,Attribute ${$(1).${_att}} is NOT defined.)
+      $(call PASS,Attribute $(1).${_att}=${$(1).${_att}})
+    )
+  )
+  $(call Test-Info,Verifying child nodes are declared.)
+  $(foreach _node,${kit_node_names},
+    $(if $(call node-is-declared,$(1).${_node}),
+      $(call PASS,Node $(1).${_node} is declared.)
+    ,
+      $(call FAIL,Node $(1).${_node} is NOT declared.)
+    )
+    $(if $(call is-a-child-of,$(1).${_node},$(1)),
+      $(call PASS,Node $(1).${_node} is a child of kit $(1).)
+    ,
+      $(call Test-Info,Children:${$(1).children})
+      $(call FAIL,Node $(1).${_node} is NOT a child of kit $(1).)
     )
   )
 ,
   $(call Test-Info,Verifying attributes are NOT defined.)
+  $(if $(call kit-is-declared,$(1)),
+    $(call FAIL,Kit $(1) is declared.)
+  ,
+    $(call PASS,Kit $(1) is NOT declared.)
+  )
   $(foreach _att,${kit_attributes},
-    $(if ${$(1).${_att}},
-      $(call FAIL,Attribute ${$(1).${_att}} is defined.)
+    $(if $(filter undefined,$(origin $(1).${_att})),
+      $(call PASS,Attribute $(1).${_att} is not defined.)
     ,
-      $(call PASS,Attribute ${$(1).${_att}} is not defined.)
+      $(call FAIL,Attribute $(1).${_att}=${$(1).${_att}})
+    )
+  )
+  $(call Test-Info,Verifying child nodes are NOT declared.)
+  $(foreach _node,${kit_node_names},
+    $(if $(call node-is-declared,$(1).${_node}),
+      $(call FAIL,Node $(1).${_node} should NOT be declared.)
+    ,
+      $(call PASS,Node $(1).${_node} is NOT declared.)
+    )
+    $(if $(call is-a-child-of,$(1).${_node},$(1)),
+      $(call FAIL,Node $(1).${_node} is a child of kit $(1).)
+    ,
+      $(call PASS,Node $(1).${_node} is NOT a child of kit $(1).)
     )
   )
 )
@@ -118,24 +183,25 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),$(1) $(2))
+$(call Enter-Macro,$(0),kit=$(1) verify-nodes=$(2))
 
 $(if $(2),
-  $(call Test-Info,Verifying attributes are defined.)
-  $(foreach _node,$(1) ${kit_node_names},
-    $(if $(call node-exists,${_node}),
-      $(call PASS,Node ${_att} exists.)
+  $(call Test-Info,Verifying kit nodes exist.)
+
+  $(foreach _node,${kit_node_names},
+    $(if $(call node-exists,$(1).${_node}),
+      $(call PASS,Node $(1).${_node} exists.)
     ,
-      $(call FAIL,Node ${_att} does not exist.)
+      $(call FAIL,Node $(1).${_node} does not exist.)
     )
   )
 ,
-  $(call Test-Info,Verifying attributes are NOT defined.)
-  $(foreach _node,$(1) ${kit_node_names},
-    $(if $(call node-exists,${_node}),
-      $(call FAIL,Node ${_att} exists.)
+  $(call Test-Info,Verifying kit nodes do NOT exist.)
+  $(foreach _node,${kit_node_names},
+    $(if $(call node-exists,$(1).${_node}),
+      $(call FAIL,Node $(1).${_node} exists.)
     ,
-      $(call PASS,Node ${_att} does not exist.)
+      $(call PASS,Node $(1).${_node} does not exist.)
     )
   )
 )
@@ -160,99 +226,117 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(call verify-kit-preconditions)
+  $(eval _kit := $(0).kit)
+  $(call Test-Info,Kit node:${_kit})
+
+  $(call declare-kit-parents)
+
   $(if ${.Failed},
-    $(call FAIL,Preconditions for ${.TestUN} are not correct.)
+    $(call Signal-Error,Setup for ${.TestUN} failed.,exit)
   ,
-    $(call Expect-Error\
-              Undefined variables:${PROJECT}.URL ${PROJECT}.BRANCH)
-    $(call declare-kit,${PROJECT})
+    $(call Test-Info,Verifying kit required variables.)
+    $(call Expect-Error,\
+              Undefined variables:${_kit}.URL ${_kit}.BRANCH)
+    $(call declare-kit,${_kit})
     $(call Verify-Error)
 
-    $(eval ${PROJECT}.URL := local)
-    $(eval ${PROJECT}.BRANCH := main)
+    $(eval ${_kit}.URL := local)
+    $(eval ${_kit}.BRANCH := main)
+
+    $(call Test-Info,Verifying kit is not declared.)
+    $(call Expect-Error,\
+      Parent node foobar for kit ${_kit} is not declared.)
+    $(call declare-kit,${_kit},foobar)
+    $(call Verify-Error)
+    $(call verify-kit-attributes,${_kit})
+    $(call verify-kit-nodes,${_kit})
+
+    $(call Test-Info,Verifying kit node already declared.)
+    $(call declare-child-node,${_kit},${KITS_NODE})
 
     $(call Expect-Error,\
-      Parent node ${PROJECTS_NODE} for kit ${PROJECT} is not declared.)
-    $(call declare-kit,${PROJECT},${PROJECTS_NODE})
+      A node using kit name ${_kit} has already been declared.)
+    $(call declare-kit,${_kit},${KITS_NODE})
     $(call Verify-Error)
-    $(call verify-kit-attributes,${PROJECT})
-    $(call verify-kit-nodes,${PROJECT})
+    $(call verify-kit-attributes,${_kit})
+    $(call verify-kit-nodes,${_kit})
 
-    $(call declare-root-node,${PROJECTS_NODE},${TESTING_PATH})
-
-    $(call Expect-No-Error)
-    $(call declare-kit,${PROJECT},${PROJECTS_NODE})
-    $(call Verify-No-Error)
-    $(call verify-kit-attributes,${PROJECT},defined)
-    $(call verify-kit-nodes,${PROJECT},defined)
-
-    $(call Expect-No-Error)
-    $(call Expect-Message,Kit ${PROJECT} has already been declared.)
-    $(call declare-kit,${PROJECT})
-    $(call Verify-No-Error)
-    $(call Verify-Message)
-
-    $(call Expect-No-Error)
-    $(call undeclare-kit,${PROJECT})
-    $(call Verify-No-Error)
-    $(call verify-kit-attributes,${PROJECT})
-    $(call verify-kit-nodes,${PROJECT})
-
-    $(call declare-child-node,${PROJECT},${PROJECTS_NODE})
+    $(call declare-repo,${_kit})
 
     $(call Expect-Error,\
-      A node using kit name ${PROJECT} has already been declared.)
-    $(call declare-kit,${PROJECT},${PROJECTS_NODE})
+      A repo using kit name ${_kit} has already been declared.)
+    $(call declare-kit,${_kit},${KITS_NODE})
+    $(call Verify-Error)
+    $(call verify-kit-attributes,${_kit})
+    $(call verify-kit-nodes,${_kit})
+
+    $(call undeclare-repo,${_kit})
+    $(call undeclare-child-node,${_kit})
+
+    $(call Test-Info,Verifying kit can be declared.)
+    $(call Expect-No-Error)
+    $(call declare-kit,${_kit},${KITS_NODE})
+    $(call Verify-No-Error)
+
+    $(call verify-kit-attributes,${_kit},defined)
+    $(call verify-kit-nodes,${_kit})
+
+    $(call Expect-No-Error)
+    $(call Expect-Warning,Kit ${_kit} has already been declared.)
+    $(call declare-kit,${_kit},${KITS_NODE})
+    $(call Verify-Warning)
+    $(call Verify-No-Error)
+
+    $(call Test-Info,Verifying undeclaring the test kit.)
+    $(call Expect-No-Error)
+    $(call undeclare-kit,${_kit})
+    $(call Verify-No-Error)
+    $(call verify-kit-attributes,${_kit})
+    $(call verify-kit-nodes,${_kit})
+
+    $(call Expect-Error,The kit ${_kit} has not been declared.)
+    $(call undeclare-kit,${_kit})
     $(call Verify-Error)
 
-    $(call declare-repo,${PROJECT})
+    $(call Test-Info,Verifying can redeclare the same kit.)
+    $(call Expect-No-Error)
+    $(call declare-kit,${_kit},${KITS_NODE})
+    $(call Verify-No-Error)
 
-    $(call Expect-Error,\
-      A repo using kit name ${PROJECT} has already been declared.)
-    $(call declare-kit,${PROJECT},${PROJECTS_NODE})
-    $(call Verify-Error)
-
-    $(call undeclare-repo,${PROJECT})
-    $(call undeclare-child-node,${PROJECT})
-
-    $(call Expect-Error,The kit ${PROJECT} has not been declared.)
-    $(call undeclare-kit,${PROJECT})
-    $(call Verify-Error)
-
-    $(call declare-kit,${PROJECT})
-    $(foreach _node,${${PROJECT}.children},
+    $(call Test-Info,Undeclaring kit nodes.)
+    $(foreach _node,${${_kit}.children},
       $(call undeclare-child-node,${_node})
     )
-    $(call undeclare-child-node,${PROJECT})
+    $(call undeclare-child-node,${_kit})
 
-    $(call Expect-Error,Kit ${PROJECT} does not have a declared node.)
-    $(call undeclare-kit,${PROJECT})
+    $(call Test-Info,Verifying can't undeclare a broken kit.)
+    $(call Expect-Error,Kit ${_kit} does not have a declared node.)
+    $(call undeclare-kit,${_kit})
     $(call Verify-Error)
 
-    $(call undeclare-repo,${PROJECT})
+    $(call undeclare-repo,${_kit})
 
-    $(call Expect-Error,Kit ${PROJECT} does not have a declared repo.)
-    $(call undeclare-kit,${PROJECT})
+    $(call Expect-Error,Kit ${_kit} does not have a declared repo.)
+    $(call undeclare-kit,${_kit})
     $(call Verify-Error)
 
-    $(call declare-child-node,${PROJECT})
-    $(call declare-repo,${PROJECT})
+    $(call declare-child-node,${_kit},${KITS_NODE})
+    $(call declare-repo,${_kit})
 
     $(call Expect-No-Error)
-    $(call undeclare-kit,${PROJECT})
+    $(call undeclare-kit,${_kit})
     $(call Verify-No-Error)
-    $(call verify-kit-attributes,${PROJECT})
+    $(call verify-kit-attributes,${_kit})
 
-    $(call Expect-Error,The kit ${PROJECT} has not been declared.)
-    $(call undeclare-kit,${PROJECT})
+    $(call Expect-Error,The kit ${_kit} has not been declared.)
+    $(call undeclare-kit,${_kit})
     $(call Verify-Error)
 
-    $(call undeclare-root-node,${PROJECTS_NODE})
-
-    $(eval undefine ${PROJECT}.URL)
-    $(eval undefine ${PROJECT}.BRANCH)
+    $(eval undefine ${_kit}.URL)
+    $(eval undefine ${_kit}.BRANCH)
   )
+  $(call undeclare-kit-parents)
+
   $(call End-Test)
   $(call Exit-Macro)
 endef
@@ -271,71 +355,49 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(call verify-kit-preconditions)
+  $(eval _kit := $(0).kit)
+  $(call Test-Info,Kit node:${_kit})
+
+  $(call declare-kit-parents)
+
   $(if ${.Failed},
-    $(call FAIL,Preconditions for ${.TestUN} are not correct.)
+    $(call Signal-Error,Setup for ${.TestUN} failed.,exit)
   ,
-    $(eval ${PROJECT}.URL := local)
-    $(eval ${PROJECT}.BRANCH := main)
+    $(eval ${_kit}.URL := local)
+    $(eval ${_kit}.BRANCH := main)
 
-    $(call declare-root-node,${PROJECTS_NODE},${TESTING_PATH})
-
+    $(call Test-Info,Verifying kit can be created.)
     $(call Expect-No-Error)
-    $(call mk-kit,${PROJECT})
+    $(call mk-kit,${_kit})
     $(call Verify-No-Error)
 
-    $(if $(call is-modfw-kit,${PROJECT}),
-      $(call PASS,Kit ${PROJECT} is expected format.)
+    $(call display-kit,${_kit})
+
+    $(if $(call is-modfw-kit,${_kit}),
+      $(call PASS,Kit ${_kit} is expected format.)
     ,
-      $(call FAIL,Kit ${PROJECT} does not conform to ModFW kit format.)
+      $(call FAIL,Kit ${_kit} does not conform to ModFW kit format.)
     )
 
-    $(call verify-kit-attributes,defined)
-    $(call verify-kit-nodes,exist)
+    $(call verify-kit-attributes,${_kit},defined)
+    $(call verify-kit-nodes,${_kit})
 
-    $(call Expect-Error,\
-      A node named ${PROJECT} has already been declared.)
-    $(call mk-kit,${PROJECT})
+    $(call Test-Info,Verifying kit can't be created more than once.)
+    $(call Expect-Warning,Kit ${_kit} has already been declared.)
+    $(call Expect-Error,Kit ${_kit} node already exists.)
+    $(call mk-kit,${_kit})
     $(call Verify-Error)
+    $(call Verify-Warning)
 
-    $(call rm-repo,${PROJECT})
+    $(call Test-Info,Teardown.)
+    $(eval undefine ${_kit}.URL)
+    $(eval undefine ${_kit}.BRANCH)
 
-    $(if $(call node-exists,${PROJECT}),
-      $(call PASS,Node ${PROJECT} still exists.)
-    ,
-      $(call FAIL,Node ${PROJECT} was removed.)
-    )
-
-    $(call rm-kit,${PROJECT})
-    $(call verify-kit-attributes,${PROJECT})
-
-    $(if $(call kit-is-declared,${PROJECT}),
-      $(call FAIL,Kit ${PROJECT} was not undeclared after removal.)
-    ,
-      $(call PASS,Kit ${PROJECT} was undeclared.)
-      $(if $(call repo-is-declared,${PROJECT}),
-        $(call FAIL,Kit repo ${PROJECT} was not undeclared.)
-      ,
-        $(call PASS,Kit repo ${PROJECT} was undeclared.)
-        $(if $(call node-is-declared,${PROJECT}),
-          $(call FAIL,Node ${PROJECT} was not undeclared.)
-        ,
-          $(call PASS,Node ${PROJECT} as undeclared,)
-          $(call declare-kit,${PROJECT})
-          $(if $(call node-exists,${PROJECT}),
-            $(call FAIL,Kit node ${PROJECT} was not removed.)
-            $(call verify-kit-nodes,${PROJECT})
-          ,
-            $(call PASS,Kit node ${PROJECT} was removed.)
-          )
-          $(call undeclare-kit,${PROJECT})
-        )
-      )
-    )
-    $(call undeclare-root-node,${PROJECTS_NODE})
-    $(eval undefine ${PROJECT}.URL)
-    $(eval undefine ${PROJECT}.BRANCH)
+    $(call rm-node,${PROJECTS_NODE})
+    $(call undeclare-kit,${_kit})
+    $(call undeclare-kit-parents)
   )
+
   $(call End-Test)
   $(call Exit-Macro)
 endef
@@ -352,40 +414,58 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(call verify-kit-preconditions)
+  $(eval _kit := $(0).kit)
+  $(call Test-Info,Kit node:${_kit})
+  $(eval _new_kit := $(0).new-kit)
+  $(call Test-Info,New kit node:${_new_kit})
+
+  $(call declare-kit-parents)
+
   $(if ${.Failed},
     $(call FAIL,Preconditions for ${.TestUN} are not correct.)
   ,
-    $(call declare-root-node,${PROJECTS_NODE},${TESTING_PATH})
+    $(eval ${_kit}.URL := local)
+    $(eval ${_kit}.BRANCH := main)
 
-    $(eval ${PROJECT}.URL := local)
-    $(eval ${PROJECT}.BRANCH := main)
+    $(eval ${_new_kit}.URL := local)
+    $(eval ${_new_kit}.BRANCH := main)
 
-    $(call mk-kit,${PROJECT})
+    $(call Expect-Error,Template kit ${_kit} does not exist.)
+    $(call mk-kit-from-template,${_new_kit},${_kit})
+    $(call Verify-Error)
 
-    $(eval ${newPROJECT}.URL := local)
-    $(eval ${newPROJECT}.BRANCH := main)
+    $(call verify-kit-attributes,${_kit})
+    $(call verify-kit-nodes,${_kit})
+
+    $(call mk-kit,${_kit})
 
     $(call Expect-No-Error)
-    $(call mk-kit-from-template,${newPROJECT},${PROJECT})
+    $(call mk-kit-from-template,${_new_kit},${_kit})
     $(call Verify-No-Error)
 
-    $(call verify-kit-attributes,${newPROJECT},defined)
-    $(call verify-kit-nodes,${newPROJECT},exist)
+    $(call verify-kit-attributes,${_new_kit},defined)
+    $(call verify-kit-nodes,${_new_kit})
 
-    $(if $(call is-modfw-kit,${newPROJECT}),
-      $(call PASS,Kit ${newPROJECT} is expected format.)
+    $(if $(call is-modfw-kit,${_new_kit}),
+      $(call PASS,Kit ${_new_kit} is expected format.)
     ,
-      $(call FAIL,Kit ${newPROJECT} does not conform to ModFW kit format.)
+      $(call FAIL,Kit ${_new_kit} does not conform to ModFW kit format.)
     )
-    $(call rm-kit,${newPROJECT})
-    $(call rm-kit,${PROJECT})
-    $(call undeclare-root-node,${PROJECTS_NODE})
 
-    $(eval undefine ${newPROJECT}.URL)
-    $(eval undefine ${newPROJECT}.BRANCH)
-    $(eval undefine ${PROJECT}.URL)
-    $(eval undefine ${PROJECT}.BRANCH)
+    $(call Expect-Error,A node named ${_new_kit} has already been declared.)
+    $(call mk-kit-from-template,${_new_kit},${_kit})
+    $(call Verify-Error)
+
+    $(eval undefine ${_new_kit}.URL)
+    $(eval undefine ${_new_kit}.BRANCH)
+    $(eval undefine ${_kit}.URL)
+    $(eval undefine ${_kit}.BRANCH)
+
+    $(call rm-node,${PROJECTS_NODE})
+
+    $(call undeclare-kit,${_new_kit})
+    $(call undeclare-kit,${_kit})
+    $(call undeclare-kit-parents)
   )
 
   $(call End-Test)
@@ -404,43 +484,47 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(call verify-kit-preconditions)
+  $(eval _kit := $(0).kit)
+  $(call Test-Info,Kit node:${_kit})
+
+  $(call declare-kit-parents)
+
   $(if ${.Failed},
     $(call FAIL,Preconditions for ${.TestUN} are not correct.)
   ,
-    $(eval ${PROJECT}.URL := local)
-    $(eval ${PROJECT}.BRANCH := main)
+    $(eval ${_kit}.URL := local)
+    $(eval ${_kit}.BRANCH := main)
 
-    $(call declare-root-node,${PROJECTS_NODE},${TESTING_PATH})
-    $(call mk-node,${PROJECTS_NODE})
+    $(call Test-Info,Creating the source kit repo.)
+    $(call declare-kit,${_kit},${kit_project_node})
+    $(call mk-kit,${_kit})
 
-    $(call declare-kit,${_srcPROJECT},${PROJECTS_NODE})
+    $(eval ${_kit}.URL := ${${_kit}.path})
 
-    $(call mk-kit,${PROJECT})
+    $(call undeclare-kit,${_kit})
 
-    $(eval ${PROJECT}.URL := ${${PROJECT}.path})
+    $(call mk-node,${KITS_NODE})
 
-    $(call Expect-No-Error)
-    $(call use-kit,${PROJECT},$(PROJECTS_NODE))
-    $(call Verify-No-Error)
+    $(call Expect-Error,\
+      Segment ${_kit} has not yet been completed.)
+    $(call use-kit,${_kit})
+    $(call Verify-Error)
+    $(call verify-kit-nodes,${_kit},exist)
 
-    $(if ${Errors},
-      $(call FAIL,An error occurred when using kit ${PROJECT})
+    $(if ${${_kit}.${_kit}.SegID},
+      $(call PASS,Make segment for kit ${_kit} was loaded.)
     ,
-      $(if ${${PROJECT}.SegID},
-        $(call PASS,Make segment for kit ${PROJECT} was loaded.)
-      ,
-        $(call FAIL,Make segment for kit ${PROJECT} was NOT loaded.)
-      )
+      $(call FAIL,Make segment for kit ${_kit} was NOT loaded.)
     )
-    $(call rm-kit,${PROJECT})
+    $(eval undefine ${_kit}.URL)
+    $(eval undefine ${_kit}.BRANCH)
 
     $(call rm-node,${PROJECTS_NODE})
-    $(call undeclare-root-node,${PROJECTS_NODE})
 
-    $(eval undefine ${PROJECT}.URL)
-    $(eval undefine ${PROJECT}.BRANCH)
+    $(call undeclare-kit,${_kit})
+    $(call undeclare-kit-parents)
   )
+
   $(call End-Test)
   $(call Exit-Macro)
 endef

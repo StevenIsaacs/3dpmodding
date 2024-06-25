@@ -34,7 +34,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),node=$(1))
   $(if $(call node-is-declared,$(1)),
     $(call FAIL,Node $(1) should not be declared.)
   ,
@@ -60,7 +60,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),node=$(1))
   $(if $(call node-is-declared,$(1)),
     $(call PASS,Node $(1) is declared.)
   ,
@@ -87,7 +87,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),node=$(1))
   $(call verify-node-is-declared,$(1))
   $(if $(call node-exists,$(1)),
     $(call PASS,Node $(1) has a valid path.)
@@ -109,7 +109,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),node=$(1))
   $(call verify-node-is-declared,$(1))
   $(if $(call node-exists,$(1)),
     $(call FAIL,Node $(1) has a valid path and should not.)
@@ -130,7 +130,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),node=$(1))
   $(call verify-node-is-declared,$(1))
   $(if ${$(1).parent},
     $(call FAIL,Node $(1) has a parent and should not.)
@@ -151,7 +151,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),node=$(1))
   $(call verify-node-is-declared,$(1))
   $(if ${$(1).parent},
     $(call PASS,Node $(1) is a child node.)
@@ -173,7 +173,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),node=$(1))
   $(call verify-node-is-declared,$(1))
   $(if ${$(1).parent},
     $(call PASS,Node $(1) is a child node.)
@@ -199,7 +199,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),node=$(1) parent=$(2))
   $(call verify-node-is-declared,$(1))
   $(call verify-node-is-declared,$(2))
   $(if ${$(1).parent},
@@ -227,7 +227,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1) $(2))
+  $(call Enter-Macro,$(0),node=$(1) parent=$(2))
   $(call verify-node-is-declared,$(2))
   $(if $(call is-a-child-of,$(1),$(2)),
     $(call FAIL,Node $(1) is a child of $(2).)

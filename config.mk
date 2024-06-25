@@ -77,7 +77,7 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := KITS_NODE
-$(call Sticky,${_var},projects)
+$(call Sticky,${_var},kits)
 define _help
 ${_var} = ${${_var}}
     The name of the directory containing the kit repos.
@@ -86,7 +86,7 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := MODS_NODE
-$(call Sticky,${_var},projects)
+$(call Sticky,${_var},mods)
 define _help
 ${_var} = ${${_var}}
     The name of the directory containing the mods within a kit repo.
@@ -233,26 +233,26 @@ are sub-directories of the ModFW directory.
 
 >-ModFW_node # All other nodes are children of this node.
   --.git
-    | Files managed by git
+    | Files managed by git.
   | .gitignore # Ignores STICKY_NODE, DOWNLOADS_NODE and, PROJECTS_NODE.
-  | makefile
+  | makefile (The top level makefile.)
   >-$${MK_NODE} = ${MK_NODE}
-    ModFW makefile segments
+    | ModFW makefile segments.
   >-$${TESTS_NODE} = ${TESTS_NODE}
-    ModFW makefile segments for testing ModFW
+    | ModFW makefile segments for testing ModFW.
 
   The following nodes are not part of the ModFW repo.
 
   >-$${STICKY_NODE} = ${STICKY_NODE}
-    Top level sticky variable save files. Ths location of this node is defined
-    by STICKY_PATH which is defined by the helpers (see help-helpers).
+    | Top level sticky variable save files. Ths location of this node is defined
+      by STICKY_PATH which is defined by the helpers (see help-helpers).
   >-$${DOWNLOADS_NODE} = ${DOWNLOADS_NODE}
-    Where downloaded tools and components are stored. Multiple projects can
-    reference these to avoid redundant downloads. The variable DOWNLOADS_PATH
-    defines the location of this node.
+    | Where downloaded tools and components are stored. Multiple projects can
+      reference these to avoid redundant downloads. The variable DOWNLOADS_PATH
+      defines the location of this node.
   >-$${PROJECTS_NODE} = ${PROJECTS_NODE}
-    Contains all projects. The location of this node is defined by
-    PROJECTS_PATH.
+    | Contains all projects. The location of this node is defined by
+      PROJECTS_PATH.
 
     The PROJECTS_NODE contains all of the installed projects. Each project is a
     separate repo.
@@ -277,49 +277,50 @@ are sub-directories of the ModFW directory.
     >-$${PROJECT} = ${PROJECT} <project> (repo)
       | .gitignore (ignores projects, tools, bin, build and staging)
       | <project>.mk
-      | project defined files
+      | Project defined files.
       --.git
-        | Files managed by git
+        | Files managed by git.
       >-$${PROJECT}.$${STICKY_NODE} = ${STICKY_NODE}
-        | project specific sticky variable save files
+        | Project specific sticky variable save files. These sticky variables
+          ARE part of the git repo.
       >-$${PROJECT}.$${BUILD_NODE} = ${BUILD_NODE}
-        | project build files
+        | Project build files.
       >-$${PROJECT}.$${STAGING_NODE} ${STAGING_NODE}
-        | project staged files
+        | Project staged files.
       >-$${PROJECT}.$${TOOLS_NODE}
         >-<tool>
-          | tool specific files used for building the tools
+          | Tool specific files used for building the tools.
         >-<tool>...
       >-$${PROJECT}.$${LIB_NODE}
         >-<lib>
-          | installed library files
+          | Installed library files.
         >-<lib>...
       >-$${PROJECT}.$${BIN_NODE}
-        | installed tools and utilities
+        | Installed tools and utilities.
       >-$${PROJECT}.$${KITS_NODE} = ${KITS_NODE}
         A project contains a collection of kits needed to build the project.
         Each kit is a separate repo.
         >-<kit> (repo) (see help-kits)
           --.git
-            | Files managed by git
+            | Files managed by git.
           | .gitignore
           | <kit>.mk
-          | kit defined files
+          | Kit defined files.
           >-<kit>.$${MODS_NODE} = ${MODS_NODE}
             A kit contains a collection of mods. The mods are part of the
             containing kit repo.
             >-<kit>.<mod> (see help-mods)
               | <mod>.mk
-              | mod defined files
+              | Mod defined files.
               >-<kit>.<mod>.$${BUILD_NODE}
-                | mod build files
+                | Mod build files.
               >-<kit>.<mod>.$${STAGING_NODE}
-                | mod staged files
+                | Mod staged files.
             >-<kit>.<mod>...
           >-<kit>.$${BUILD_NODE}
-            | kit build files
+            | Kit build files.
           >-<kit>.$${STAGING_NODE}
-            | kit staged files
+            | Kit staged files.
         >-<kit>... (repo)
     >-<project>... (repo)
 

@@ -160,7 +160,7 @@ help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
 $(strip
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),project=$(1))
   $(if $(call is-modfw-repo,$(1)),
     $(call Run,grep $(1) ${$(1).seg_f})
     $(if ${Run_Rc},
@@ -186,7 +186,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),$(1))
+$(call Enter-Macro,$(0),project=$(1))
 $(if $(call project-is-declared,$(1)),
   $(call Attention,Project $(1) has already been declared.)
 ,
@@ -232,7 +232,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),$(1) $(2))
+$(call Enter-Macro,$(0),project=$(1))
 
 $(if $(call project-is-declared,$(1)),
   $(foreach _a,${project_attributes},
@@ -241,7 +241,7 @@ $(if $(call project-is-declared,$(1)),
   $(if $(call repo-is-declared,$(1)),
     $(call undeclare-repo,$(1))
     $(if $(call node-is-declared,$(1)),
-      $(if $(call is-child-node,$(1)),
+      $(if $(call is-a-child-node,$(1)),
         $(foreach _node,${$(1).children},
           $(call undeclare-child-node,${_node})
         )
@@ -277,7 +277,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),project=$(1))
   $(if $(call project-is-declared,$(1))
     $(call Display-Vars,\
       $(foreach _a,${project_attributes},$(1).${_a}) \
@@ -326,7 +326,7 @@ help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0),$(1))
-  $(call declare-project,$(1))
+  $(call declare-project,project=$(1))
   $(if ${Errors},
     $(call Warn,Not creating project $(1).)
   ,
@@ -368,7 +368,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1) $(2))
+  $(call Enter-Macro,$(0),project=$(1) template=$(2))
   $(if node-is-declared,$(1),
     $(call Signal-Error,A node named $(1) has already been declared.)
   ,
@@ -404,7 +404,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),project=$(1))
   $(call declare-project,$(1))
   $(if ${Errors},
     $(call Warn,Could not remove project $(1).)
@@ -443,7 +443,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),project=$(1))
   $(if $(call node-is-declared,${PROJECTS_NODE}),
     $(if $(call node-exists,${PROJECTS_NODE}),
       $(if $(call project-is-declared,$(1)),
