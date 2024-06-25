@@ -43,7 +43,7 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := kit_node_names
-${_var} := ${MODS_NODE} ${BUILD_NODE} ${STAGING_NODE}
+${_var} := MODS_NODE BUILD_NODE STAGING_NODE
 define _help
 ${_var}
   A kit is a repo which contains a number of mods. A kit also defines context
@@ -170,6 +170,7 @@ $(if $(call kit-is-declared,$(1)),
     ,
       $(eval _ud := $(call Require,\
         PROJECT KITS_NODE BUILD_NODE STAGING_NODE $(1).URL $(1).BRANCH))
+      $(eval _ud += $(call Require,${kit_node_names}))
       $(if ${_ud},
         $(call Signal-Error,Undefined variables:${_ud})
       ,
@@ -178,7 +179,7 @@ $(if $(call kit-is-declared,$(1)),
           $(call declare-child-node,$(1),$(2))
           $(call declare-repo,$(1))
           $(foreach _node,${kit_node_names},
-            $(call declare-child-node,$(1).${_node},$(1))
+            $(call declare-child-node,$(1).${${_node}},$(1))
           )
           $(eval $(1).goals :=)
           $(eval $(1).build_path := ${$(1).${BUILD_NODE}.path})
@@ -428,10 +429,10 @@ $(if ${${$(1).seg_un}.SegID},
     $(call Signal-Error,An error occurred when installing the kit $(1).)
   ,
     $(foreach _node,${kit_node_names},
-      $(if $(call node-exists,$(1).${_node}),
-        $(call Info,Using existing node $(1).${_node})
+      $(if $(call node-exists,$(1).${${_node}}),
+        $(call Info,Using existing node $(1).${${_node}})
       ,
-        $(call mk-node,$(1).${_node})
+        $(call mk-node,$(1).${${_node}})
       )
     )
     $(call Use-Segment,${$(1).seg_f})

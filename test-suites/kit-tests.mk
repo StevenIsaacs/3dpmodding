@@ -130,16 +130,16 @@ $(if $(2),
   )
   $(call Test-Info,Verifying child nodes are declared.)
   $(foreach _node,${kit_node_names},
-    $(if $(call node-is-declared,$(1).${_node}),
-      $(call PASS,Node $(1).${_node} is declared.)
+    $(if $(call node-is-declared,$(1).${${_node}}),
+      $(call PASS,Node $(1).${${_node}} is declared.)
     ,
-      $(call FAIL,Node $(1).${_node} is NOT declared.)
+      $(call FAIL,Node $(1).${${_node}} is NOT declared.)
     )
-    $(if $(call is-a-child-of,$(1).${_node},$(1)),
-      $(call PASS,Node $(1).${_node} is a child of kit $(1).)
+    $(if $(call is-a-child-of,$(1).${${_node}},$(1)),
+      $(call PASS,Node $(1).${${_node}} is a child of kit $(1).)
     ,
       $(call Test-Info,Children:${$(1).children})
-      $(call FAIL,Node $(1).${_node} is NOT a child of kit $(1).)
+      $(call FAIL,Node $(1).${${_node}} is NOT a child of kit $(1).)
     )
   )
 ,
@@ -158,15 +158,15 @@ $(if $(2),
   )
   $(call Test-Info,Verifying child nodes are NOT declared.)
   $(foreach _node,${kit_node_names},
-    $(if $(call node-is-declared,$(1).${_node}),
-      $(call FAIL,Node $(1).${_node} should NOT be declared.)
+    $(if $(call node-is-declared,$(1).${${_node}}),
+      $(call FAIL,Node $(1).${${_node}} should NOT be declared.)
     ,
-      $(call PASS,Node $(1).${_node} is NOT declared.)
+      $(call PASS,Node $(1).${${_node}} is NOT declared.)
     )
-    $(if $(call is-a-child-of,$(1).${_node},$(1)),
-      $(call FAIL,Node $(1).${_node} is a child of kit $(1).)
+    $(if $(call is-a-child-of,$(1).${${_node}},$(1)),
+      $(call FAIL,Node $(1).${${_node}} is a child of kit $(1).)
     ,
-      $(call PASS,Node $(1).${_node} is NOT a child of kit $(1).)
+      $(call PASS,Node $(1).${${_node}} is NOT a child of kit $(1).)
     )
   )
 )
@@ -189,19 +189,19 @@ $(if $(2),
   $(call Test-Info,Verifying kit nodes exist.)
 
   $(foreach _node,${kit_node_names},
-    $(if $(call node-exists,$(1).${_node}),
-      $(call PASS,Node $(1).${_node} exists.)
+    $(if $(call node-exists,$(1).${${_node}}),
+      $(call PASS,Node $(1).${${_node}} exists.)
     ,
-      $(call FAIL,Node $(1).${_node} does not exist.)
+      $(call FAIL,Node $(1).${${_node}} does not exist.)
     )
   )
 ,
   $(call Test-Info,Verifying kit nodes do NOT exist.)
   $(foreach _node,${kit_node_names},
-    $(if $(call node-exists,$(1).${_node}),
-      $(call FAIL,Node $(1).${_node} exists.)
+    $(if $(call node-exists,$(1).${${_node}}),
+      $(call FAIL,Node $(1).${${_node}} exists.)
     ,
-      $(call PASS,Node $(1).${_node} does not exist.)
+      $(call PASS,Node $(1).${${_node}} does not exist.)
     )
   )
 )
