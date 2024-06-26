@@ -10,7 +10,7 @@ $(call Enter-Segment,Macros to support ModFW repos.)
 define _help
 Make segment: ${Seg}.mk
 
-This segment defines macros for managing ModFW repos. They are not intended to
+This segment defines macros for managing ModFW repos. They are intended to
 be called only by the higher level macros (see help-projects, help-kits, and
 help-mods).
 
