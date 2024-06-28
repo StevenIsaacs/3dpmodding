@@ -7,6 +7,8 @@ ifndef ${LastSegUN}.SegID
 $(call Enter-Segment,ModFW Mods.)
 # -----
 
+$(call Use-Segment,kits)
+
 define _help
 Make segment: ${Seg}.mk
 

@@ -7,6 +7,8 @@ ifndef ${LastSegUN}.SegID
 $(call Enter-Segment,Manage multiple ModFW kits using git, branches, and tags.)
 # -----
 
+$(call Use-Segment,repos)
+
 define _help
 Make segment: ${Seg}.mk
 
@@ -42,8 +44,18 @@ endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
+_var := kit_ignored_nodes
+${_var} := BUILD_NODE STAGING_NODE
+define _help
+${_var}
+  These nodes are not part of the git repository and therefore ignored using
+  .gitignore.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+
 _var := kit_node_names
-${_var} := MODS_NODE BUILD_NODE STAGING_NODE
+${_var} := MODS_NODE $(kit_ignored_nodes)
 define _help
 ${_var}
   A kit is a repo which contains a number of mods. A kit also defines context
@@ -51,15 +63,10 @@ ${_var}
   within the kit directory making each of the mod directories child nodes of
   the kit node.
 
-  Kit node names:
-  <kit>.${MODS_NODE} ($${MODS_NODE})
-    The name of the directory where mods are stored.
-  <kit>.${BUILD_NODE} ($${BUILD_NODE})
-    The name of the build artifact directory within the project build directory.
-  <kit>.${STAGING_NODE} {$${STAGING_NODE}}
-    The name of the staging artifact directory within the project staging
-    directory.
-
+Kit node names:
+$(foreach _node,${kit_node_names},
+$(call help-${_node})
+)
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
@@ -169,13 +176,13 @@ $(if $(call kit-is-declared,$(1)),
         A node using kit name $(1) has already been declared.)
     ,
       $(eval _ud := $(call Require,\
-        PROJECT KITS_NODE BUILD_NODE STAGING_NODE $(1).URL $(1).BRANCH))
+        PROJECT KITS_NODE ${kit_node_names} $(1).URL $(1).BRANCH))
       $(eval _ud += $(call Require,${kit_node_names}))
       $(if ${_ud},
         $(call Signal-Error,Undefined variables:${_ud})
       ,
-        $(call Verbose,Declaring kit $(1).)
         $(if $(call node-is-declared,$(2)),
+          $(call Verbose,Declaring kit $(1).)
           $(call declare-child-node,$(1),$(2))
           $(call declare-repo,$(1))
           $(foreach _node,${kit_node_names},
@@ -251,7 +258,8 @@ define ${_macro}
 $(call Enter-Macro,$(0),kit=$(1))
 $(if $(call kit-is-declared,$(1)),
   $(call Display-Vars,\
-    $(foreach _a,${kit_attributes},$(1).${_a})
+    $(foreach _a,${kit_attributes},$(1).${_a}) \
+    $(foreach _a,${kit_node_names},$(1).${_a})
   )
   $(call display-repo,$(1))
 ,
@@ -265,14 +273,15 @@ $(call Add-Help-Section,kit-install,Macros for cloning or creating kits.)
 _macro := gen-kit-gitignore
 define _help
 ${_macro}
-  Generate the .gitignore file text for a kit.
+  Generate the .gitignore file text for a kit. The ignored items are relative
+  to the kit directory.
   Parameters:
     1 = The kit name.
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(foreach _n,${BUILD_NODE} ${STAGING_NODE},
+$(foreach _n,${kit_ignored_nodes},
 $(1).${_n}
 )
 endef

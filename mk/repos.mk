@@ -7,6 +7,8 @@ ifndef ${LastSegUN}.SegID
 $(call Enter-Segment,Macros to support ModFW repos.)
 # -----
 
+$(call Use-Segment,nodes)
+
 define _help
 Make segment: ${Seg}.mk
 

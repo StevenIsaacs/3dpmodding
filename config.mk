@@ -40,7 +40,7 @@ _var := MK_NODE
 $(call Sticky,${_var},mk)
 define _help
 ${_var} = ${${_var}}
-    The name of the directory containing the ModFW makefile segments.
+  The name of the directory containing the ModFW makefile segments.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
@@ -49,8 +49,8 @@ _var := TESTING_PATH
 $(call Sticky,${_var},${TmpPath}/testing)
 define _help
 ${_var} = ${${_var}}
-    The path to the root node which will contain test nodes. This is used to
-    avoid polluting the projects directory.
+  The path to the root node which will contain test nodes. This is used to
+  avoid polluting the projects directory.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
@@ -59,10 +59,10 @@ _var := PROJECTS_PATH
 $(call Sticky,${_var},${ModFW_path})
 define _help
 ${_var} = ${${_var}}
-    The path to the root node which will contain project nodes. This can be used
-    to avoid polluting the ModFW directory itself.
-    However, this defaults to the path to ModFW itself as defined by
-    ModFW_path. Use this to change the location where projects are installed.
+  The path to the root node which will contain project nodes. This can be used
+  to avoid polluting the ModFW directory itself.
+  However, this defaults to the path to ModFW itself as defined by
+  ModFW_path. Use this to change the location where projects are installed.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
@@ -71,7 +71,7 @@ _var := PROJECTS_NODE
 $(call Sticky,${_var},projects)
 define _help
 ${_var} = ${${_var}}
-    The name of the root node containing the project nodes.
+  The name of the root node containing the project nodes.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
@@ -80,7 +80,7 @@ _var := KITS_NODE
 $(call Sticky,${_var},kits)
 define _help
 ${_var} = ${${_var}}
-    The name of the directory containing the kit repos.
+  The name of the directory containing the kit repos.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
@@ -89,7 +89,7 @@ _var := MODS_NODE
 $(call Sticky,${_var},mods)
 define _help
 ${_var} = ${${_var}}
-    The name of the directory containing the mods within a kit repo.
+  The name of the directory containing the mods within a kit repo.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
@@ -98,8 +98,8 @@ _var := PROJECT_STICKY_NODE
 $(call Sticky,${_var},${STICKY_NODE})
 define _help
 ${_var} = ${${_var}}
-    The name of the directory containing the project specific sticky variables.
-    This defaults to the Helpers variable STICKY_NODE.
+  The name of the directory containing the project specific sticky variables.
+  This defaults to the Helpers variable STICKY_NODE.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})

@@ -7,6 +7,8 @@ ifndef ${LastSegUN}.SegID
 $(call Enter-Segment,Provide features to use one or more projects.)
 # -----
 
+$(call Use-Segment,mods)
+
 define _help
 Make segment: ${Seg}.mk
 
@@ -77,9 +79,18 @@ endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
+_var := project_ignored_nodes
+${_var} := BUILD_NODE STAGING_NODE TOOLS_NODE BIN_NODE LIB_NODE
+define _help
+${_var}
+  These nodes are not part of the git repository and therefore ignored using
+  .gitignore.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+
 _var := project_node_names
-${_var} := \
-  STICKY_NODE BUILD_NODE STAGING_NODE TOOLS_NODE BIN_NODE LIB_NODE KITS_NODE
+${_var} := STICKY_NODE KITS_NODE ${project_ignored_nodes}
 define _help
 ${_var}
   A project is intended to be self contained meaning all components used to
@@ -90,12 +101,19 @@ ${_var}
   has the option to make them sticky.
 
   See help-modfw_structure for more information.
+
+Project node names:
+$(foreach _node,${project_node_names},
+$(call help-${_node})
+)
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := project_attributes
-${_var} := goals sticky_path
+${_var} := \
+  goals sticky_path build_path staging_path tools_path bin_path \
+  lib_path kits_path
 define _help
 ${_var}
   A project is a ModFW repo and extends a repo with the additional attributes.
@@ -103,25 +121,29 @@ ${_var}
   Additional attributes:
   $${PROJECT}.goals
     The list of goals for the project.
+  $${PROJECT}.sticky_path
+    Where project sticky variables are stored. NOTE: These are part of the
+    project repo.
+  $${PROJECT}.build_path
+    Where project build artifacts are stored.
+  $${PROJECT},staging_path
+    Where project deliverables are staged. Additional files are cherry picked
+    from kits and mods and placed here.
+  $${PROJECT}.tools_path
+    Where the project specific build tools are stored. Typically, tools are
+    build in this directory and then installed in the project bin or lib
+    directories.
+  $${PROJECT}.bin_path
+    Where the project specific tools and utilities are installed.
+  $${PROJECT}.lib_path
+    Where the project specific libraries are installed.
+  $${PROJECT}.kits_path
+    Where kits are installed.
 
-  The repo attributes are:
 ${help-repo_attributes}
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
-
-_var := project_inc_list
-${_var} := repos kits mods
-define _help
-${_var} := ${${_var}}
-  This is the list of segments used by ${Seg}.
-endef
-help-${_var} := $(call _help)
-$(call Add-Help,${_var})
-
-$(foreach _s,${project_inc_list}, \
-  $(call Use-Segment,${_s}) \
-)
 
 $(call Add-Help-Section,project-ifs,Macros for checking project status.)
 
@@ -166,8 +188,12 @@ $(strip
     $(if ${Run_Rc},
       $(call Verbose,grep returned:${Run_Rc})
     ,
-      $(if $(wildcard ${(1).path}/.gitignore),
+      $(if $(wildcard ${$(1).path}/.gitignore),
+        $(call Verbose,$(1) is a valid ModFW project.)
         1
+      ,
+        $(call Verbose,${(1).path}/.gitignore does not exist.)
+      )
       )
     )
   )
@@ -182,13 +208,14 @@ define _help
   Declare a project as a repo and a child of the $${PROJECTS_NODE} node.
   Parameters:
     1 = The name of the project.
+    2 = The parent node for the project.
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),project=$(1))
 $(if $(call project-is-declared,$(1)),
-  $(call Attention,Project $(1) has already been declared.)
+  $(call Warn,Project $(1) has already been declared.)
 ,
   $(if $(call repo-is-declared,$(1)),
     $(call Signal-Error,\
@@ -199,21 +226,30 @@ $(if $(call project-is-declared,$(1)),
         A node using project name $(1) has already been declared.)
     ,
       $(eval _ud := $(call Require,\
-        PROJECTS_NODE $(1).URL $(1).BRANCH))
+        PROJECTS_NODE ${project_node_names} $(1).URL $(1).BRANCH))
+      $(eval _ud += $(call Require,${project_node_names}))
       $(if ${_ud},
         $(call Signal-Error,Undefined variables:${_ud})
       ,
-        $(if $(call node-is-declared,${PROJECTS_NODE}),
+        $(if $(call node-is-declared,$(2)),
           $(call Verbose,Declaring project $(1).)
-          $(call declare-child-node,$(1),${PROJECTS_NODE})
+          $(call declare-child-node,$(1),$(2))
           $(call declare-repo,$(1))
           $(foreach _node,${project_node_names},
-            $(call declare-child-node,${PROJECT}.${${_node}},$(1))
+            $(call declare-child-node,$(1).${${_node}},$(1))
           )
+          $(eval $(1).goals :=)
+          $(eval $(1).sticky_path := ${$(1).${STICKY_NODE}.path})
+          $(eval $(1).build_path := ${$(1).${BUILD_NODE}.path})
+          $(eval $(1).staging_path := ${$(1).${STAGING_NODE}.path})
+          $(eval $(1).tools_path := ${$(1).${TOOLS_NODE}.path})
+          $(eval $(1).bin_path := ${$(1).${BIN_NODE}.path})
+          $(eval $(1).lib_path := ${$(1).${LIB_NODE}.path})
+          $(eval $(1).kits_path := ${$(1).${KITS_NODE}.path})
           $(eval projects += $(1))
         ,
           $(call Signal-Error,\
-            Parent node ${PROJECTS_NODE} for project $(1) is not declared.)
+            Parent node $(2) for project $(1) is not declared.)
         )
       )
     )
@@ -235,9 +271,6 @@ define ${_macro}
 $(call Enter-Macro,$(0),project=$(1))
 
 $(if $(call project-is-declared,$(1)),
-  $(foreach _a,${project_attributes},
-    $(eval undefine $(1).${_a})
-  )
   $(if $(call repo-is-declared,$(1)),
     $(call undeclare-repo,$(1))
     $(if $(call node-is-declared,$(1)),
@@ -295,15 +328,16 @@ $(call Add-Help-Section,project-install,Macros for creating projects.)
 _macro := gen-project-gitignore
 define _help
 ${_macro}
-  Generate the .gitignore file text for a project.
+  Generate the .gitignore file text for a project. The ignored items are
+  relative to the project directory.
   Parameters:
     1 = The project name.
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(foreach _n,${project_node_names},
-${${_n}}
+$(foreach _n,${project_ignored_nodes},
+$(1).${_n}
 )
 endef
 
@@ -325,25 +359,21 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
-  $(call declare-project,project=$(1))
+  $(call Enter-Macro,$(0),project=$(1))
+  $(call declare-project,$(1),${PROJECTS_NODE})
   $(if ${Errors},
-    $(call Warn,Not creating project $(1).)
+    $(call Attention,Unable to make a project.)
   ,
-    $(if $(call project-exists,$(1)),
-      $(call Signal-Error,Project $(1) already exists.)
+    $(if $(call node-exists,$(1)),
+      $(call Signal-Error,Project $(1) node already exists.)
     ,
-      $(if $(call node-exists,$(1)),
-        $(call Signal-Error,A node named $(1) already exists.)
+      $(call mk-node,$(1))
+      $(call mk-modfw-repo,$(1))
+      $(if ${Errors},
+        $(call Warn,An error occurred -- not generating .gitignore file.)
       ,
-        $(call mk-node,$(1))
-        $(call mk-modfw-repo,$(1))
-        $(if ${Errors},
-          $(call Warn,Not generating .gitignore file.)
-        ,
-          $(file >${$(1).path}/.gitignore,$(call gen-project-gitignore,$(1)))
-          $(call add-file-to-repo,$(1),.gitignore)
-        )
+        $(file >${$(1).path}/.gitignore,$(call gen-project-gitignore,$(1)))
+        $(call add-file-to-repo,$(1),.gitignore)
       )
     )
   )
@@ -369,18 +399,22 @@ help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0),project=$(1) template=$(2))
-  $(if node-is-declared,$(1),
-    $(call Signal-Error,A node named $(1) has already been declared.)
+
+  $(call declare-kit,$(1),${PROJECTS_NODE})
+  $(if ${Errors},
+    $(call Attention,Unable to make a project.)
   ,
     $(if $(call node-exists,$(1)),
       $(call Signal-Error,Project $(1) node already exists.)
+      $(call undeclare-project,$(1))
     ,
-      $(call declare-project,$(2))
-      $(if $(call if-project-exists,$(2)),
-        $(call declare-project,$(1))
+      $(call declare-project,$(2),${PROJECTS_NODE})
+      $(if $(call is-modfw-repo,$(2)),
         $(call mk-repo-from-template,$(1),$(2))
       ,
         $(call Signal-Error,Template project $(2) does not exist.)
+        $(call undeclare-project,$(1))
+        $(call undeclare-project,$(2))
       )
     )
   )
@@ -428,6 +462,46 @@ endef
 
 $(call Add-Help-Section,project-use,The primary macro for using projects.)
 
+_macro := install-project
+define _help
+${_macro}
+  Use this to install a project repo. This declares and clones an existing repo
+  into the $${PROJECTS_NODE} node directory.
+
+  If the project has already been declared then the existing project
+  declaration is used.
+
+  Parameters:
+    1 = The name of the project to install.
+endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
+define ${_macro}
+$(call Enter-Macro,$(0),project=$(1))
+
+$(call declare-project,$(1),${KITS_NODE})
+$(if ${Errors},
+  $(call Attention,Unable to install a project.)
+,
+  $(if $(call node-exists,${$(1).parent}),
+    $(call install-repo,$(1))
+    $(if ${Errors},
+    ,
+      $(if $(call is-modfw-repo,$(1)),
+        $(call Verbose,Project $(1) is a ModFW repo.)
+      ,
+        $(call Signal-Error,Project $(1) is not a ModFW repo.)
+        $(if ${VERBOSE},$(call display-project,$(1)))
+      )
+    )
+  ,
+    $(call Signal-Error,\
+      Parent node ${$(1).parent} for project $(1) does not exist.)
+  )
+)
+$(call Exit-Macro)
+endef
+
 _macro := use-project
 define _help
 ${_macro}
@@ -444,48 +518,23 @@ help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0),project=$(1))
-  $(if $(call node-is-declared,${PROJECTS_NODE}),
-    $(if $(call node-exists,${PROJECTS_NODE}),
-      $(if $(call project-is-declared,$(1)),
-        $(call Attention,Using existing project declaration for $(1).)
-      ,
-        $(call declare-project,$(1))
-      )
-      $(if ${Errors},
-        $(call Signal-Error,An error occurred when declaring project $(1).)
-      ,
-        $(if ${${$(1).seg_un}.SegID},
-          $(call Verbose,Project $(1) is already in use.)
+  $(if ${${$(1).seg_un}.SegID},
+    $(call Verbose,Kit $(1) is already in use.)
+  ,
+    $(call Info,Using project:$(1))
+    $(call install-project,$(1))
+    $(if ${Errors},
+      $(call Signal-Error,An error occurred when installing the project $(1).)
+    ,
+      $(foreach _node,${project_node_names},
+        $(if $(call node-exists,$(1).${${_node}}),
+          $(call Info,Using existing node $(1).${${_node}})
         ,
-          $(call Info,Using project:$(1))
-          $(call install-repo,$(1))
-          $(if ${Errors},
-            $(call Signal-Error,An error occurred when installing project $(1).)
-          ,
-            $(if $(call is-modfw-repo,$(1)),
-              $(call mk-child-nodes,$(1))
-              $(call Attention,Redirecting sticky variables to project:$(1))
-              $(call Redirect-Sticky,${$(1).${STICKY_NODE}.path})
-              $(call Use-Segment,${$(1).seg_f})
-            ,
-              $(call Signal-Error,Project $(1) is not a modfw repo.)
-              $(if ${${$(1).seg_un}.SegID},
-                $(call Attention,Loaded segment $(1).seg_un)
-              ,
-                $(call Signal-Error,Segment for project $(1) was not loaded.)
-              )
-            )
-          ,
-            $(call Signal-Error,\
-              Parent node ${$(1).parent} for project $(1) does not exist.)
-          )
+          $(call mk-node,$(1).${${_node}})
         )
       )
-    ,
-      $(call Signal-Error,Parent node ${_parent} does not exist.)
+      $(call Use-Segment,${$(1).seg_f})
     )
-  ,
-    $(call Signal-Error,Parent node ${_parent} has not been declared.)
   )
   $(call Exit-Macro)
 endef
