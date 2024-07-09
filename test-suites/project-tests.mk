@@ -22,54 +22,61 @@ endef
 help-${SegID} := $(call _help)
 $(call Add-Help,${SegID})
 
+$(call Use-Segment,projects)
+
 $(call Add-Help-Section,verifiers,Macros to verify project features.)
 
-_macro := verify-project-preconditions
+_macro := declare-project-parents
 define _help
-  Verify that the variables used by the project tests are either defined or
-  undefined.
-
-  This verifies PROJECT_NODE and PROJECT have been defined. This also verifies
-  $${PROJECT}.URL and $${PROJECT}.BRANCH have not been defined.
-
-  The $${PROJECTS_NODE} directory should not exist.
+  Declare the parents for a project. The parent structure conforms to a normal
+  project structure where projects reside within projects. This basically
+  declares a test node to contain the project testing nodes.
+  None of the parent nodes should have been previously declared.
+  If the preconditions for a projects test are not correct an error is emitted
+  and the test exits.
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0))
-
-$(if ${TESTING_PATH},
-  $(call PASS,PROJECTS_PATH=${TESTING_PATH})
-,
-  $(call FAIL,PROJECTS_PATH is not defined.)
+$(call Enter-Macro,$(0),\
+  TESTING_PATH=${TESTING_PATH}\
+  PROJECTS_NODE=${PROJECTS_NODE}\
 )
 
-$(foreach _v,PROJECTS_NODE PROJECT,
+$(if ${TESTING_PATH},
+  $(call PASS,TESTING_PATH=${TESTING_PATH})
+,
+  $(call FAIL,TESTING_PATH is not defined.)
+)
+
+$(foreach _v,PROJECTS_NODE,
   $(if ${${_v}},
     $(call PASS,Var ${_v} = ${${_v}})
     $(if $(call node-is-declared,${_v}),
       $(call FAIL,The node ${_v} should NOT be declared.)
     ,
       $(call PASS,The node ${_v} is not declared.)
-      $(if $(wildcard ${TESTING_PATH}/${PROJECTS_NODE}),
-        $(call FAIL,The PROJECTS_NODE directory should NOT exist.)
-      ,
-        $(call PASS,The PROJECTS_NODE directory does not exist.)
-      )
     )
   ,
     $(call FAIL,Var ${_v} is NOT defined.)
   )
 )
 
-$(foreach _v,${PROJECT}.URL ${PROJECT}.BRANCH,
-  $(if ${${_v}},
-    $(call FAIL,Var ${_v} = ${${_v}})
-  ,
-    $(call PASS,Var ${_v} is NOT defined.)
-  )
-)
+$(call declare-root-node,${PROJECTS_NODE},${TESTING_PATH})
+
+$(call Exit-Macro)
+endef
+
+_macro := undeclare-project-parents
+define _help
+  Teardown a project test. This reverses what was done in declare-project-parents.
+endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
+define ${_macro}
+$(call Enter-Macro,$(0))
+
+$(call undeclare-root-node,${PROJECTS_NODE})
 
 $(call Exit-Macro)
 endef
@@ -88,20 +95,57 @@ $(call Enter-Macro,$(0),project=$(1) verify-atts=$(2))
 
 $(if $(2),
   $(call Test-Info,Verifying attributes are defined.)
+  $(if $(call project-is-declared,$(1)),
+    $(call PASS,Project $(1) is declared.)
+  ,
+    $(call FAIL,Project $(1) is NOT declared.)
+  )
   $(foreach _att,${project_attributes},
-    $(if ${$(1).${_att}},
-      $(call PASS,Attribute ${$(1).${_att}} is defined.)
+    $(if $(filter undefined,$(origin $(1).${_att})),
+      $(call FAIL,Attribute $(1).${_att} is NOT defined.)
     ,
-      $(call FAIL,Attribute ${$(1).${_att}} is NOT defined.)
+      $(call PASS,Attribute $(1).${_att}=${$(1).${_att}})
+    )
+  )
+  $(call Test-Info,Verifying child nodes are declared.)
+  $(foreach _node,${project_node_names},
+    $(if $(call node-is-declared,$(1).${${_node}}),
+      $(call PASS,Node $(1).${${_node}} is declared.)
+    ,
+      $(call FAIL,Node $(1).${${_node}} is NOT declared.)
+    )
+    $(if $(call is-a-child-of,$(1).${${_node}},$(1)),
+      $(call PASS,Node $(1).${${_node}} is a child of project $(1).)
+    ,
+      $(call Test-Info,Children:${$(1).children})
+      $(call FAIL,Node $(1).${${_node}} is NOT a child of project $(1).)
     )
   )
 ,
   $(call Test-Info,Verifying attributes are NOT defined.)
+  $(if $(call project-is-declared,$(1)),
+    $(call FAIL,Project $(1) is declared.)
+  ,
+    $(call PASS,Project $(1) is NOT declared.)
+  )
   $(foreach _att,${project_attributes},
-    $(if ${$(1).${_att}},
-      $(call FAIL,Attribute ${$(1).${_att}} is defined.)
+    $(if $(filter undefined,$(origin $(1).${_att})),
+      $(call PASS,Attribute $(1).${_att} is not defined.)
     ,
-      $(call PASS,Attribute ${$(1).${_att}} is not defined.)
+      $(call FAIL,Attribute $(1).${_att}=${$(1).${_att}})
+    )
+  )
+  $(call Test-Info,Verifying child nodes are NOT declared.)
+  $(foreach _node,${project_node_names},
+    $(if $(call node-is-declared,$(1).${${_node}}),
+      $(call FAIL,Node $(1).${${_node}} should NOT be declared.)
+    ,
+      $(call PASS,Node $(1).${${_node}} is NOT declared.)
+    )
+    $(if $(call is-a-child-of,$(1).${${_node}},$(1)),
+      $(call FAIL,Node $(1).${${_node}} is a child of project $(1).)
+    ,
+      $(call PASS,Node $(1).${${_node}} is NOT a child of project $(1).)
     )
   )
 )
@@ -121,21 +165,22 @@ define ${_macro}
 $(call Enter-Macro,$(0),project=$(1) verify-nodes=$(2))
 
 $(if $(2),
-  $(call Test-Info,Verifying attributes are defined.)
-  $(foreach _node,$(1) ${project_node_names},
-    $(if $(call node-exists,${_node}),
-      $(call PASS,Node ${_att} exists.)
+  $(call Test-Info,Verifying project nodes exist.)
+
+  $(foreach _node,${project_node_names},
+    $(if $(call node-exists,$(1).${${_node}}),
+      $(call PASS,Node $(1).${${_node}} exists.)
     ,
-      $(call FAIL,Node ${_att} does not exist.)
+      $(call FAIL,Node $(1).${${_node}} does not exist.)
     )
   )
 ,
-  $(call Test-Info,Verifying attributes are NOT defined.)
-  $(foreach _node,$(1) ${project_node_names},
-    $(if $(call node-exists,${_node}),
-      $(call FAIL,Node ${_att} exists.)
+  $(call Test-Info,Verifying project nodes do NOT exist.)
+  $(foreach _node,${project_node_names},
+    $(if $(call node-exists,$(1).${${_node}}),
+      $(call FAIL,Node $(1).${${_node}} exists.)
     ,
-      $(call PASS,Node ${_att} does not exist.)
+      $(call PASS,Node $(1).${${_node}} does not exist.)
     )
   )
 )
@@ -160,99 +205,117 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(call verify-project-preconditions)
+  $(eval _project := $(0).project)
+  $(call Test-Info,Project node:${_project})
+
+  $(call declare-project-parents)
+
   $(if ${.Failed},
-    $(call FAIL,Preconditions for ${.TestUN} are not correct.)
+    $(call Signal-Error,Setup for ${.TestUN} failed.,exit)
   ,
-    $(call Expect-Error\
-              Undefined variables:${PROJECT}.URL ${PROJECT}.BRANCH)
-    $(call declare-project,${PROJECT})
+    $(call Test-Info,Verifying project required variables.)
+    $(call Expect-Error,\
+              Undefined variables:${_project}.URL ${_project}.BRANCH)
+    $(call declare-project,${_project})
     $(call Verify-Error)
 
-    $(eval ${PROJECT}.URL := local)
-    $(eval ${PROJECT}.BRANCH := main)
+    $(eval ${_project}.URL := local)
+    $(eval ${_project}.BRANCH := main)
+
+    $(call Test-Info,Verifying project is not declared.)
+    $(call Expect-Error,\
+      Parent node foobar for project ${_project} is not declared.)
+    $(call declare-project,${_project},foobar)
+    $(call Verify-Error)
+    $(call verify-project-attributes,${_project})
+    $(call verify-project-nodes,${_project})
+
+    $(call Test-Info,Verifying project node already declared.)
+    $(call declare-child-node,${_project},${PROJECTS_NODE})
 
     $(call Expect-Error,\
-      Parent node ${PROJECTS_NODE} for project ${PROJECT} is not declared.)
-    $(call declare-project,${PROJECT},${PROJECTS_NODE})
+      A node using project name ${_project} has already been declared.)
+    $(call declare-project,${_project},${PROJECTS_NODE})
     $(call Verify-Error)
-    $(call verify-project-attributes,${PROJECT})
-    $(call verify-project-nodes,${PROJECT})
+    $(call verify-project-attributes,${_project})
+    $(call verify-project-nodes,${_project})
 
-    $(call declare-root-node,${PROJECTS_NODE},${TESTING_PATH})
-
-    $(call Expect-No-Error)
-    $(call declare-project,${PROJECT},${PROJECTS_NODE})
-    $(call Verify-No-Error)
-    $(call verify-project-attributes,${PROJECT},defined)
-    $(call verify-project-nodes,${PROJECT},defined)
-
-    $(call Expect-No-Error)
-    $(call Expect-Message,Project ${PROJECT} has already been declared.)
-    $(call declare-project,${PROJECT})
-    $(call Verify-No-Error)
-    $(call Verify-Message)
-
-    $(call Expect-No-Error)
-    $(call undeclare-project,${PROJECT})
-    $(call Verify-No-Error)
-    $(call verify-project-attributes,${PROJECT})
-    $(call verify-project-nodes,${PROJECT})
-
-    $(call declare-child-node,${PROJECT},${PROJECTS_NODE})
+    $(call declare-repo,${_project})
 
     $(call Expect-Error,\
-      A node using project name ${PROJECT} has already been declared.)
-    $(call declare-project,${PROJECT},${PROJECTS_NODE})
+      A repo using project name ${_project} has already been declared.)
+    $(call declare-project,${_project},${PROJECTS_NODE})
+    $(call Verify-Error)
+    $(call verify-project-attributes,${_project})
+    $(call verify-project-nodes,${_project})
+
+    $(call undeclare-repo,${_project})
+    $(call undeclare-child-node,${_project})
+
+    $(call Test-Info,Verifying project can be declared.)
+    $(call Expect-No-Error)
+    $(call declare-project,${_project},${PROJECTS_NODE})
+    $(call Verify-No-Error)
+
+    $(call verify-project-attributes,${_project},defined)
+    $(call verify-project-nodes,${_project})
+
+    $(call Expect-No-Error)
+    $(call Expect-Warning,Project ${_project} has already been declared.)
+    $(call declare-project,${_project},${PROJECTS_NODE})
+    $(call Verify-Warning)
+    $(call Verify-No-Error)
+
+    $(call Test-Info,Verifying undeclaring the test project.)
+    $(call Expect-No-Error)
+    $(call undeclare-project,${_project})
+    $(call Verify-No-Error)
+    $(call verify-project-attributes,${_project})
+    $(call verify-project-nodes,${_project})
+
+    $(call Expect-Error,The project ${_project} has not been declared.)
+    $(call undeclare-project,${_project})
     $(call Verify-Error)
 
-    $(call declare-repo,${PROJECT})
+    $(call Test-Info,Verifying can redeclare the same project.)
+    $(call Expect-No-Error)
+    $(call declare-project,${_project},${PROJECTS_NODE})
+    $(call Verify-No-Error)
 
-    $(call Expect-Error,\
-      A repo using project name ${PROJECT} has already been declared.)
-    $(call declare-project,${PROJECT},${PROJECTS_NODE})
-    $(call Verify-Error)
-
-    $(call undeclare-repo,${PROJECT})
-    $(call undeclare-child-node,${PROJECT})
-
-    $(call Expect-Error,The project ${PROJECT} has not been declared.)
-    $(call undeclare-project,${PROJECT})
-    $(call Verify-Error)
-
-    $(call declare-project,${PROJECT})
-    $(foreach _node,${${PROJECT}.children},
+    $(call Test-Info,Undeclaring project nodes.)
+    $(foreach _node,${${_project}.children},
       $(call undeclare-child-node,${_node})
     )
-    $(call undeclare-child-node,${PROJECT})
+    $(call undeclare-child-node,${_project})
 
-    $(call Expect-Error,Project ${PROJECT} does not have a declared node.)
-    $(call undeclare-project,${PROJECT})
+    $(call Test-Info,Verifying can't undeclare a broken project.)
+    $(call Expect-Error,Project ${_project} does not have a declared node.)
+    $(call undeclare-project,${_project})
     $(call Verify-Error)
 
-    $(call undeclare-repo,${PROJECT})
+    $(call undeclare-repo,${_project})
 
-    $(call Expect-Error,Project ${PROJECT} does not have a declared repo.)
-    $(call undeclare-project,${PROJECT})
+    $(call Expect-Error,Project ${_project} does not have a declared repo.)
+    $(call undeclare-project,${_project})
     $(call Verify-Error)
 
-    $(call declare-child-node,${PROJECT})
-    $(call declare-repo,${PROJECT})
+    $(call declare-child-node,${_project},${PROJECTS_NODE})
+    $(call declare-repo,${_project})
 
     $(call Expect-No-Error)
-    $(call undeclare-project,${PROJECT})
+    $(call undeclare-project,${_project})
     $(call Verify-No-Error)
-    $(call verify-project-attributes,${PROJECT})
+    $(call verify-project-attributes,${_project})
 
-    $(call Expect-Error,The project ${PROJECT} has not been declared.)
-    $(call undeclare-project,${PROJECT})
+    $(call Expect-Error,The project ${_project} has not been declared.)
+    $(call undeclare-project,${_project})
     $(call Verify-Error)
 
-    $(call undeclare-root-node,${PROJECTS_NODE})
-
-    $(eval undefine ${PROJECT}.URL)
-    $(eval undefine ${PROJECT}.BRANCH)
+    $(eval undefine ${_project}.URL)
+    $(eval undefine ${_project}.BRANCH)
   )
+  $(call undeclare-project-parents)
+
   $(call End-Test)
   $(call Exit-Macro)
 endef
@@ -271,71 +334,49 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(call verify-project-preconditions)
+  $(eval _project := $(0).project)
+  $(call Test-Info,Project node:${_project})
+
+  $(call declare-project-parents)
+
   $(if ${.Failed},
-    $(call FAIL,Preconditions for ${.TestUN} are not correct.)
+    $(call Signal-Error,Setup for ${.TestUN} failed.,exit)
   ,
-    $(eval ${PROJECT}.URL := local)
-    $(eval ${PROJECT}.BRANCH := main)
+    $(eval ${_project}.URL := local)
+    $(eval ${_project}.BRANCH := main)
 
-    $(call declare-root-node,${PROJECTS_NODE},${TESTING_PATH})
-
+    $(call Test-Info,Verifying project can be created.)
     $(call Expect-No-Error)
-    $(call mk-project,${PROJECT})
+    $(call mk-project,${_project})
     $(call Verify-No-Error)
 
-    $(if $(call is-modfw-project,${PROJECT}),
-      $(call PASS,Project ${PROJECT} is expected format.)
+    $(call display-project,${_project})
+
+    $(if $(call is-modfw-project,${_project}),
+      $(call PASS,Project ${_project} is expected format.)
     ,
-      $(call FAIL,Project ${PROJECT} does not conform to ModFW project format.)
+      $(call FAIL,Project ${_project} does not conform to ModFW project format.)
     )
 
-    $(call verify-project-attributes,defined)
-    $(call verify-project-nodes,exist)
+    $(call verify-project-attributes,${_project},defined)
+    $(call verify-project-nodes,${_project})
 
-    $(call Expect-Error,\
-      A node named ${PROJECT} has already been declared.)
-    $(call mk-project,${PROJECT})
+    $(call Test-Info,Verifying project can't be created more than once.)
+    $(call Expect-Warning,Project ${_project} has already been declared.)
+    $(call Expect-Error,Project ${_project} node already exists.)
+    $(call mk-project,${_project})
     $(call Verify-Error)
+    $(call Verify-Warning)
 
-    $(call rm-repo,${PROJECT})
+    $(call Test-Info,Teardown.)
+    $(eval undefine ${_project}.URL)
+    $(eval undefine ${_project}.BRANCH)
 
-    $(if $(call node-exists,${PROJECT}),
-      $(call PASS,Node ${PROJECT} still exists.)
-    ,
-      $(call FAIL,Node ${PROJECT} was removed.)
-    )
-
-    $(call rm-project,${PROJECT})
-    $(call verify-project-attributes,${PROJECT})
-
-    $(if $(call project-is-declared,${PROJECT}),
-      $(call FAIL,Project ${PROJECT} was not undeclared after removal.)
-    ,
-      $(call PASS,Project ${PROJECT} was undeclared.)
-      $(if $(call repo-is-declared,${PROJECT}),
-        $(call FAIL,Project repo ${PROJECT} was not undeclared.)
-      ,
-        $(call PASS,Project repo ${PROJECT} was undeclared.)
-        $(if $(call node-is-declared,${PROJECT}),
-          $(call FAIL,Node ${PROJECT} was not undeclared.)
-        ,
-          $(call PASS,Node ${PROJECT} as undeclared,)
-          $(call declare-project,${PROJECT})
-          $(if $(call node-exists,${PROJECT}),
-            $(call FAIL,Project node ${PROJECT} was not removed.)
-            $(call verify-project-nodes,${PROJECT})
-          ,
-            $(call PASS,Project node ${PROJECT} was removed.)
-          )
-          $(call undeclare-project,${PROJECT})
-        )
-      )
-    )
-    $(call undeclare-root-node,${PROJECTS_NODE})
-    $(eval undefine ${PROJECT}.URL)
-    $(eval undefine ${PROJECT}.BRANCH)
+    $(call rm-node,${PROJECTS_NODE})
+    $(call undeclare-project,${_project})
+    $(call undeclare-project-parents)
   )
+
   $(call End-Test)
   $(call Exit-Macro)
 endef
@@ -352,40 +393,62 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(call verify-project-preconditions)
+  $(eval _project := $(0).project)
+  $(call Test-Info,Project node:${_project})
+  $(eval _new_project := $(0).new-project)
+  $(call Test-Info,New project node:${_new_project})
+
+  $(call declare-project-parents)
+
   $(if ${.Failed},
     $(call FAIL,Preconditions for ${.TestUN} are not correct.)
   ,
-    $(call declare-root-node,${PROJECTS_NODE},${TESTING_PATH})
+    $(eval ${_project}.URL := local)
+    $(eval ${_project}.BRANCH := main)
 
-    $(eval ${PROJECT}.URL := local)
-    $(eval ${PROJECT}.BRANCH := main)
+    $(eval ${_new_project}.URL := local)
+    $(eval ${_new_project}.BRANCH := main)
 
-    $(call mk-project,${PROJECT})
+    $(call Expect-Error,Template project ${_project} does not exist.)
+    $(call mk-project-from-template,${_new_project},${_project})
+    $(call Verify-Error)
 
-    $(eval ${newPROJECT}.URL := local)
-    $(eval ${newPROJECT}.BRANCH := main)
+    $(call verify-project-attributes,${_project})
+    $(call verify-project-nodes,${_project})
+
+    $(call Clear-Errors)
+    $(call mk-project,${_project})
+    $(call undeclare-project,${_project})
 
     $(call Expect-No-Error)
-    $(call mk-project-from-template,${newPROJECT},${PROJECT})
+    $(call mk-project-from-template,${_new_project},${_project})
     $(call Verify-No-Error)
 
-    $(call verify-project-attributes,${newPROJECT},defined)
-    $(call verify-project-nodes,${newPROJECT},exist)
+    $(call verify-project-attributes,${_new_project},defined)
+    $(call verify-project-nodes,${_new_project})
 
-    $(if $(call is-modfw-project,${newPROJECT}),
-      $(call PASS,Project ${newPROJECT} is expected format.)
+    $(if $(call is-modfw-project,${_new_project}),
+      $(call PASS,Project ${_new_project} is expected format.)
     ,
-      $(call FAIL,Project ${newPROJECT} does not conform to ModFW project format.)
+      $(call FAIL,Project ${_new_project} does not conform to ModFW project format.)
     )
-    $(call rm-project,${newPROJECT})
-    $(call rm-project,${PROJECT})
-    $(call undeclare-root-node,${PROJECTS_NODE})
 
-    $(eval undefine ${newPROJECT}.URL)
-    $(eval undefine ${newPROJECT}.BRANCH)
-    $(eval undefine ${PROJECT}.URL)
-    $(eval undefine ${PROJECT}.BRANCH)
+    $(call Expect-Warning,Project ${_new_project} has already been declared.)
+    $(call Expect-Error,Project ${_new_project} node already exists.)
+    $(call mk-project-from-template,${_new_project},${_project})
+    $(call Verify-Error)
+    $(call Verify-Warning)
+
+    $(eval undefine ${_new_project}.URL)
+    $(eval undefine ${_new_project}.BRANCH)
+    $(eval undefine ${_project}.URL)
+    $(eval undefine ${_project}.BRANCH)
+
+    $(call rm-node,${PROJECTS_NODE})
+
+    $(call undeclare-project,${_new_project})
+    $(call undeclare-project,${_project})
+    $(call undeclare-project-parents)
   )
 
   $(call End-Test)
@@ -404,43 +467,53 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(call verify-project-preconditions)
+  $(eval _project := $(0).project)
+  $(call Test-Info,Project node:${_project})
+
+  $(call declare-project-parents)
+
   $(if ${.Failed},
     $(call FAIL,Preconditions for ${.TestUN} are not correct.)
   ,
-    $(eval ${PROJECT}.URL := local)
-    $(eval ${PROJECT}.BRANCH := main)
+    $(eval ${_project}.URL := local)
+    $(eval ${_project}.BRANCH := main)
 
-    $(call declare-root-node,${PROJECTS_NODE},${TESTING_PATH})
+    $(eval _src_projects := src-projects)
+
+    $(call Test-Info,Creating the source project repo.)
+    $(call declare-root-node,${_src_projects},${TESTING_PATH})
+    $(call declare-project,${_project},${_src_projects})
+    $(call mk-project,${_project})
+
+    $(eval ${_project}.URL := ${${_project}.path})
+
+    $(call undeclare-project,${_project})
+
     $(call mk-node,${PROJECTS_NODE})
 
-    $(call declare-project,${_srcPROJECT},${PROJECTS_NODE})
+    $(call Expect-Error,\
+      Segment ${_project} has not yet been completed.)
+    $(call use-project,${_project})
+    $(call Verify-Error)
+    $(call verify-project-nodes,${_project},exist)
 
-    $(call mk-project,${PROJECT})
-
-    $(eval ${PROJECT}.URL := ${${PROJECT}.path})
-
-    $(call Expect-No-Error)
-    $(call use-project,${PROJECT},$(PROJECTS_NODE))
-    $(call Verify-No-Error)
-
-    $(if ${Errors},
-      $(call FAIL,An error occurred when using project ${PROJECT})
+    $(if ${${_project}.${_project}.SegID},
+      $(call PASS,Make segment for project ${_project} was loaded.)
     ,
-      $(if ${${PROJECT}.SegID},
-        $(call PASS,Make segment for project ${PROJECT} was loaded.)
-      ,
-        $(call FAIL,Make segment for project ${PROJECT} was NOT loaded.)
-      )
+      $(call FAIL,Make segment for project ${_project} was NOT loaded.)
     )
-    $(call rm-project,${PROJECT})
+    $(eval undefine ${_project}.URL)
+    $(eval undefine ${_project}.BRANCH)
+
+    $(call rm-node,${_src_projects})
 
     $(call rm-node,${PROJECTS_NODE})
-    $(call undeclare-root-node,${PROJECTS_NODE})
 
-    $(eval undefine ${PROJECT}.URL)
-    $(eval undefine ${PROJECT}.BRANCH)
+    $(call undeclare-project,${_project})
+    $(call undeclare-node,${_src_projects})
+    $(call undeclare-project-parents)
   )
+
   $(call End-Test)
   $(call Exit-Macro)
 endef

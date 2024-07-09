@@ -67,6 +67,16 @@ endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
+_var := STICKY_NODE
+$(call Sticky,${_var},${STICKY_DIR})
+define _help
+${_var} = ${${_var}}
+  The name of the node containing the overall sticky variables. This defaults
+  to the helpers variable STICKY_DIR.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+
 _var := PROJECTS_NODE
 $(call Sticky,${_var},projects)
 define _help
@@ -99,7 +109,7 @@ $(call Sticky,${_var},${STICKY_NODE})
 define _help
 ${_var} = ${${_var}}
   The name of the directory containing the project specific sticky variables.
-  This defaults to the Helpers variable STICKY_NODE.
+  This defaults to the variable STICKY_NODE.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
@@ -141,7 +151,7 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := LIB_NODE
-$(call Sticky,${_var},bin)
+$(call Sticky,${_var},lib)
 define _help
 ${_var} = ${${_var}}
   The the name of the directory where libraries used to build projects are

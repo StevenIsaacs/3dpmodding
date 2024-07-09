@@ -48,7 +48,7 @@ _var := kit_ignored_nodes
 ${_var} := BUILD_NODE STAGING_NODE
 define _help
 ${_var}
-  These nodes are not part of the git repository and therefore ignored using
+  These nodes are not part of the git repository and therefore are ignored using
   .gitignore.
 endef
 help-${_var} := $(call _help)
@@ -72,7 +72,7 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := kit_attributes
-${_var} := goals build_path staging_path
+${_var} := goals build_path staging_path mods_path
 define _help
 ${_var}
   A kit is a ModFW repo and extends a repo with the additional attributes.
@@ -86,6 +86,8 @@ ${_var}
   <kit>.staging_path
     The path to the kit staging directory. The staging directory is where
     the kit deliverables are stored.
+  <kit>.mods_path
+    Where mods are stored within the kit.
 
   The repo attributes are:
 ${help-repo_attributes}
@@ -191,6 +193,7 @@ $(if $(call kit-is-declared,$(1)),
           $(eval $(1).goals :=)
           $(eval $(1).build_path := ${$(1).${BUILD_NODE}.path})
           $(eval $(1).staging_path := ${$(1).${STAGING_NODE}.path})
+          $(eval $(1).mods_path := ${$(1).${MODS_NODE}.path})
           $(eval kits += $(1))
         ,
           $(call Signal-Error,\
@@ -218,8 +221,8 @@ $(call Enter-Macro,$(0),kit=$(1))
 $(if $(call kit-is-declared,$(1)),
   $(if $(call repo-is-declared,$(1)),
     $(if $(call node-is-declared,$(1)),
-      $(call undeclare-repo,$(1))
       $(if $(call is-a-child-node,$(1)),
+        $(call undeclare-repo,$(1))
         $(foreach _node,${$(1).children},
           $(call undeclare-child-node,${_node})
         )
@@ -301,7 +304,7 @@ ${_macro}
   NOTE: This is designed to be callable from the make command line using the
   helper call-${_macro} goal.
   For example:
-    make ${_macro}.PARMS=<prj> call-${_macro}
+    make ${_macro}.PARMS=<kit> [<kit>.URL=<url>] [<kit>.BRANCH=<branch>] call-${_macro}
   Parameters:
     1 = The node name of the new kit (<kit>).
 endef
