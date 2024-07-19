@@ -226,6 +226,7 @@ define ${_macro}
   $(if $(call node-is-declared,$(1)),
     $(if ${$(1).children},
       $(call Signal-Error,Root node $(1) has children -- NOT undeclaring.)
+      $(call Attention,Children are: ${$(1).children})
     ,
       $(foreach _a,${node_attributes},
         $(eval undefine $(1).${_a})
@@ -300,13 +301,42 @@ define ${_macro}
   $(if $(call node-is-declared,$(1)),
     $(if ${$(1).children},
       $(call Signal-Error,Child node $(1) has children -- NOT undeclaring.)
+      $(call Attention,Children are: ${$(1).children})
     ,
+      $(call Verbose,Child parent is:${$(1).parent})
+      $(call Verbose,Child parent children are:${${$(1).parent}.children})
       $(eval ${$(1).parent}.children := \
         $(filter-out $(1),${${$(1).parent}.children}))
+      $(call Verbose,Child parent children are now:${${$(1).parent}.children})
       $(foreach _a,${node_attributes},
         $(eval undefine $(1).${_a})
       )
       $(eval nodes := $(filter-out $(1),${nodes}))
+    )
+  ,
+    $(call Signal-Error,Node $(1) is NOT declared -- NOT undeclaring.)
+  )
+  $(call Exit-Macro)
+endef
+
+_macro := undeclare-descendants
+define _help
+${_macro}
+  Undeclare all of the children of a node. If the children have children then
+  they are undeclared first.
+  NOTE: This recursively calls itself when a node has children.
+  Parameters:
+    1 = The root node to undeclare.
+endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
+define ${_macro}
+  $(call Enter-Macro,$(0),node=$(1))
+  $(if $(call node-is-declared,$(1)),
+    $(foreach _child,${$(1).children},
+      $(if ${${_child}.children},
+        $(call undeclare-descendants,${_child}))
+      $(call undeclare-child-node,${_child})
     )
   ,
     $(call Signal-Error,Node $(1) is NOT declared -- NOT undeclaring.)

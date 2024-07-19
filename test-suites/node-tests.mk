@@ -427,24 +427,26 @@ define ${.TestUN}
 
   $(eval _rn := $(0).dgcnr1)
   $(eval _cn := dgcnc1)
-  $(eval _gcn := dgcngc1)
+  $(eval _gcn1 := dgcngc1)
+  $(eval _gcn2 := cgcngc2)
+  $(eval _ggcn1 := dgcnggc1)
 
   $(call verify-node-not-declared,${_rn})
   $(call verify-node-not-declared,${_cn})
-  $(call verify-node-not-declared,${_gcn})
+  $(call verify-node-not-declared,${_gcn1})
 
   $(call declare-root-node,${_rn},${TESTING_PATH})
   $(call declare-child-node,${_cn},${_rn})
 
   $(call Expect-No-Error)
-  $(call declare-child-node,${_gcn},${_cn})
+  $(call declare-child-node,${_gcn1},${_cn})
   $(call Verify-No-Error)
 
-  $(call verify-node-is-declared,${_gcn})
+  $(call verify-node-is-declared,${_gcn1})
 
-  $(call verify-is-child-of-parent,${_gcn})
-  $(call verify-is-child-of-node,${_gcn},${_cn})
-  $(call verify-is-not-child-of-node,${_gcn},${_rn})
+  $(call verify-is-child-of-parent,${_gcn1})
+  $(call verify-is-child-of-node,${_gcn1},${_cn})
+  $(call verify-is-not-child-of-node,${_gcn1},${_rn})
 
   $(call Test-Info,Verify child node cannot be undeclared.)
   $(call Expect-Error,Child node ${_cn} has children -- NOT undeclaring.)
@@ -453,17 +455,33 @@ define ${.TestUN}
 
   $(call Test-Info,Verify grandchild node can be undeclared.)
   $(call Expect-No-Error)
-  $(call undeclare-child-node,${_gcn})
+  $(call undeclare-child-node,${_gcn1})
   $(call Verify-No-Error)
 
-  $(call verify-node-not-declared,${_gcn})
+  $(call verify-node-not-declared,${_gcn1})
 
-  $(call verify-is-not-child-of-node,${_gcn},${_cn})
+  $(call verify-is-not-child-of-node,${_gcn1},${_cn})
 
   $(call Test-Info,Verify child node can now be undeclared.)
   $(call Expect-No-Error)
   $(call undeclare-child-node,${_cn})
   $(call Verify-No-Error)
+
+  $(call verify-node-not-declared,${_cn})
+  $(call verify-node-not-declared,${_gcn1})
+
+  $(call Test-Info,Verifying undeclaring descendants.)
+  $(call declare-child-node,${_cn},${_rn})
+  $(call declare-child-node,${_gcn1},${_cn})
+  $(call declare-child-node,${_ggcn1},${__gcn1})
+  $(call declare-child-node,${_gcn2},${_cn})
+
+  $(call undeclare-descendants,${_rn})
+
+  $(call verify-node-not-declared,${_gcn2})
+  $(call verify-node-not-declared,${_ggcn1})
+  $(call verify-node-not-declared,${_gcn1})
+  $(call verify-node-not-declared,${_cn})
 
   $(call undeclare-root-node,${_rn})
 
@@ -558,12 +576,14 @@ define ${.TestUN}
   $(call rm-node,${_cn})
   $(call verify-node-does-not-exist,${_cn})
 
-  $(call undeclare-child-node,${_cn})
-
   $(call Test-Info,Destroying test child node.)
   $(call rm-node,${_rn})
-  $(call undeclare-root-node,${_rn})
+  $(call undeclare-descendants,${_rn})
 
+  $(call verify-node-not-declared,${_gcn})
+  $(call verify-node-not-declared,${_cn})
+  $(call display-node-tree,${_rn})
+  $(call undeclare-root-node,${_rn})
 
   $(call End-Test)
   $(call Exit-Macro)
