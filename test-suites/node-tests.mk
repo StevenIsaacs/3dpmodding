@@ -428,7 +428,7 @@ define ${.TestUN}
   $(eval _rn := $(0).dgcnr1)
   $(eval _cn := dgcnc1)
   $(eval _gcn1 := dgcngc1)
-  $(eval _gcn2 := cgcngc2)
+  $(eval _gcn2 := dgcngc2)
   $(eval _ggcn1 := dgcnggc1)
 
   $(call verify-node-not-declared,${_rn})
@@ -473,11 +473,13 @@ define ${.TestUN}
   $(call Test-Info,Verifying undeclaring descendants.)
   $(call declare-child-node,${_cn},${_rn})
   $(call declare-child-node,${_gcn1},${_cn})
-  $(call declare-child-node,${_ggcn1},${__gcn1})
+  $(call declare-child-node,${_ggcn1},${_gcn1})
   $(call declare-child-node,${_gcn2},${_cn})
 
+  $(call display-node-descendants,${_rn})
   $(call undeclare-descendants,${_rn})
-
+  $(call display-node-descendants,${_rn})
+$(call Pause)
   $(call verify-node-not-declared,${_gcn2})
   $(call verify-node-not-declared,${_ggcn1})
   $(call verify-node-not-declared,${_gcn1})

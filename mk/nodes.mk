@@ -107,6 +107,31 @@ ${_macro} = $(if $(filter $(1),${$(2).children}),1)
 
 $(call Add-Help-Section,node-reports,Macros for reporting nodes.)
 
+_macro := display-node-descendants
+define _help
+${_macro}
+  Display all of the children of a node. If the children have children then
+  they are displayed first.
+  NOTE: This recursively calls itself when a node has children.
+  Parameters:
+    1 = The node for which to display the descendants.
+endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
+define ${_macro}
+  $(call Enter-Macro,$(0),node=$(1))
+  $(if $(call node-is-declared,$(1)),
+    $(foreach _child,${$(1).children},
+      $(call Info,Node ${_child} is a child of:${${_child}.parent})
+      $(if ${${_child}.children},
+        $(call display-node-descendants,${_child}))
+    )
+  ,
+    $(call Signal-Error,Node $(1) is NOT declared -- NOT displaying.)
+  )
+  $(call Exit-Macro)
+endef
+
 _macro := display-node
 define _help
 ${_macro}
@@ -326,7 +351,7 @@ ${_macro}
   they are undeclared first.
   NOTE: This recursively calls itself when a node has children.
   Parameters:
-    1 = The root node to undeclare.
+    1 = The node for which to undeclare the descendants.
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
