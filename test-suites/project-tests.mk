@@ -213,7 +213,7 @@ define ${.TestUN}
   $(if ${.Failed},
     $(call Signal-Error,Setup for ${.TestUN} failed.,exit)
   ,
-    $(call Test-Info,Verifying project required variables.)
+    $(call Mark-Step,Verifying project required variables.)
     $(call Expect-Error,\
               Undefined variables:${_project}.URL ${_project}.BRANCH)
     $(call declare-project,${_project})
@@ -222,7 +222,7 @@ define ${.TestUN}
     $(eval ${_project}.URL := local)
     $(eval ${_project}.BRANCH := main)
 
-    $(call Test-Info,Verifying project is not declared.)
+    $(call Mark-Step,Verifying project is not declared.)
     $(call Expect-Error,\
       Parent node foobar for project ${_project} is not declared.)
     $(call declare-project,${_project},foobar)
@@ -230,7 +230,7 @@ define ${.TestUN}
     $(call verify-project-attributes,${_project})
     $(call verify-project-nodes,${_project})
 
-    $(call Test-Info,Verifying project node already declared.)
+    $(call Mark-Step,Verifying project node already declared.)
     $(call declare-child-node,${_project},${PROJECTS_NODE})
 
     $(call Expect-Error,\
@@ -252,7 +252,7 @@ define ${.TestUN}
     $(call undeclare-repo,${_project})
     $(call undeclare-child-node,${_project})
 
-    $(call Test-Info,Verifying project can be declared.)
+    $(call Mark-Step,Verifying project can be declared.)
     $(call Expect-No-Error)
     $(call declare-project,${_project},${PROJECTS_NODE})
     $(call Verify-No-Error)
@@ -266,7 +266,7 @@ define ${.TestUN}
     $(call Verify-Warning)
     $(call Verify-No-Error)
 
-    $(call Test-Info,Verifying undeclaring the test project.)
+    $(call Mark-Step,Verifying undeclaring the test project.)
     $(call Expect-No-Error)
     $(call undeclare-project,${_project})
     $(call Verify-No-Error)
@@ -277,7 +277,7 @@ define ${.TestUN}
     $(call undeclare-project,${_project})
     $(call Verify-Error)
 
-    $(call Test-Info,Verifying can redeclare the same project.)
+    $(call Mark-Step,Verifying can redeclare the same project.)
     $(call Expect-No-Error)
     $(call declare-project,${_project},${PROJECTS_NODE})
     $(call Verify-No-Error)
@@ -288,7 +288,7 @@ define ${.TestUN}
     )
     $(call undeclare-child-node,${_project})
 
-    $(call Test-Info,Verifying can't undeclare a broken project.)
+    $(call Mark-Step,Verifying can't undeclare a broken project.)
     $(call Expect-Error,Project ${_project} does not have a declared node.)
     $(call undeclare-project,${_project})
     $(call Verify-Error)
@@ -345,7 +345,7 @@ define ${.TestUN}
     $(eval ${_project}.URL := local)
     $(eval ${_project}.BRANCH := main)
 
-    $(call Test-Info,Verifying project can be created.)
+    $(call Mark-Step,Verifying project can be created.)
     $(call Expect-No-Error)
     $(call mk-project,${_project})
     $(call Verify-No-Error)
@@ -361,7 +361,7 @@ define ${.TestUN}
     $(call verify-project-attributes,${_project},defined)
     $(call verify-project-nodes,${_project})
 
-    $(call Test-Info,Verifying project can't be created more than once.)
+    $(call Mark-Step,Verifying project can't be created more than once.)
     $(call Expect-Warning,Project ${_project} has already been declared.)
     $(call Expect-Error,Project ${_project} node already exists.)
     $(call mk-project,${_project})
@@ -416,7 +416,6 @@ define ${.TestUN}
     $(call verify-project-attributes,${_project})
     $(call verify-project-nodes,${_project})
 
-    $(call Clear-Errors)
     $(call mk-project,${_project})
     $(call undeclare-project,${_project})
 

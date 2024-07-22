@@ -10,11 +10,56 @@ $(call Enter-Segment,Macros to support ModFW nodes.)
 define _help
 Make segment: ${Seg}.mk
 
-In ModFW nodes defines macros for declaring and using nodes in a tree structure.
+In ModFW nodes are structures used to manage directory trees where each
+directory is described using a node. Only ModFW related directories are
+described using nodes.
+
 A node is essentially the point where a branch in a tree occurs. A node is
 essentially a directory in the file system. The name of the node and the name
 of the directory are the same. In ModFW each node must contain a makefile
 segment having the same name as the node and, therefore, the directory.
+
+In ModFW the following terms are used to define nodes:
+
+  families: A number of unrelated trees.
+
+  tree: ModFW uses a tree structure to organize components needed to assemble
+  deliverables. This structure is similar to a classic tree structure as
+  described here: https://en.wikipedia.org/wiki/Tree_(data_structure)
+
+  node: A node data structure describes a directory in the file system. A node
+  can be contained in another node (i.e. have a parent). Conversely, a node can
+  contain other nodes (have children). Semantically, a node serves to
+  differentiate directories which are part of the ModFW structure apart from
+  unrelated directories. A node must at minimum contain a makefile segment
+  (seg) having the same name as the node itself.
+
+  root: A root node has no parent but can have children. The ModFW directory is
+  a root node. Typically the project and kit directories are children of the
+  ModFW node but can exist in other locations making them root nodes as well.
+
+  child: A child node always has a parent and can have children.
+
+  sibling: A node which has the same parent as another node.
+
+  descendant: A node's children and children of children and so on.
+
+  Here's an example tree:
+  root
+    | <root>.mk
+    | (files)
+    --> child <-------------------
+      | <child>.mk                |
+      | (files)                   |
+      --> child <------           |
+        | <child>.mk   |          | siblings
+        | (files)      | siblings |
+      --> child <------           |
+        | <child>.mk              |
+        | (files)                 |
+    --> child <-------------------
+      | <child>.mk
+      | (files)
 
 Command line goals:
   help-${SegUN}   Display this help.
@@ -328,11 +373,11 @@ define ${_macro}
       $(call Signal-Error,Child node $(1) has children -- NOT undeclaring.)
       $(call Attention,Children are: ${$(1).children})
     ,
-      $(call Verbose,Child parent is:${$(1).parent})
-      $(call Verbose,Child parent children are:${${$(1).parent}.children})
+      $(call Verbose,Parent is:${$(1).parent})
+      $(call Verbose,Siblings are:${${$(1).parent}.children})
       $(eval ${$(1).parent}.children := \
         $(filter-out $(1),${${$(1).parent}.children}))
-      $(call Verbose,Child parent children are now:${${$(1).parent}.children})
+      $(call Verbose,Siblings are now:${${$(1).parent}.children})
       $(foreach _a,${node_attributes},
         $(eval undefine $(1).${_a})
       )
@@ -344,7 +389,7 @@ define ${_macro}
   $(call Exit-Macro)
 endef
 
-_macro := undeclare-descendants
+_macro := undeclare-node-descendants
 define _help
 ${_macro}
   Undeclare all of the children of a node. If the children have children then
@@ -360,7 +405,7 @@ define ${_macro}
   $(if $(call node-is-declared,$(1)),
     $(foreach _child,${$(1).children},
       $(if ${${_child}.children},
-        $(call undeclare-descendants,${_child}))
+        $(call undeclare-node-descendants,${_child}))
       $(call undeclare-child-node,${_child})
     )
   ,

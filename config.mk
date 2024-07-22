@@ -321,6 +321,7 @@ are sub-directories of the ModFW directory.
             containing kit repo.
             >-<kit>.<mod> (see help-mods)
               | <mod>.mk
+              | .gitignore
               | Mod defined files.
               >-<kit>.<mod>.$${BUILD_NODE}
                 | Mod build files.

@@ -211,7 +211,7 @@ define ${.TestUN}
 
   $(call verify-repo-not-declared,${_rn})
 
-  $(call Test-Info,Checking undeclared node.)
+  $(call Mark-Step,Checking undeclared node.)
   $(call Expect-Error,The node for repo ${_rn} has not been declared.)
   $(call declare-repo,${_rn})
   $(call Verify-Error)
@@ -219,7 +219,7 @@ define ${.TestUN}
 
   $(call declare-root-node,${_rn},${TESTING_PATH})
 
-  $(call Test-Info,Checking the default URL.)
+  $(call Mark-Step,Checking the default URL.)
   $(call Expect-No-Error)
   $(call declare-repo,${_rn})
   $(call Verify-No-Error)
@@ -230,7 +230,7 @@ define ${.TestUN}
     ${_rn}.repo_branch:${DEFAULT_BRANCH} \
     )
 
-  $(call Test-Info,Verify repo can be undeclared.)
+  $(call Mark-Step,Verify repo can be undeclared.)
   $(call Expect-No-Error)
   $(call undeclare-repo,${_rn})
   $(call Verify-No-Error)
@@ -239,7 +239,7 @@ define ${.TestUN}
   $(eval ${_rn}.URL := test_url)
   $(eval ${_rn}.BRANCH := test)
 
-  $(call Test-Info,Verify repo can be declared using the defaults.)
+  $(call Mark-Step,Verify repo can be declared using the defaults.)
   $(call Expect-No-Error)
   $(call declare-repo,${_rn},${${_rn}.URL},${${_rn}.BRANCH})
   $(call Verify-No-Error)
@@ -263,12 +263,12 @@ define ${.TestUN}
   $(call Verify-No-Error)
   $(call verify-repo-not-declared,${_rn})
 
-  $(call Test-Info,Verify repo cannot be undeclared when it is not declared.)
+  $(call Mark-Step,Verify repo cannot be undeclared when it is not declared.)
   $(call Expect-Error,Repo ${_rn} has not been declared.)
   $(call undeclare-repo,${_rn})
   $(call Verify-Error)
 
-  $(call Test-Info,Verify repo can be declared with a specified branch.)
+  $(call Mark-Step,Verify repo can be declared with a specified branch.)
 
   $(call Expect-No-Error)
   $(call declare-repo,${_rn},${${_rn}.URL},${${_rn}.BRANCH})
@@ -310,13 +310,13 @@ define ${.TestUN}
   $(eval _rn := $(0).ner)
   $(call declare-root-node,${_rn},${TESTING_PATH})
 
-  $(call Test-Info,Testing repo has not been declared.)
+  $(call Mark-Step,Testing repo has not been declared.)
   $(call verify-repo-not-declared,${_rn})
 
   $(call mk-node,${_rn})
   $(call declare-repo,${_rn})
 
-  $(call Test-Info,Testing repo does not exist.)
+  $(call Mark-Step,Testing repo does not exist.)
   $(call verify-repo-does-not-exist,${_rn})
 
   $(call rm-node,${_rn})
@@ -345,13 +345,13 @@ define ${.TestUN}
   $(eval ${_rn}.URL := test)
   $(eval ${_rn}.BRANCH := test)
 
-  $(call Test-Info,Testing repo is not declared.)
+  $(call Mark-Step,Testing repo is not declared.)
   $(call verify-repo-not-declared,${_rn})
 
   $(call Test-Info,Creating test root node.)
   $(call declare-root-node,${_rn},${TESTING_PATH})
 
-  $(call Test-Info,Verify can create repo.)
+  $(call Mark-Step,Verify can create repo.)
   $(call Expect-Error,Repo ${_rn} has not been declared.)
   $(call mk-modfw-repo,${_rn})
   $(call Verify-Error)
@@ -370,7 +370,7 @@ define ${.TestUN}
 
   $(call verify-is-modfw-repo,${_rn})
 
-  $(call Test-Info,Verify the repo can't be created if it already exists.)
+  $(call Mark-Step,Verify the repo can't be created if it already exists.)
   $(call Expect-Error,Repo ${_rn} already exists.)
   $(call mk-modfw-repo,${_rn})
   $(call Verify-Error)
@@ -417,7 +417,7 @@ define ${.TestUN}
   $(eval _cn1 := clnc1)
   $(eval _cn2 := clnc2)
 
-  $(call Test-Info,Testing repo is not declared.)
+  $(call Mark-Step,Testing repo is not declared.)
   $(call verify-repo-not-declared,${_cn1})
 
   $(call Test-Info,Creating root node ${_r1} to contain the test repos.)
@@ -453,7 +453,7 @@ define ${.TestUN}
   $(call Test-Info,Declaring repo ${_cn2} as clone of ${_cn1})
   $(call declare-repo,${_cn2},${${_cn1}.path})
 
-  $(call Test-Info,Cloning local repo ${_cn1} to ${_cn2})
+  $(call Mark-Step,Cloning local repo ${_cn1} to ${_cn2})
   $(call Expect-No-Error)
   $(call clone-repo,${_cn2})
   $(call Verify-No-Error)
@@ -509,13 +509,13 @@ define ${.TestUN}
   $(call declare-root-node,${_rn},${TESTING_PATH})
   $(call mk-node,${_rn})
 
-  $(call Test-Info,Testing repo is not declared.)
+  $(call Mark-Step,Testing repo is not declared.)
   $(call verify-repo-not-declared,${_cn1})
 
   $(call declare-child-node,${_cn1},${_rn})
   $(call mk-node,${_cn1})
 
-  $(call Test-Info,Testing template is not a repo.)
+  $(call Mark-Step,Testing template is not a repo.)
   $(call Expect-Error,Template node ${_cn1} is not a repo.)
   $(call mk-repo-from-template,${_cn2},${_cn1})
   $(call Verify-Error)
@@ -527,19 +527,19 @@ define ${.TestUN}
   $(call declare-child-node,${_cn2},${_rn})
   $(call declare-repo,${_cn2})
 
-  $(call Test-Info,Using ${_cn1} as template for ${_cn2})
+  $(call Mark-Step,Using ${_cn1} as template for ${_cn2})
   $(call Expect-No-Error)
   $(call mk-repo-from-template,${_cn2},${_cn1})
   $(call Verify-No-Error)
   $(call verify-repo-exists,${_cn2})
   $(call verify-is-modfw-repo,${_cn2})
 
-  $(call Test-Info,Check the errors if the new repo node exists.)
+  $(call Mark-Step,Check the errors if the new repo node exists.)
   $(call Expect-Error,The repo node ${_cn2} already exists -- not cloning.)
   $(call mk-repo-from-template,${_cn2},${_cn1})
   $(call Verify-Error)
 
-  $(call Test-Info,Verify template repo errors.)
+  $(call Mark-Step,Verify template repo errors.)
   $(call rm-node,${_cn2})
   $(if $(wildcard ${${_cn1}.seg_f}),
     $(call PASS,The segment file for ${_cn1} exists -- removing.)
@@ -592,7 +592,7 @@ define ${.TestUN}
   $(eval _r1 := urr1)
   $(eval _r2 := urr2)
 
-  $(call Test-Info,Checking undeclared repo.)
+  $(call Mark-Step,Checking undeclared repo.)
   $(call Expect-Error,The repo ${_r2} has not been declared.)
   $(call install-repo,${_r2})
   $(call Verify-Error)
@@ -600,7 +600,7 @@ define ${.TestUN}
   $(call declare-root-node,${_r2},${TESTING_PATH})
   $(call declare-repo,${_r2},bogus)
 
-  $(call Test-Info,Checking cannot use a root node.)
+  $(call Mark-Step,Checking cannot use a root node.)
   $(call Expect-Error,Repo ${_r2} is not a child node.)
   $(call install-repo,${_r2})
   $(call Verify-Error)
@@ -612,7 +612,7 @@ define ${.TestUN}
   $(call declare-child-node,${_r2},${_pn})
   $(call declare-repo,${_r2},null)
 
-  $(call Test-Info,Checking parent does not exist.)
+  $(call Mark-Step,Checking parent does not exist.)
   $(call Expect-Error,Parent node for repo ${_r2} does not exist.)
   $(call install-repo,${_r2})
   $(call Verify-Error)
@@ -632,7 +632,7 @@ define ${.TestUN}
 
   $(call mk-node,${_r2})
 
-  $(call Test-Info,Checking node name conflict.)
+  $(call Mark-Step,Checking node name conflict.)
   $(call Expect-Error,A node having the repo name ${_r2} already exists.)
   $(call install-repo,${_r2})
   $(call Verify-Error)
@@ -640,16 +640,16 @@ define ${.TestUN}
 
   $(call rm-node,${_r2})
 
-  $(call Test-Info,Checking all conditions are correct.)
+  $(call Mark-Step,Checking all conditions are correct.)
   $(call Expect-No-Error)
   $(call install-repo,${_r2})
   $(call Verify-No-Error)
   $(call verify-repo-exists,${_r2})
 
-  $(call Test-Info,Checking cannot install a second time.)
-  $(call Expect-Warning,Repo ${_r2} already exists -- not installing.)
+  $(call Mark-Step,Checking cannot install a second time.)
+  $(call Expect-Message,Repo ${_r2} already exists -- not installing.)
   $(call install-repo,${_r2})
-  $(call Verify-Warning)
+  $(call Verify-Message)
 
   $(call Test-Info,Test teardown.)
   $(call undeclare-repo,${_r2})
@@ -698,7 +698,7 @@ define ${.TestUN}
 
   $(eval _b := testbranch)
 
-  $(call Test-Info,Verifying error messages when repo has not been declared.)
+  $(call Mark-Step,Verifying error messages when repo has not been declared.)
   $(foreach _m,${_bms},
     $(call Expect-Error,Repo ${_cn} has not been declared.)
     $(call ${_m},${_cn},${_b})
@@ -707,7 +707,7 @@ define ${.TestUN}
 
   $(call declare-repo,${_cn})
 
-  $(call Test-Info,Verifying error messages when repo does not exist.)
+  $(call Mark-Step,Verifying error messages when repo does not exist.)
   $(foreach _m,${_bms},
     $(call Expect-Error,${_cn} is NOT a repo.)
     $(call ${_m},${_cn},${_b})
@@ -717,7 +717,7 @@ define ${.TestUN}
   $(call mk-node,${_cn})
   $(call mk-modfw-repo,${_cn})
 
-  $(call Test-Info,Verifying:repo-branch-exists.)
+  $(call Mark-Step,Verifying:repo-branch-exists.)
   $(eval _bl := $(call branches,${_cn}))
   $(call Test-Info,Branch list is: ${_bl})
   $(if $(call repo-branch-exists,${_cn},${DEFAULT_BRANCH}),
@@ -736,7 +736,7 @@ define ${.TestUN}
   $(call switch-branch,${_cn},${_b})
   $(call Verify-Error)
 
-  $(call Test-Info,Verifying:mk-branch)
+  $(call Mark-Step,Verifying:mk-branch)
   $(call mk-branch,${_cn},${_b})
   $(eval _bl := $(call branches,${_cn}))
   $(call Test-Info,Branch list is: ${_bl})
@@ -753,7 +753,7 @@ define ${.TestUN}
   $(eval _ab := $(call get-active-branch,${_cn}))
   $(call Test-Info,Active branch is: ${_ab})
 
-  $(call Test-Info,Verifying:switch-branch)
+  $(call Mark-Step,Verifying:switch-branch)
   $(call Expect-No-Error)
   $(call switch-branch,${_cn},$(DEFAULT_BRANCH))
   $(call Verify-No-Error)
@@ -761,7 +761,7 @@ define ${.TestUN}
   $(eval _ab := $(call get-active-branch,${_cn}))
   $(call Test-Info,Active branch is: ${_ab})
 
-  $(call Test-Info,Verifying:rm-branch)
+  $(call Mark-Step,Verifying:rm-branch)
   $(call Expect-No-Error)
   $(call rm-branch,${_cn},${_b})
   $(eval _bl := $(call branches,${_cn}))
@@ -773,7 +773,7 @@ define ${.TestUN}
     $(call PASS,Branch ${_b} does not exist.)
   )
 
-  $(call Test-Info,Verify cannot delete previously deleted branch.)
+  $(call Mark-Step,Verify cannot delete previously deleted branch.)
   $(call Expect-Error,Repo ${_cn} does not contain branch ${_b}.)
   $(call rm-branch,${_cn},${_b})
   $(call Verify-Error)

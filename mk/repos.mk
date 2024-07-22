@@ -734,7 +734,7 @@ $(call Enter-Macro,$(0),repo=$(1))
 
 $(if $(call repo-is-declared,$(1)),
   $(if $(call repo-exists,$(1)),
-    $(call Warn,Repo $(1) already exists -- not installing.)
+    $(call Attention,Repo $(1) already exists -- not installing.)
   ,
     $(if $(call node-exists,$(1)),
       $(call Signal-Error,A node having the repo name $(1) already exists.)

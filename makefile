@@ -102,20 +102,8 @@ Definitions:
   comp: A ModFW component. A component can be a mod, kit, or project. All
   ModFW components contain at minimum a makefile segment having the same name.
 
-  tree: ModFW uses a tree structure to organize components needed to assemble
-  deliverables. This structure is similar to a classic tree structure as
-  described here: https://en.wikipedia.org/wiki/Tree_(data_structure)
-
-  node: A node for related files. A node is implemented as a directory
-  in the file system. A node can be contained in another node (parent).
-  Conversely, a node can contain other nodes (children). Semantically, a node serves to differentiate directories which are part of the ModFW structure apart from unrelated directories. A node must at minimum contain a makefile segment (seg) having the same name as the node itself. See help-nodes for
-  more information.
-
-  root node: A root node has no parent but has children. The ModFW directory is
-  a root node. Typically the project and kit directories are children of the
-  ModFW node but can exist in other locations making them root nodes as well.
-
-  forest: A number of unconnected trees.
+  node: A data structure which describes a ModFW related directory. Nodes are
+  organized into a tree structure. See help-nodes for more information.
 
   repo: A node which is also a clone of a git repository.
 
@@ -422,7 +410,7 @@ define ${_macro}
   $(call Enter-Macro,$(0))
 
   $(call Add-Segment-Path,${MK_NODE})
-  $(call Use-Segment,nodes)
+  $(call Use-Segment,projects)
 
   $(call declare-root-node,${ModFW_node},${ModFW_path})
 
@@ -438,12 +426,11 @@ define ${_macro}
   $(call Exit-Macro)
 endef
 
-$(call init-modfw)
 
   ifeq (${PROJECT},)
     $(call Signal-Error,PROJECT must be defined.)
   else
-    $(call Use-Segment,projects)
+    $(call init-modfw)
 
     $(call use-project,${PROJECT})
     endif # PROJECT defined

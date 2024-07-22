@@ -73,15 +73,19 @@ $(foreach _v,PROJECTS_NODE kit_project_node KITS_NODE,
   )
 )
 
+$(call declare-root-node,${PROJECTS_NODE},${TESTING_PATH})
+$(call declare-child-node,${kit_project_node},${PROJECTS_NODE})
+$(call declare-child-node,${KITS_NODE},${kit_project_node})
+
 $(if $(call node-exists,${kit_project_node}),
   $(call FAIL,The node ${kit_project_node} should NOT exist.)
 ,
   $(call PASS,The node ${kit_project_node} does not exist.)
 )
 
-$(call declare-root-node,${PROJECTS_NODE},${TESTING_PATH})
-$(call declare-child-node,${kit_project_node},${PROJECTS_NODE})
-$(call declare-child-node,${KITS_NODE},${kit_project_node})
+$(if ${.Failed},
+  $(call FAIL,Prerequisites for a kit test are not correct.,exit)
+)
 
 $(call Exit-Macro)
 endef
@@ -234,7 +238,7 @@ define ${.TestUN}
   $(if ${.Failed},
     $(call Signal-Error,Setup for ${.TestUN} failed.,exit)
   ,
-    $(call Test-Info,Verifying kit required variables.)
+    $(call Mark-Step,Verifying kit required variables.)
     $(call Expect-Error,\
               Undefined variables:${_kit}.URL ${_kit}.BRANCH)
     $(call declare-kit,${_kit})
@@ -243,7 +247,7 @@ define ${.TestUN}
     $(eval ${_kit}.URL := local)
     $(eval ${_kit}.BRANCH := main)
 
-    $(call Test-Info,Verifying kit is not declared.)
+    $(call Mark-Step,Verifying kit is not declared.)
     $(call Expect-Error,\
       Parent node foobar for kit ${_kit} is not declared.)
     $(call declare-kit,${_kit},foobar)
@@ -251,7 +255,7 @@ define ${.TestUN}
     $(call verify-kit-attributes,${_kit})
     $(call verify-kit-nodes,${_kit})
 
-    $(call Test-Info,Verifying kit node already declared.)
+    $(call Mark-Step,Verifying kit node already declared.)
     $(call declare-child-node,${_kit},${KITS_NODE})
 
     $(call Expect-Error,\
@@ -273,7 +277,7 @@ define ${.TestUN}
     $(call undeclare-repo,${_kit})
     $(call undeclare-child-node,${_kit})
 
-    $(call Test-Info,Verifying kit can be declared.)
+    $(call Mark-Step,Verifying kit can be declared.)
     $(call Expect-No-Error)
     $(call declare-kit,${_kit},${KITS_NODE})
     $(call Verify-No-Error)
@@ -282,12 +286,12 @@ define ${.TestUN}
     $(call verify-kit-nodes,${_kit})
 
     $(call Expect-No-Error)
-    $(call Expect-Warning,Kit ${_kit} has already been declared.)
+    $(call Expect-Message,Kit ${_kit} has already been declared.)
     $(call declare-kit,${_kit},${KITS_NODE})
-    $(call Verify-Warning)
+    $(call Verify-Message)
     $(call Verify-No-Error)
 
-    $(call Test-Info,Verifying undeclaring the test kit.)
+    $(call Mark-Step,Verifying undeclaring the test kit.)
     $(call Expect-No-Error)
     $(call undeclare-kit,${_kit})
     $(call Verify-No-Error)
@@ -298,7 +302,7 @@ define ${.TestUN}
     $(call undeclare-kit,${_kit})
     $(call Verify-Error)
 
-    $(call Test-Info,Verifying can redeclare the same kit.)
+    $(call Mark-Step,Verifying can redeclare the same kit.)
     $(call Expect-No-Error)
     $(call declare-kit,${_kit},${KITS_NODE})
     $(call Verify-No-Error)
@@ -309,7 +313,7 @@ define ${.TestUN}
     )
     $(call undeclare-child-node,${_kit})
 
-    $(call Test-Info,Verifying can't undeclare a broken kit.)
+    $(call Mark-Step,Verifying can't undeclare a broken kit.)
     $(call Expect-Error,Kit ${_kit} does not have a declared node.)
     $(call undeclare-kit,${_kit})
     $(call Verify-Error)
@@ -366,7 +370,7 @@ define ${.TestUN}
     $(eval ${_kit}.URL := local)
     $(eval ${_kit}.BRANCH := main)
 
-    $(call Test-Info,Verifying kit can be created.)
+    $(call Mark-Step,Verifying kit can be created.)
     $(call Expect-No-Error)
     $(call mk-kit,${_kit})
     $(call Verify-No-Error)
@@ -382,12 +386,12 @@ define ${.TestUN}
     $(call verify-kit-attributes,${_kit},defined)
     $(call verify-kit-nodes,${_kit})
 
-    $(call Test-Info,Verifying kit can't be created more than once.)
-    $(call Expect-Warning,Kit ${_kit} has already been declared.)
+    $(call Mark-Step,Verifying kit can't be created more than once.)
+    $(call Expect-Message,Kit ${_kit} has already been declared.)
     $(call Expect-Error,Kit ${_kit} node already exists.)
     $(call mk-kit,${_kit})
     $(call Verify-Error)
-    $(call Verify-Warning)
+    $(call Verify-Message)
 
     $(call Test-Info,Teardown.)
     $(eval undefine ${_kit}.URL)

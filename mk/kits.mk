@@ -14,8 +14,7 @@ Make segment: ${Seg}.mk
 
 A kit is a collection of mods. Each kit is expected to be maintained as a
 separate git repository. The kit repository can either be local or a clone
-of a remote repository. If a kit repository does not exist then one is either
-cloned or created when the "mk-kit" goal is used.
+of a remote repository.
 
 The kit specific sticky variables are stored in the active project.
 
@@ -72,7 +71,7 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := kit_attributes
-${_var} := goals build_path staging_path mods_path
+${_var} := goals mods_path build_path staging_path
 define _help
 ${_var}
   A kit is a ModFW repo and extends a repo with the additional attributes.
@@ -80,14 +79,16 @@ ${_var}
   Attributes:
   <kit>.goals
     The list of goals for the kit.
+  <kit>.mods
+    The list of declared mods in the kit.
+  <kit>.mods_path
+    Where mods are stored within the kit.
   <kit>.build_path
     The path to the kit build directory. The build directory is where
     intermediate files are stored.
   <kit>.staging_path
     The path to the kit staging directory. The staging directory is where
     the kit deliverables are stored.
-  <kit>.mods_path
-    Where mods are stored within the kit.
 
   The repo attributes are:
 ${help-repo_attributes}
@@ -109,13 +110,24 @@ ${_macro} = $(if $(filter $(1),${kits}),1)
 _macro := kit-exists
 define _help
 ${_macro}
-  This returns a non-empty value if a node contains a ModFW repo.
+  This returns a non-empty value if a kit node contains a ModFW repo.
   Parameters:
     1 = The name of a previously declared kit.
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 ${_macro} = $(call is-modfw-repo,$(1))
+
+_macro := kit-has-declared-mods
+define _help
+${_macro}
+  This returns a non-empty value if the kit has declared mods.
+  Parameters:
+    1 = The name of a previously declared kit.
+endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
+${_macro} = $(if ${$(1).mods},1)
 
 _macro := is-modfw-kit
 define _help
@@ -167,7 +179,7 @@ $(call Add-Help,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),kit=$(1) parent=$(2))
 $(if $(call kit-is-declared,$(1)),
-  $(call Warn,Kit $(1) has already been declared.)
+  $(call Attention,Kit $(1) has already been declared.)
 ,
   $(if $(call repo-is-declared,$(1)),
     $(call Signal-Error,\
@@ -191,9 +203,9 @@ $(if $(call kit-is-declared,$(1)),
             $(call declare-child-node,$(1).${${_node}},$(1))
           )
           $(eval $(1).goals :=)
+          $(eval $(1).mods_path := ${$(1).${MODS_NODE}.path})
           $(eval $(1).build_path := ${$(1).${BUILD_NODE}.path})
           $(eval $(1).staging_path := ${$(1).${STAGING_NODE}.path})
-          $(eval $(1).mods_path := ${$(1).${MODS_NODE}.path})
           $(eval kits += $(1))
         ,
           $(call Signal-Error,\
@@ -242,6 +254,56 @@ $(if $(call kit-is-declared,$(1)),
   )
 ,
   $(call Signal-Error,The kit $(1) has not been declared.)
+)
+$(call Exit-Macro)
+endef
+
+_macro := list-declared-mod
+define _help
+${_macro}
+  Add a mod to a kit declared mod list.
+  Parameters:
+    1 = The kit.mod reference for the mod (name of the mod's node).
+    2 = The kit containing the mod.
+endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
+define ${_macro}
+$(call Enter-Macro,$(0),mod=$(1) kit=$(2))
+$(if kit-is-declared,$(2),
+  $(if node-is-declared,$(1),
+    $(eval $(2).mods += $(1))
+  ,
+    $(call Signal-Error,The node for mod $(1) has not been declared.)
+  )
+,
+  $(call Signal-Error,Kit $(2) has not been declared.)
+)
+$(call Exit-Macro)
+endef
+
+_macro := unlist-declared-mod
+define _help
+${_macro}
+  Remove a mod from a kit declared mod list.
+  Parameters:
+    1 = The kit.mod reference for the mod (name of the mod's node).
+    2 = The kit containing the mod.
+endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
+define ${_macro}
+$(call Enter-Macro,$(0),mod=$(1) kit=$(2))
+$(if kit-is-declared,$(2),
+  $(call Verbose,Kit $(2) is declared.)
+  $(if node-is-declared,$(1),
+    $(call Verbose,Mod $(1) node is declared.)
+    $(eval $(2).mods := $(filter-out $(1),${$(2).mods}))
+  ,
+    $(call Signal-Error,The node for mod $(1) has not been declared.)
+  )
+,
+  $(call Signal-Error,Kit $(2) has not been declared.)
 )
 $(call Exit-Macro)
 endef

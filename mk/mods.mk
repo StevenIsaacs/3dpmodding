@@ -16,12 +16,20 @@ A mod defines all of the tools and build procedures for a specific component.
 Mods are always contained within a kit and are not available until the
 containing kit has either been installed or created.
 
-A mod is referenced using the kit name and the mod in a dotted notation making
-it possible for more than one kit to contain mods of the same name.
+A mod is referenced using the kit name and the mod in a dot notation making
+it possible for more than one kit to contain mods having the same name. A mod
+reference is shown in the following sections as <kit>.<mod>. This is consistent
+with a path since a mod directory is a subdirectory of a kit.
 e.g. samplekit.samplemod references the kit samplekit and the mod samplemod.
 
-If a mod is referenced but its kit has not been installed then the kit is
-installed.
+NOTE: The <kit>.<mod> reference should be equal to $${<kit>.<mod>.SegUN} after loading the mod segment file which can be used as a sanity check.
+
+WARNING: Because of a mod reference being a dot notation, kit and mod names
+cannot contain dots. e.g. sample.kit.sample.mod will cause unpredictable
+results.
+
+If a mod is referenced but the kit containing the mod has not been installed
+then the kit is installed.
 
 All mods are child nodes of the containing kit node.
 
@@ -47,12 +55,22 @@ ${_var}
   The list of declared mods.
 endef
 
-_var := mod_node_names
+_var := mod_ignored_nodes
 ${_var} := BUILD_NODE STAGING_NODE
 define _help
 ${_var}
+  These nodes are not part of the git repository and therefore are ignored using
+  .gitignore.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+
+_var := mod_node_names
+${_var} := ${mod_ignored_nodes}
+define _help
+${_var}
   A mod is always contained within a kit which contains a number of mods. A kit
-  also defines context for the mods withing a kit.
+  also defines context for the mods within a kit.
 
   Mod node names:
   <kit>.<mod>.$${BUILD_NODE} (default = ${BUILD_NODE})
@@ -66,18 +84,20 @@ endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
-_var := mod_attributes ${node_attributes}
-${_var} := seg_f
+_var := mod_attributes
+${_var} := goals kit mod seg_f
 define _help
 ${_var}
   A mod is basically a tree node and has the same attributes as the node.
 
   Additional attributes:
+  <kit>.<mod>.goals
+    The list of goals for the mod.
   <kit>.<mod>.kit
-    The name of the kit containing the mod. This is also equal to the name
+    The kit name portion of the mod reference. This is also equal to the name
     of the mod parent node.
   <kit>.<mod>.mod
-    The name of the mod.
+    The mod name portion of the mod reference.
   <kit>.<mod>.seg_f
     The path and file name of the makefile segment for the mod.
 
@@ -87,6 +107,32 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 $(call Add-Help-Section,mod-ref-macros,Macros for referencing mods.)
+
+_macro := is-valid-mod-reference
+define _help
+${_macro}
+  Returns a non-empty value if a mod reference is valid.
+  Parameters:
+    1 = <kit>.<mod> reference.
+endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
+define ${_macro}
+$(strip
+  $(call Enter-Macro,$(0),kit.mod=$(1))
+  $(if $(word 3,$(subst ., ,$(1))),
+    $(call Verbose,Reference $(1) is NOT a valid mod reference.)
+  ,
+    $(if $(word 2,$(subst ., ,$(1))),
+      $(call Verbose,Reference $(1) is a valid mod reference.)
+      yes
+    ,
+      $(call Verbose,Reference $(1) is NOT a valid mod reference.)
+    )
+  )
+  $(call Exit-Macro)
+)
+endef
 
 _macro := kit-name
 define _help
@@ -119,7 +165,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
-${_macro} = ${${$(word 1,$(subst ., ,$(1)))}.path}
+${_macro} = ${${$(1).kit}.path}
 
 _macro := mod-path
 define _help
@@ -130,7 +176,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
-${_macro} = ${${$(word 2,$(subst ., ,$(1)))}.path}
+${_macro} = ${$(1).path}
 
 $(call Add-Help-Section,mod-ifs,Macros for checking mod status.)
 
@@ -146,14 +192,14 @@ ${_macro} = $(if $(filter $(1),${mods}),1)
 _macro := mod-exists
 define _help
 ${_macro}
-  This returns a non-empty value if a node contains a ModFW repo.
+  This returns a non-empty value if a node contains a makefile segment.
   Parameters:
     1 = The name of a previously declared mod. This should be a <kit>.<mod>
         reference.
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
-${_macro} = $(wildcard ${$(1).seg_f})
+${_macro} = $(call node-exists,$(1))
 
 _macro := is-modfw-mod
 define _help
@@ -171,12 +217,14 @@ $(call Add-Help,${_macro})
 define ${_macro}
 $(strip
   $(call Enter-Macro,$(0),kit.mod=$(1))
-  $(if $(call is-modfw-repo,$(1)),
-    $(call Run,grep $(1) ${$(1).seg_f})
+  $(if $(wildcard ${$(1).seg_f}),
+    $(call Run,grep ${$(1).mod} ${$(1).seg_f})
     $(if ${Run_Rc},
       $(call Verbose,grep returned:${Run_Rc})
     ,
-      $(if $(wildcard ${(1).path}/.gitignore),
+      $(call Verbose,Checking:${$(1).path}/.gitignore)
+      $(if $(wildcard ${$(1).path}/.gitignore),
+        $(call Verbose,File exists:${$(1).path}/.gitignore)
         1
       )
     )
@@ -191,70 +239,172 @@ _macro := declare-mod
 define _help
 ${_macro}
   Define the attributes of a mod. A mod must be declared before any other mod
-  related macros can be used. If the kit containing the mod has not been
-  declared it is automatically declared.
+  related macros can be used. The containing kit is also declared.
   Parameters:
     1 = The <kit>.<mod> reference to the mod.
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),kit.mod=$(1))
+$(call Enter-Macro,$(0),kit.mod=$(1) KITS_NODE=${KITS_NODE})
+
 $(if $(call mod-is-declared,$(1)),
-  $(call Verbose,Mod $(1) has already been declared.)
+  $(call Attention,Mod $(1) has already been declared.)
 ,
-  $(if node-is-declared,$(1),
-    $(call Signal-Error,\
-      A node having the mod name $(1) has already been declared.)
-  ,
-    $(eval _k := kit-name,$(1))
-    $(eval _m := mod-name,$(1))
-    $(call declare-kit,${_k})
-    $(if $(call kit-is-declared,${_k}),
-      $(call Verbose,Declaring mod $(1).)
-      $(eval $(1).kit := ${_k})
-      $(eval $(1).mod := ${_m})
-      $(call declare-child-node,$(1),${_k},${_m})
-      $(foreach _node,${mod_node_names},
-        $(call declare-child-node,$(1).${${_node}},${_k}.${_node},${_m})
-      )
-      $(eval $(1).seg_f := ${${_k}.path}/${_m}.mk)
-      $(eval mods += $(1))
+  $(eval _valid := $(call is-valid-mod-reference,$(1)))
+  $(if ${_valid},
+    $(if $(call node-is-declared,$(1)),
+      $(call Signal-Error,\
+        A node having the mod name $(1) has already been declared.)
     ,
-      $(call Signal-Error,Declaration of kit ${_k} failed.)
+      $(eval _k := $(call kit-name,$(1)))
+      $(eval _m := $(call mod-name,$(1)))
+      $(if $(call kit-is-declared,${_k}),
+        $(call Verbose,Using previously declared kit ${_k})
+      ,
+        $(call declare-kit,${_k},${KITS_NODE})
+      )
+      $(if ${Errors},
+        $(call Signal-Error,Declaration of kit ${_k} failed.)
+      ,
+        $(call Verbose,Declaring mod $(1).)
+        $(eval $(1).kit := ${_k})
+        $(eval $(1).mod := ${_m})
+        $(call declare-child-node,$(1),${_k},${_m})
+        $(foreach _node,${mod_node_names},
+          $(call declare-child-node,$(1).${${_node}},$(1),${${_node}})
+        )
+        $(eval $(1).goals := )
+        $(eval $(1).seg_f := ${$(1).path}/${_m}.mk)
+        $(call list-declared-mod,$(1),$($(1).kit))
+        $(eval mods += $(1))
+      )
     )
+  ,
+    $(call Signal-Error,Mod $(1) is NOT a valid mod reference.)
   )
+)
+
+$(call Exit-Macro)
+endef
+
+_macro := undeclare-mod
+define _help
+  Remove a mod declaration. If undeclaring the mod results in the containing
+  kit no longer having any declared mods then the kit is also undeclared.
+  Parameters:
+    1 = The name of the mod.
+endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
+define ${_macro}
+$(call Enter-Macro,$(0),mod=$(1))
+
+$(if $(call mod-is-declared,$(1)),
+  $(if $(call node-is-declared,$(1)),
+    $(if $(call is-a-child-node,$(1)),
+      $(if $(call kit-is-declared,${$(1).kit}),
+        $(call undeclare-node-descendants,$(1))
+        $(eval mods := $(filter-out $(1),${mods}))
+        $(call undeclare-child-node,$(1))
+        $(call unlist-declared-mod,$(1),${$(1).kit})
+        $(if $(call kit-has-declared-mods,${$(1).kit}),
+          $(call Verbose,Kit ${$(1).kit} still has declared mods.)
+        ,
+          $(call Verbose,Undeclaring kit ${$(1).kit})
+          $(call undeclare-kit,${$(1).kit})
+        )
+        $(foreach _att,${mod_attributes},
+          $(eval undefine $(1).${_att})
+        )
+      ,
+        $(call Signal-Error,Kit ${$(1).kit} is NOT declared.)
+      )
+    ,
+      $(call Signal-Error,Mod $(1) is not a child node.)
+    )
+  ,
+    $(call Signal-Error,Mod $(1) does not have a declared node.)
+  )
+,
+  $(call Signal-Error,The mod $(1) has not been declared.)
 )
 $(call Exit-Macro)
 endef
 
 $(call Add-Help-Section,mod-install,Macros for installing or creating mods.)
 
-_macro := install-mod
+_macro := display-mod
 define _help
 ${_macro}
-  Declare and install a mod if necessary.
-
+  Display the attributes of a declared mod.
   Parameters:
-    1 = The <kit>.<mod> name of the mod to install.
+    1 = The name of the mod.
+endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
+define ${_macro}
+$(call Enter-Macro,$(0),mod=$(1))
+$(if $(call mod-is-declared,$(1)),
+  $(call Display-Vars,\
+    $(foreach _a,${mod_attributes},$(1).${_a}) \
+    $(foreach _a,${mod_node_names},$(1).${_a})
+  )
+  $(foreach _n,${mod_node_names},
+    $(if $(call node-exists,${_n}),
+      $(call Info,Mod node ${_n} exists.)
+    ,
+      $(call Info,Mod node ${_n} does NOT exist.)
+    )
+  )
+,
+  $(call Warn,Mod $(1) has not been declared.)
+)
+$(call Exit-Macro)
+endef
+
+_macro := mk-mod
+define _help
+${_macro}
+  Declare and initialize a new mod within a kit. A makefile segment is generated from a template. The dev must then complete the makefile segment before attempting a build. The kit is installed if necessary.
+
+  NOTE: This is designed to be callable from the make command line using the
+  helpers call-<macro> goal.
+  For example:
+    make ${_macro}.PARMS=<kit>.<mod> call-${_macro}
+  Parameters:
+    1 = The <kit>.<mod> name of the new mod.
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),kit.mod=$(1))
+
 $(call declare-mod,$(1))
 $(if ${Errors},
-  $(call Signal-Error,An error occurred when declaring mod $(1))
+  $(call Attention,An error occurred when declaring mod $(1).)
 ,
   $(call install-kit,${$(1).kit})
   $(if ${Errors},
+    $(call Attention,An error occurred when installing kit ${$(1).kit})
   ,
-    $(if $(call is-modfw-mod,$(1)),
+    $(if $(call is-modfw-kit,${$(1).kit}),
+      $(if $(call node-exists,$(1)),
+        $(call Signal-Error,A node $(1) already exists.)
+      ,
+        $(call mk-node,$(1))
+        $(call Gen-Segment-File,${$(1).mod},${$(1).seg_f},\
+          <Mod:${$(1).mod} edit this description>)
+        $(call add-file-to-repo,${$(1).kit},$(1).seg_f)
+        $(file >${$(1).path}/.gitignore,$(call gen-mod-gitignore,$(1)))
+        $(call add-file-to-repo,${$(1).kit},.gitignore)
+      )
     ,
-      $(call Signal-Error,Mod $(1) is not a ModFW style mod.)
+      $(call Signal-Error,Kit ${_k} is not a ModFW style repo.)
     )
   )
 )
+
 $(call Exit-Macro)
 endef
 
@@ -281,66 +431,42 @@ help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),kit.mod=$(1) template=$(2))
-$(call install-mod,$(2))
+
+$(call declare-mod,$(2))
 $(if ${Errors},
+  $(call Attention,An error occurred when declaring template mod $(2))
 ,
   $(call declare-mod,$(1))
   $(if ${Errors},
+    $(call Attention,An error occurred when declaring mod $(1))
   ,
-    $(call install-kit,${$(1).kit})
+    $(call install-kit,${$(2).kit})
     $(if ${Errors},
+      $(call Attention,An error occurred when installing kit ${$(2).kit})
     ,
-      $(if $(call mod-exists,$(1)),
-        $(call Info,Mod $(1) already exists.)
-      ,
-        $(call Run,cp -r ${$(2).path},${$(1).path})
-        $(if ${Run_Rc},
-          $(call Signal-Error,\
-            Copying template kit ${_kt} to the new kit ${_k} failed.)
+      $(if $(call mod-exists,$(2)),
+        $(call install-kit,${$(1).kit})
+        $(if ${Errors},
+          $(call Attention,An error occurred when installing kit ${$(1).kit})
         ,
-          $(call Derive-Segment-File,\
-            ${$(2).mod},${$(2).seg_f},${$(1).mod},${$(1).seg_f})
+          $(if $(call mod-exists,$(1)),
+            $(call Info,Mod $(1) already exists.)
+          ,
+            $(call Info,Basing mod $(1) on mod $(2))
+            $(call Run,cp -r ${$(2).path},${$(1).path})
+            $(if ${Run_Rc},
+              $(call Signal-Error,\
+                Copying template kit ${_kt} to the new kit ${_k} failed.)
+            ,
+              $(call Derive-Segment-File,\
+                ${$(2).mod},${$(2).seg_f},${$(1).mod},${$(1).seg_f})
+              $(call add-file-to-repo,${$(1).kit},.)
+            )
+          )
         )
-      )
-    )
-  )
-)
-$(call Exit-Macro)
-endef
-
-_macro := mk-mod
-define _help
-${_macro}
-  Declare and initialize a new mod within a kit. A makefile segment is generated from a template. The dev must then complete the makefile segment before attempting a build. The kit is installed if necessary.
-
-  NOTE: This is designed to be callable from the make command line using the
-  helpers call-<macro> goal.
-  For example:
-    make ${_macro}.PARMS=<kit>.<mod> call-${_macro}
-  Parameters:
-    1 = The <kit>.<mod> name of the new mod.
-endef
-help-${_macro} := $(call _help)
-$(call Add-Help,${_macro})
-define ${_macro}
-$(call Enter-Macro,$(0),kit.mod=$(1))
-$(call declare-mod,$(1))
-$(if ${Errors},
-,
-  $(call install-kit,${$(1).kit})
-  $(if ${Errors},
-    $(call Signal-Error,An error occurred when installing kit ${$(1).kit})
-  ,
-    $(if $(call is-modfw-kit,${$(1).kit}),
-      $(if $(call node-exists,$(1)),
-        $(call Signal-Error,A node $(1) already exists.)
       ,
-        $(call mk-node,$(1))
-        $(call Gen-Segment-File,${$(1).mod},$(1).seg_f,\
-          <Mod:$(1) edit this description>)
+        $(call Signal-Error,Template mod $(2) does not exist.)
       )
-    ,
-      $(call Signal-Error,Kit ${_k} is not a ModFW style repo.)
     )
   )
 )
@@ -358,6 +484,7 @@ help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),kit.mod=$(1))
+
 $(call declare-mod,$(1))
 $(if ${Errors},
 ,
@@ -367,6 +494,13 @@ $(if ${Errors},
     $(if $(call is-modfw-kit,${$(1).kit}),
       $(call Info,Using mod ${$(1).mod} from kit ${$(1).kit}.)
       $(if $(call is-modfw-mod,$(1)),
+        $(foreach _node,${mod_node_names},
+          $(if $(call node-exists,$(1).${${_node}}),
+            $(call Info,Using existing node $(1).${${_node}})
+          ,
+            $(call mk-node,$(1).${${_node}})
+          )
+        )
         $(call Use-Segment,${$(1).seg_f})
       ,
         $(call Signal-Error,Mod $(1) is not a ModFW style mod.)
@@ -376,6 +510,7 @@ $(if ${Errors},
     )
   )
 )
+
 $(call Exit-Macro)
 endef
 
