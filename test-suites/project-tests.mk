@@ -490,10 +490,10 @@ define ${.TestUN}
 
     $(call mk-node,${PROJECTS_NODE})
 
-    $(call Expect-Error,\
+    $(call Expect-Message,\
       Segment ${_project} has not yet been completed.)
     $(call use-project,${_project})
-    $(call Verify-Error)
+    $(call Verify-Message)
     $(call verify-project-nodes,${_project},exist)
 
     $(if ${${_project}.${_project}.SegID},

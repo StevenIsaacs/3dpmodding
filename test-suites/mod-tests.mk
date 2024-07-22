@@ -508,50 +508,43 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(eval _mod := $(0).mod)
+  $(eval _kit := $(call To-Shell-Var,$(0).test-kit))
+  $(eval _mod := test-mod)
+  $(eval _mod_ref := ${_kit}.${_mod})
   $(call Test-Info,Mod node:${_mod})
 
+  $(eval ${_kit}.URL := local)
+  $(eval ${_kit}.BRANCH := main)
+
   $(call declare-kit-parents)
+  $(call mk-node,${KITS_NODE})
+  $(call mk-kit,${_kit})
+  $(call mk-mod,${_mod_ref})
 
-  $(if ${.Failed},
-    $(call FAIL,Preconditions for ${.TestUN} are not correct.)
+  $(if ${Errors},
+    $(call Signal-Error,Setup for ${.TestUN} failed.,exit)
   ,
-    $(eval ${_mod_ref}.URL := local)
-    $(eval ${_mod_ref}.BRANCH := main)
-
-    $(eval _src_mods := src-mods)
-
-    $(call Test-Info,Creating the source mod repo.)
-    $(call declare-root-node,${_src_mods},${TESTING_PATH})
-    $(call declare-mod,${_mod_ref},${_src_mods})
-    $(call mk-mod,${_mod_ref})
-
-    $(eval ${_mod_ref}.URL := ${${_mod}.path})
-
-    $(call undeclare-mod,${_mod_ref})
-
-    $(call mk-node,${PROJECTS_NODE})
-
-    $(call Expect-Error,\
-      Segment ${_mod_ref} has not yet been completed.)
+    $(call Mark-Step,Verifying mod segment can be loaded and reports error.)
+    $(call Expect-Message,\
+      Segment ${_mod} has not yet been completed.)
     $(call use-mod,${_mod_ref})
-    $(call Verify-Error)
-    $(call verify-mod-nodes,${_mod_ref},exist)
+    $(call Verify-Message)
 
     $(if ${${_mod}.${_mod}.SegID},
       $(call PASS,Make segment for mod ${_mod_ref} was loaded.)
     ,
       $(call FAIL,Make segment for mod ${_mod_ref} was NOT loaded.)
     )
-    $(eval undefine ${_mod_ref}.URL)
-    $(eval undefine ${_mod_ref}.BRANCH)
+    $(call Mark-Step,Verifying mod nodes were created.)
+    $(call verify-mod-nodes,${_mod_ref},exist)
 
-    $(call rm-node,${_src_mods})
+    $(call Test-Info,Teardown.)
+    $(eval undefine ${_kit}.URL)
+    $(eval undefine ${_kit}.BRANCH)
 
     $(call rm-node,${PROJECTS_NODE})
-
     $(call undeclare-mod,${_mod_ref})
-    $(call undeclare-node,${_src_mods})
+    $(call undeclare-kit,${_kit})
     $(call undeclare-kit-parents)
   )
 

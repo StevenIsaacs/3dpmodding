@@ -509,10 +509,10 @@ define ${.TestUN}
 
     $(call mk-node,${KITS_NODE})
 
-    $(call Expect-Error,\
+    $(call Expect-Message,\
       Segment ${_kit} has not yet been completed.)
     $(call use-kit,${_kit})
-    $(call Verify-Error)
+    $(call Verify-Message)
     $(call verify-kit-nodes,${_kit},exist)
 
     $(if ${${_kit}.${_kit}.SegID},
