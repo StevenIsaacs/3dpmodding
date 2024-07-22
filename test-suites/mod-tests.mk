@@ -397,11 +397,11 @@ define ${.TestUN}
     $(eval undefine ${_kit}.URL)
     $(eval undefine ${_kit}.BRANCH)
 
-    $(call rm-node,${PROJECTS_NODE})
     $(call undeclare-mod,${_mod_ref})
     $(call undeclare-kit,${_kit})
-    $(call undeclare-kit-parents)
   )
+  $(call rm-node,${PROJECTS_NODE})
+  $(call undeclare-kit-parents)
 
   $(call End-Test)
   $(call Exit-Macro)
@@ -485,12 +485,13 @@ define ${.TestUN}
     $(eval undefine ${_kit}.URL)
     $(eval undefine ${_kit}.BRANCH)
 
-    $(call rm-node,${PROJECTS_NODE})
     $(call undeclare-mod,${_mod_ref})
     $(call undeclare-mod,${_new_mod_ref})
     $(call undeclare-kit,${_kit})
-    $(call undeclare-kit-parents)
   )
+
+  $(call rm-node,${PROJECTS_NODE})
+  $(call undeclare-kit-parents)
 
   $(call End-Test)
   $(call Exit-Macro)
@@ -542,11 +543,12 @@ define ${.TestUN}
     $(eval undefine ${_kit}.URL)
     $(eval undefine ${_kit}.BRANCH)
 
-    $(call rm-node,${PROJECTS_NODE})
     $(call undeclare-mod,${_mod_ref})
     $(call undeclare-kit,${_kit})
-    $(call undeclare-kit-parents)
   )
+
+  $(call rm-node,${PROJECTS_NODE})
+  $(call undeclare-kit-parents)
 
   $(call End-Test)
   $(call Exit-Macro)

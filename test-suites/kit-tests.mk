@@ -99,8 +99,7 @@ $(call Add-Help,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0))
 
-$(call undeclare-child-node,${KITS_NODE})
-$(call undeclare-child-node,${kit_project_node})
+$(call undeclare-node-descendants,${PROJECTS_NODE})
 $(call undeclare-root-node,${PROJECTS_NODE})
 
 $(call Exit-Macro)
@@ -397,10 +396,10 @@ define ${.TestUN}
     $(eval undefine ${_kit}.URL)
     $(eval undefine ${_kit}.BRANCH)
 
-    $(call rm-node,${PROJECTS_NODE})
     $(call undeclare-kit,${_kit})
-    $(call undeclare-kit-parents)
   )
+  $(call rm-node,${PROJECTS_NODE})
+  $(call undeclare-kit-parents)
 
   $(call End-Test)
   $(call Exit-Macro)
@@ -434,6 +433,7 @@ define ${.TestUN}
     $(eval ${_new_kit}.URL := local)
     $(eval ${_new_kit}.BRANCH := main)
 
+    $(call Mark-Step,Verifying template kit must exist.)
     $(call Expect-Error,Template kit ${_kit} does not exist.)
     $(call mk-kit-from-template,${_new_kit},${_kit})
     $(call Verify-Error)
@@ -443,6 +443,7 @@ define ${.TestUN}
 
     $(call mk-kit,${_kit})
 
+    $(call Mark-Step,Verifying kit can be created.)
     $(call Expect-No-Error)
     $(call mk-kit-from-template,${_new_kit},${_kit})
     $(call Verify-No-Error)
@@ -456,21 +457,25 @@ define ${.TestUN}
       $(call FAIL,Kit ${_new_kit} does not conform to ModFW kit format.)
     )
 
-    $(call Expect-Error,A node named ${_new_kit} has already been declared.)
+    $(call Mark-Step,\
+      Verifying can't make kit if node has already been declared.)
+    $(call Expect-Message,Kit ${_new_kit} has already been declared.)
+    $(call Expect-Error,Kit ${_new_kit} node already exists.)
     $(call mk-kit-from-template,${_new_kit},${_kit})
     $(call Verify-Error)
+    $(call Verify-Message)
 
     $(eval undefine ${_new_kit}.URL)
     $(eval undefine ${_new_kit}.BRANCH)
     $(eval undefine ${_kit}.URL)
     $(eval undefine ${_kit}.BRANCH)
 
-    $(call rm-node,${PROJECTS_NODE})
-
     $(call undeclare-kit,${_new_kit})
     $(call undeclare-kit,${_kit})
-    $(call undeclare-kit-parents)
   )
+
+  $(call rm-node,${PROJECTS_NODE})
+  $(call undeclare-kit-parents)
 
   $(call End-Test)
   $(call Exit-Macro)
@@ -509,6 +514,7 @@ define ${.TestUN}
 
     $(call mk-node,${KITS_NODE})
 
+    $(call Mark-Step,Verifying message that kit segment is incomplete.)
     $(call Expect-Message,\
       Segment ${_kit} has not yet been completed.)
     $(call use-kit,${_kit})
@@ -523,11 +529,11 @@ define ${.TestUN}
     $(eval undefine ${_kit}.URL)
     $(eval undefine ${_kit}.BRANCH)
 
-    $(call rm-node,${PROJECTS_NODE})
 
     $(call undeclare-kit,${_kit})
-    $(call undeclare-kit-parents)
   )
+  $(call rm-node,${PROJECTS_NODE})
+  $(call undeclare-kit-parents)
 
   $(call End-Test)
   $(call Exit-Macro)
