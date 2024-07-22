@@ -395,9 +395,9 @@ $(if ${Errors},
         $(call mk-node,$(1))
         $(call Gen-Segment-File,${$(1).mod},${$(1).seg_f},\
           <Mod:${$(1).mod} edit this description>)
-        $(call add-file-to-repo,${$(1).kit},$(1).seg_f)
+        $(call add-file-to-repo,${$(1).kit},${$(1).seg_f})
         $(file >${$(1).path}/.gitignore,$(call gen-mod-gitignore,$(1)))
-        $(call add-file-to-repo,${$(1).kit},.gitignore)
+        $(call add-file-to-repo,${$(1).kit},${$(1).path}/.gitignore)
       )
     ,
       $(call Signal-Error,Kit ${_k} is not a ModFW style repo.)
@@ -432,31 +432,32 @@ $(call Add-Help,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),kit.mod=$(1) template=$(2))
 
+$(call Verbose,Installing template mod kit.)
 $(call declare-mod,$(2))
 $(if ${Errors},
   $(call Attention,An error occurred when declaring template mod $(2))
 ,
-  $(call declare-mod,$(1))
+  $(call install-kit,${$(2).kit})
   $(if ${Errors},
-    $(call Attention,An error occurred when declaring mod $(1))
+    $(call Attention,An error occurred when installing kit ${$(2).kit})
   ,
-    $(call install-kit,${$(2).kit})
-    $(if ${Errors},
-      $(call Attention,An error occurred when installing kit ${$(2).kit})
-    ,
-      $(if $(call mod-exists,$(2)),
+    $(if $(call mod-exists,$(2)),
+      $(call declare-mod,$(1))
+      $(if ${Errors},
+        $(call Attention,An error occurred when declaring mod $(1))
+      ,
         $(call install-kit,${$(1).kit})
         $(if ${Errors},
           $(call Attention,An error occurred when installing kit ${$(1).kit})
         ,
           $(if $(call mod-exists,$(1)),
-            $(call Info,Mod $(1) already exists.)
+            $(call Attention,Mod $(1) already exists.)
           ,
             $(call Info,Basing mod $(1) on mod $(2))
-            $(call Run,cp -r ${$(2).path},${$(1).path})
+            $(call Run,cp -r ${$(2).path} ${$(1).path})
             $(if ${Run_Rc},
               $(call Signal-Error,\
-                Copying template kit ${_kt} to the new kit ${_k} failed.)
+                Copying template mod $(2) to the new kit $(1) failed.)
             ,
               $(call Derive-Segment-File,\
                 ${$(2).mod},${$(2).seg_f},${$(1).mod},${$(1).seg_f})
@@ -464,9 +465,9 @@ $(if ${Errors},
             )
           )
         )
-      ,
-        $(call Signal-Error,Template mod $(2) does not exist.)
       )
+    ,
+      $(call Signal-Error,Template mod $(2) does not exist.)
     )
   )
 )

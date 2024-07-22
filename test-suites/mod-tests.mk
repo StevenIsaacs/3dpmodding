@@ -357,7 +357,7 @@ define ${.TestUN}
   $(call declare-kit-parents)
   $(call mk-node,${KITS_NODE})
 
-  $(if ${.Failed},
+  $(if ${Errors},
     $(call Signal-Error,Setup for ${.TestUN} failed.,exit)
   ,
     $(call Mark-Step,Verifying kit must exist before installing mod.)
@@ -399,6 +399,7 @@ define ${.TestUN}
 
     $(call rm-node,${PROJECTS_NODE})
     $(call undeclare-mod,${_mod_ref})
+    $(call undeclare-kit,${_kit})
     $(call undeclare-kit-parents)
   )
 
@@ -409,7 +410,8 @@ endef
 $(call Declare-Test,mk-mod-from-template)
 define _help
 ${.TestUN}
-  Verify making a new mod using an existing mod as a template.
+  Verify making a new mod using an existing mod as a template. Both mods
+  are contained in the same kit.
 endef
 help-${.TestUN} := $(call ${_help})
 $(call Add-Help,${.TestUN})
@@ -418,60 +420,75 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(eval _mod := $(0).mod)
+  $(eval _kit := $(call To-Shell-Var,$(0).test-kit))
+  $(eval _mod := test-mod)
+  $(eval _mod_ref := ${_kit}.${_mod})
+  $(eval _new_mod := new-mod)
+  $(eval _new_mod_ref := ${_kit}.${_new_mod})
   $(call Test-Info,Mod node:${_mod})
-  $(eval _new_mod := $(0).new-mod)
   $(call Test-Info,New mod node:${_new_mod})
 
+  $(eval ${_kit}.URL := local)
+  $(eval ${_kit}.BRANCH := main)
+
   $(call declare-kit-parents)
+  $(call mk-node,${KITS_NODE})
+  $(call mk-kit,${_kit})
 
-  $(if ${.Failed},
-    $(call FAIL,Preconditions for ${.TestUN} are not correct.)
+  $(if ${Errors},
+    $(call Signal-Error,Setup for ${.TestUN} failed.,exit)
   ,
-    $(eval ${_mod_ref}.URL := local)
-    $(eval ${_mod_ref}.BRANCH := main)
-
-    $(eval ${_new_mod}.URL := local)
-    $(eval ${_new_mod}.BRANCH := main)
-
     $(call Expect-Error,Template mod ${_mod_ref} does not exist.)
-    $(call mk-mod-from-template,${_new_mod},${_mod_ref})
+    $(call mk-mod-from-template,${_new_mod_ref},${_mod_ref})
     $(call Verify-Error)
 
-    $(call verify-mod-attributes,${_mod_ref})
-    $(call verify-mod-nodes,${_mod_ref})
+    $(call verify-mod-attributes,${_new_mod_ref})
+    $(call verify-mod-nodes,${_new_mod_ref})
 
     $(call mk-mod,${_mod_ref})
-    $(call undeclare-mod,${_mod_ref})
 
+    $(call Mark-Step,Verifying can create new mod from template.)
     $(call Expect-No-Error)
-    $(call mk-mod-from-template,${_new_mod},${_mod_ref})
+    $(call mk-mod-from-template,${_new_mod_ref},${_mod_ref})
     $(call Verify-No-Error)
 
-    $(call verify-mod-attributes,${_new_mod},defined)
-    $(call verify-mod-nodes,${_new_mod})
-
-    $(if $(call is-modfw-mod,${_new_mod}),
-      $(call PASS,Mod ${_new_mod} is expected format.)
-    ,
-      $(call FAIL,Mod ${_new_mod} does not conform to ModFW mod format.)
+    $(call Mark-Step,Verifying mods have been declared.)
+    $(foreach _m,${_mod_ref} ${_new_mod_ref},
+      $(if $(call mod-is-declared,${_m}),
+        $(call PASS,Mod ${_m} has been declared.)
+      ,
+        $(call FAIL,Mod ${_m} has NOT been declared.)
+      )
     )
 
-    $(call Expect-Warning,Mod ${_new_mod} has already been declared.)
-    $(call Expect-Error,Mod ${_new_mod} node already exists.)
-    $(call mk-mod-from-template,${_new_mod},${_mod_ref})
-    $(call Verify-Error)
-    $(call Verify-Warning)
+    $(call Mark-Step,Verifying new mod attributes)
+    $(call verify-mod-attributes,${_new_mod_ref},defined)
+    $(call verify-mod-nodes,${_new_mod_ref})
 
-    $(eval undefine ${_new_mod}.URL)
-    $(eval undefine ${_new_mod}.BRANCH)
-    $(eval undefine ${_mod_ref}.URL)
-    $(eval undefine ${_mod_ref}.BRANCH)
+    $(if $(call is-modfw-mod,${_new_mod_ref}),
+      $(call PASS,Mod ${_new_mod_ref} is expected format.)
+    ,
+      $(call FAIL,Mod ${_new_mod_ref} does not conform to ModFW mod format.)
+    )
+
+    $(call Mark-Step,Verifying cannot declare same mod.)
+    $(call Expect-Message,Mod ${_new_mod_ref} has already been declared.)
+    $(call mk-mod-from-template,${_new_mod_ref},${_mod_ref})
+    $(call Verify-Message)
+
+    $(call Mark-Step,Verifying cannot create same mod.)
+    $(call Expect-Message,Mod ${_new_mod_ref} already exists.)
+    $(call mk-mod-from-template,${_new_mod_ref},${_mod_ref})
+    $(call Verify-Message)
+
+    $(call Test-Info,Teardown.)
+    $(eval undefine ${_kit}.URL)
+    $(eval undefine ${_kit}.BRANCH)
 
     $(call rm-node,${PROJECTS_NODE})
-
-    $(call undeclare-mod,${_new_mod})
     $(call undeclare-mod,${_mod_ref})
+    $(call undeclare-mod,${_new_mod_ref})
+    $(call undeclare-kit,${_kit})
     $(call undeclare-kit-parents)
   )
 
