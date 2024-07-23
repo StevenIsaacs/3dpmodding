@@ -456,7 +456,7 @@ ${_macro}
     1 = The node name.
     2 = An optional prompt for Confirm.
     3 = If not empty then use this as the response. When equal to y then
-        remove the repo without a prompt.
+        remove the node without a prompt.
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
