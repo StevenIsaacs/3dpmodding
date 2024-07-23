@@ -677,18 +677,17 @@ ${_macro}
   Remove a repo. This deletes the repo .git directory and leaves all
   other files intact.
   To completely remove the repository contents use rm-node instead.
-  NOTE: Yes, in theory calling rm-node does remove the .git directory.
-  However, for consistency and to avoid future problems when more repo
-  information is maintained, call rm-repo and then rm-node.
   WARNING: Use with care! This can have serious consequences.
   Parameters:
     1 = The name of the repo to destroy.
     2 = An optional prompt for Confirm.
+    3 = If not empty then use this as the response. When equal to y then
+        remove the repo without a prompt.
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),repo=$(1))
+  $(call Enter-Macro,$(0),repo=$(1) Prompt=$(call To-String,$(2)) auto=$(3))
   $(if $(call repo-is-declared,$(1)),
     $(if $(call node-exists,$(1)),
       $(if $(call repo-exists,$(1)),
@@ -697,7 +696,20 @@ define ${_macro}
         ,
           $(eval _p_ := Destroy repo $(1)?)
         )
-        $(if $(call Confirm,${_p_},y),
+        $(eval _rm := )
+        $(if $(3),
+          $(call Attention,Setting automatic response to $(3))
+          $(if $(filter $(3),y),
+            $(eval _rm := y)
+          )
+        ,
+          $(if $(call Confirm,${_p_},y),
+            $(eval _rm := y)
+          )
+        )
+        $(call Attention,Response is:${_rm})
+        $(if ${_rm},
+          $(call Attention,Removing repo $(1))
           $(call Run,rm -rf ${$(1).path}/.git)
         )
       ,

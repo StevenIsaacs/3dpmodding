@@ -455,11 +455,13 @@ ${_macro}
   Parameters:
     1 = The node name.
     2 = An optional prompt for Confirm.
+    3 = If not empty then use this as the response. When equal to y then
+        remove the repo without a prompt.
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),node=$(1) Prompt=$(call To-String,$(2)))
+  $(call Enter-Macro,$(0),node=$(1) Prompt=$(call To-String,$(2)) auto=$(3))
   $(if $(call node-is-declared,$(1)),
     $(if $(call node-exists,$(1)),
       $(if $(2),
@@ -467,7 +469,20 @@ define ${_macro}
       ,
         $(eval _p := Destroy node $(1)?)
       )
-      $(if $(call Confirm,${_p},y),
+      $(eval _rm := )
+      $(if $(3),
+        $(call Attention,Setting automatic response to $(3))
+        $(if $(filter $(3),y),
+          $(eval _rm := y)
+        )
+      ,
+        $(if $(call Confirm,${_p_},y),
+          $(eval _rm := y)
+        )
+      )
+      $(call Attention,Response is:${_rm})
+      $(if ${_rm},
+        $(call Attention,Removing node $(1))
         $(call Run,rm -rf ${$(1).path})
       )
     ,
@@ -498,32 +513,6 @@ define ${_macro}
       )
     ,
       $(call Signal-Error,Parent node $(1) does not exist.)
-    )
-  ,
-    $(call Signal-Error,Parent node $(1) has not been declare.)
-  )
-  $(call Exit-Macro)
-endef
-
-_macro := rm-child-nodes
-define _help
-${_macro}
-  This macro removes the child nodes within a parent node.
-  Parameters:
-    1 = The name of the parent node.
-endef
-help-${_macro} := $(call _help)
-$(call Add-Help,${_macro})
-define ${_macro}
-  $(call Enter-Macro,$(0),parent=$(1))
-  $(if $(call node-is-declared,$(1)),
-    $(if $(call node-exists,$(1)),
-      $(call Info,Removing child nodes in parent $(1).)
-      $(foreach _node,${$(1).children},
-        $(call rm-node,${$(1).${_node}})
-      )
-    ,
-      $(call Signal-Error,The parent node $(1) does not exist.)
     )
   ,
     $(call Signal-Error,Parent node $(1) has not been declare.)

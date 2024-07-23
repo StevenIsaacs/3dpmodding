@@ -338,7 +338,7 @@ define ${.TestUN}
   $(call mk-node,${_rn})
   $(call verify-node-exists,${_rn})
 
-  $(call rm-node,${_rn})
+  $(call rm-node,${_rn},,y)
   $(call verify-node-does-not-exist,${_rn})
 
   $(call undeclare-root-node,${_rn})
@@ -520,13 +520,13 @@ define ${.TestUN}
   $(call mk-node,${_cn})
   $(call verify-node-exists,${_cn})
 
-  $(call rm-node,${_cn})
+  $(call rm-node,${_cn},,y)
   $(call verify-node-does-not-exist,${_cn})
 
   $(call undeclare-child-node,${_cn})
 
   $(call Test-Info,Destroying test child node.)
-  $(call rm-node,${_rn})
+  $(call rm-node,${_rn},,y)
   $(call undeclare-root-node,${_rn})
 
 
@@ -570,16 +570,16 @@ define ${.TestUN}
 
   $(call display-node-tree,${_rn})
 
-  $(call rm-node,${_gcn})
+  $(call rm-node,${_gcn},,y)
   $(call verify-node-does-not-exist,${_gcn})
 
   $(call display-node-tree,${_rn})
 
-  $(call rm-node,${_cn})
+  $(call rm-node,${_cn},,y)
   $(call verify-node-does-not-exist,${_cn})
 
   $(call Test-Info,Destroying test child node.)
-  $(call rm-node,${_rn})
+  $(call rm-node,${_rn},,y)
   $(call undeclare-node-descendants,${_rn})
 
   $(call verify-node-not-declared,${_gcn})

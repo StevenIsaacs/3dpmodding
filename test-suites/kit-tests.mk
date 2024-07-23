@@ -398,7 +398,7 @@ define ${.TestUN}
 
     $(call undeclare-kit,${_kit})
   )
-  $(call rm-node,${PROJECTS_NODE})
+  $(call rm-node,${PROJECTS_NODE},,y)
   $(call undeclare-kit-parents)
 
   $(call End-Test)
@@ -474,7 +474,7 @@ define ${.TestUN}
     $(call undeclare-kit,${_kit})
   )
 
-  $(call rm-node,${PROJECTS_NODE})
+  $(call rm-node,${PROJECTS_NODE},,y)
   $(call undeclare-kit-parents)
 
   $(call End-Test)
@@ -532,7 +532,7 @@ define ${.TestUN}
 
     $(call undeclare-kit,${_kit})
   )
-  $(call rm-node,${PROJECTS_NODE})
+  $(call rm-node,${PROJECTS_NODE},,y)
   $(call undeclare-kit-parents)
 
   $(call End-Test)

@@ -372,7 +372,7 @@ define ${.TestUN}
     $(eval undefine ${_project}.URL)
     $(eval undefine ${_project}.BRANCH)
 
-    $(call rm-node,${PROJECTS_NODE})
+    $(call rm-node,${PROJECTS_NODE},,y)
     $(call undeclare-project,${_project})
     $(call undeclare-project-parents)
   )
@@ -443,7 +443,7 @@ define ${.TestUN}
     $(eval undefine ${_project}.URL)
     $(eval undefine ${_project}.BRANCH)
 
-    $(call rm-node,${PROJECTS_NODE})
+    $(call rm-node,${PROJECTS_NODE},,y)
 
     $(call undeclare-project,${_new_project})
     $(call undeclare-project,${_project})
@@ -504,9 +504,9 @@ define ${.TestUN}
     $(eval undefine ${_project}.URL)
     $(eval undefine ${_project}.BRANCH)
 
-    $(call rm-node,${_src_projects})
+    $(call rm-node,${_src_projects},,y)
 
-    $(call rm-node,${PROJECTS_NODE})
+    $(call rm-node,${PROJECTS_NODE},,y)
 
     $(call undeclare-project,${_project})
     $(call undeclare-node,${_src_projects})

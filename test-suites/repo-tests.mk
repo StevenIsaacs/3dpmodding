@@ -319,7 +319,7 @@ define ${.TestUN}
   $(call Mark-Step,Testing repo does not exist.)
   $(call verify-repo-does-not-exist,${_rn})
 
-  $(call rm-node,${_rn})
+  $(call rm-node,${_rn},,y)
   $(call undeclare-repo,${_rn})
   $(call undeclare-root-node,${_rn})
 
@@ -376,21 +376,21 @@ define ${.TestUN}
   $(call Verify-Error)
 
   $(call Test-Info,DECLINE deletion of the .git directory.)
-  $(call rm-repo,${_rn},DECLINE - press n)
+  $(call rm-repo,${_rn},DECLINE - press n,n)
   $(call verify-repo-exists,${_rn})
 
   $(call Test-Info,ACCEPT deletion of the .git directory.)
-  $(call rm-repo,${_rn},ACCEPT - press y)
+  $(call rm-repo,${_rn},ACCEPT - press y,y)
   $(call verify-repo-does-not-exist,${_rn})
 
   $(call Expect-Error,Node ${_rn} is not a repo -- not removing repo.)
-  $(call rm-repo,${_rn})
+  $(call rm-repo,${_rn},,y)
   $(call Verify-Error)
 
   $(call undeclare-repo,${_rn})
 
   $(call Test-Info,Cleaning up.)
-  $(call rm-node,${_rn})
+  $(call rm-node,${_rn},,y)
   $(call undeclare-root-node,${_rn})
   $(eval undefine ${_rn}.URL)
   $(eval undefine ${_rn}.BRANCH)
@@ -444,7 +444,7 @@ define ${.TestUN}
   )
   $(if $(call repo-exists,${_cn2}),
     $(call FAIL,Repo ${_cn2} should not exist.)
-    $(call rm-repo,${_cn2})
+    $(call rm-repo,${_cn2},,y)
   ,
     $(call PASS,Repo ${_cn2} was not created using a bogus url.)
   )
@@ -471,17 +471,17 @@ define ${.TestUN}
   $(call verify-repo-exists,${_cn2})
 
   $(call Test-Info,Teardown.)
-  $(call rm-repo,${_cn2})
+  $(call rm-repo,${_cn2},,y)
   $(call undeclare-repo,${_cn2})
-  $(call rm-node,${_cn2})
+  $(call rm-node,${_cn2},,y)
   $(call undeclare-child-node,${_cn2})
 
-  $(call rm-repo,${_cn1})
+  $(call rm-repo,${_cn1},,y)
   $(call undeclare-repo,${_cn1})
-  $(call rm-node,${_cn1})
+  $(call rm-node,${_cn1},,y)
   $(call undeclare-child-node,${_cn1})
 
-  $(call rm-node,${_rn})
+  $(call rm-node,${_rn},,y)
   $(call undeclare-root-node,${_rn})
 
   $(call End-Test)
@@ -540,7 +540,7 @@ define ${.TestUN}
   $(call Verify-Error)
 
   $(call Mark-Step,Verify template repo errors.)
-  $(call rm-node,${_cn2})
+  $(call rm-node,${_cn2},,y)
   $(if $(wildcard ${${_cn1}.seg_f}),
     $(call PASS,The segment file for ${_cn1} exists -- removing.)
     $(call Run,rm ${${_cn1}.seg_f})
@@ -553,7 +553,7 @@ define ${.TestUN}
   $(call Verify-Error)
   $(call verify-node-does-not-exist,${_cn2})
 
-  $(call rm-repo,${_cn1})
+  $(call rm-repo,${_cn1},,y)
   $(call Expect-Error,Template node ${_cn1} is not a repo.)
   $(call mk-repo-from-template,${_cn2},${_cn1})
   $(call Verify-Error)
@@ -561,14 +561,14 @@ define ${.TestUN}
 
   $(call Test-Info,Teardown.)
   $(call undeclare-repo,${_cn2})
-  $(call rm-node,${_cn2})
+  $(call rm-node,${_cn2},,y)
   $(call undeclare-child-node,${_cn2})
 
   $(call undeclare-repo,${_cn1})
-  $(call rm-node,${_cn1})
+  $(call rm-node,${_cn1},,y)
   $(call undeclare-child-node,${_cn1})
 
-  $(call rm-node,${_rn})
+  $(call rm-node,${_rn},,y)
   $(call undeclare-root-node,${_rn})
 
   $(call End-Test)
@@ -638,7 +638,7 @@ define ${.TestUN}
   $(call Verify-Error)
   $(call verify-repo-does-not-exist,${_r2})
 
-  $(call rm-node,${_r2})
+  $(call rm-node,${_r2},,y)
 
   $(call Mark-Step,Checking all conditions are correct.)
   $(call Expect-No-Error)
@@ -653,14 +653,14 @@ define ${.TestUN}
 
   $(call Test-Info,Test teardown.)
   $(call undeclare-repo,${_r2})
-  $(call rm-node,${_r2})
+  $(call rm-node,${_r2},,y)
   $(call undeclare-child-node,${_r2})
 
   $(call undeclare-repo,${_r1})
-  $(call rm-node,${_r1})
+  $(call rm-node,${_r1},,y)
   $(call undeclare-child-node,${_r1})
 
-  $(call rm-node,${_pn})
+  $(call rm-node,${_pn},,y)
   $(call undeclare-root-node,${_pn})
 
   $(call End-Test)
@@ -780,10 +780,10 @@ define ${.TestUN}
 
   $(call Test-Info,Test teardown.)
   $(call undeclare-repo,${_cn})
-  $(call rm-node,${_cn})
+  $(call rm-node,${_cn},,y)
   $(call undeclare-child-node,${_cn})
 
-  $(call rm-node,${_rn})
+  $(call rm-node,${_rn},,y)
   $(call undeclare-root-node,${_rn})
 
   $(call End-Test)
