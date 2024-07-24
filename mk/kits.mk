@@ -270,8 +270,8 @@ help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),mod=$(1) kit=$(2))
-$(if kit-is-declared,$(2),
-  $(if node-is-declared,$(1),
+$(if $(call kit-is-declared,$(2)),
+  $(if $(call node-is-declared,$(1)),
     $(eval $(2).mods += $(1))
   ,
     $(call Signal-Error,The node for mod $(1) has not been declared.)
@@ -294,9 +294,9 @@ help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),mod=$(1) kit=$(2))
-$(if kit-is-declared,$(2),
+$(if $(call kit-is-declared,$(2)),
   $(call Verbose,Kit $(2) is declared.)
-  $(if node-is-declared,$(1),
+  $(if $(call node-is-declared,$(1)),
     $(call Verbose,Mod $(1) node is declared.)
     $(eval $(2).mods := $(filter-out $(1),${$(2).mods}))
   ,

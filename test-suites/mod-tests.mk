@@ -63,7 +63,7 @@ $(if $(2),
   $(if $(filter ${$(1).parent},${$(1).kit}),
     $(call PASS,Mod $(1) parent and kit are the same.)
   ,
-    $(call FAO;,Mod $(1) parent and kit are NOT the same.)
+    $(call FAIL,Mod $(1) parent and kit are NOT the same.)
   )
   $(foreach _att,${mod_attributes},
     $(if $(filter undefined,$(origin $(1).${_att})),

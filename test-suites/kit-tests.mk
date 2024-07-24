@@ -529,7 +529,6 @@ define ${.TestUN}
     $(eval undefine ${_kit}.URL)
     $(eval undefine ${_kit}.BRANCH)
 
-
     $(call undeclare-kit,${_kit})
   )
   $(call rm-node,${PROJECTS_NODE},,y)
