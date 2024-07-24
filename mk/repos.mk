@@ -206,7 +206,6 @@ $(strip
       $(call Run,cd ${$(1).path} && git ls-remote | grep From)
       $(if ${Run_Rc},
         $(call Signal-Error,Git returned an error when getting URL for repo $(1).)
-        $(call Debug,${Run_Output})
       ,
         $(word 2,${Run_Output})
       )
@@ -367,6 +366,7 @@ ${_macro}
   updated to indicate which branch.
   NOTE: This is designed to be callable from the make command line using the
   helpers call-<macro> goal.
+
   For example:
     make ${_macro}.PARMS=<repo>:<branch> call-${_macro}
   Parameters:
@@ -381,7 +381,7 @@ $(call Enter-Macro,$(0),repo=$(1) branch=$(2))
 $(if $(call repo-is-declared,$(1)),
   $(if $(call repo-exists,$(1)),
     $(if $(2),
-      $(eval _b_ := $(2)),
+      $(eval _b_ := $(2))
     ,
       $(eval _b_ := ${$(1).BRANCH})
     )
@@ -544,7 +544,6 @@ $(if $(call node-exists,$(1)),
       $(eval $(1).repo_url := ${$(2).path})
       $(call clone-repo,$(1))
       $(call Run,cd ${$(1).path} && git remote remove origin)
-      $(call Debug,Git RC:(${Run_Rc}))
       $(if ${Run_Rc},
         $(call Signal-Error,Error removing template origin from $(2).)
       ,
@@ -555,7 +554,6 @@ $(if $(call node-exists,$(1)),
           git add . && \
           git commit . -m "New repo $(1) derived from $(2)." \
         )
-        $(call Debug,Edit RC:(${Run_Rc}))
         $(if ${Run_Rc},
           $(call Signal-Error,Error during edit of $(1) segment file.)
         )
