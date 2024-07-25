@@ -276,7 +276,7 @@ $(if $(call mod-is-declared,$(1)),
         )
         $(eval $(1).goals := )
         $(eval $(1).seg_f := ${$(1).path}/${_m}.mk)
-        $(call list-declared-mod,$(1),$($(1).kit))
+        $(call register-mod,$(1),$($(1).kit))
         $(eval mods += $(1))
       )
     )
@@ -293,7 +293,7 @@ define _help
   Remove a mod declaration. If undeclaring the mod results in the containing
   kit no longer having any declared mods then the kit is also undeclared.
   Parameters:
-    1 = The name of the mod.
+    1 = The <kit>.<mod> reference to the mod.
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
@@ -304,10 +304,9 @@ $(if $(call mod-is-declared,$(1)),
   $(if $(call node-is-declared,$(1)),
     $(if $(call is-a-child-node,$(1)),
       $(if $(call kit-is-declared,${$(1).kit}),
+        $(call unregister-mod,$(1),${$(1).kit})
         $(call undeclare-node-descendants,$(1))
-        $(eval mods := $(filter-out $(1),${mods}))
         $(call undeclare-child-node,$(1))
-        $(call unlist-declared-mod,$(1),${$(1).kit})
         $(if $(call kit-has-declared-mods,${$(1).kit}),
           $(call Verbose,Kit ${$(1).kit} still has declared mods.)
         ,
@@ -317,6 +316,7 @@ $(if $(call mod-is-declared,$(1)),
         $(foreach _att,${mod_attributes},
           $(eval undefine $(1).${_att})
         )
+        $(eval mods := $(filter-out $(1),${mods}))
       ,
         $(call Signal-Error,Kit ${$(1).kit} is NOT declared.)
       )

@@ -258,7 +258,7 @@ $(if $(call kit-is-declared,$(1)),
 $(call Exit-Macro)
 endef
 
-_macro := list-declared-mod
+_macro := register-mod
 define _help
 ${_macro}
   Add a mod to a kit declared mod list.
@@ -271,18 +271,15 @@ $(call Add-Help,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),mod=$(1) kit=$(2))
 $(if $(call kit-is-declared,$(2)),
-  $(if $(call node-is-declared,$(1)),
-    $(eval $(2).mods += $(1))
-  ,
-    $(call Signal-Error,The node for mod $(1) has not been declared.)
-  )
+  $(eval $(2).mods += ${$(1).mod})
+  $(call Verbose,Kit $(2) mods are:${$(2).mods})
 ,
   $(call Signal-Error,Kit $(2) has not been declared.)
 )
 $(call Exit-Macro)
 endef
 
-_macro := unlist-declared-mod
+_macro := unregister-mod
 define _help
 ${_macro}
   Remove a mod from a kit declared mod list.
@@ -296,12 +293,8 @@ define ${_macro}
 $(call Enter-Macro,$(0),mod=$(1) kit=$(2))
 $(if $(call kit-is-declared,$(2)),
   $(call Verbose,Kit $(2) is declared.)
-  $(if $(call node-is-declared,$(1)),
-    $(call Verbose,Mod $(1) node is declared.)
-    $(eval $(2).mods := $(filter-out $(1),${$(2).mods}))
-  ,
-    $(call Signal-Error,The node for mod $(1) has not been declared.)
-  )
+  $(eval $(2).mods := $(filter-out ${$(1).mod},${$(2).mods}))
+  $(call Verbose,Kit $(2) mods are:${$(2).mods})
 ,
   $(call Signal-Error,Kit $(2) has not been declared.)
 )
