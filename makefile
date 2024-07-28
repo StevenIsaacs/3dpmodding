@@ -417,15 +417,11 @@ define ${_macro}
 
   $(call declare-root-node,${ModFW_node},${ModFW_path})
 
-  $(foreach _child,STICKY_NODE MK_NODE DOWNLOADS_NODE,
+  $(foreach _child,STICKY_NODE MK_NODE DOWNLOADS_NODE PROJECTS_NODE,
    $(call declare-child-node,${${_child}},${ModFW_node})
    $(call mk-node,${${_child}})
   )
 
-  $(call declare-child-node,${PROJECTS_NODE},${ModFW_node})
-  $(call mk-node,${PROJECTS_NODE})
-  $(call declare-child-node,${DOWNLOADS_NODE},${ModFW_node})
-  $(call mk-node,${DOWNLOADS_NODE})
   $(call Exit-Macro)
 endef
 
