@@ -33,6 +33,10 @@ _null := $(shell \
 MakeD := ModFW -- A modding framework.
 include ${_helpers}
 
+# ModFW always has a log file.
+LOG_FILE := ${WorkingDir}.log
+$(call Enable-Log-File)
+
 ifeq ($(call Is-Goal,test),)
   _override := overrides
 else
@@ -427,7 +431,7 @@ endef
 
 
   ifeq (${PROJECT},)
-    $(call Signal-Error,PROJECT must be defined.)
+    $(call Signal-Error,PROJECT must be defined.,exit)
   else
     $(call init-modfw)
 
