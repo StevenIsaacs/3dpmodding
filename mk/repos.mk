@@ -285,7 +285,7 @@ ${_macro}
   Check to see if a repo has a given branch. A non-empty value is returned if
   the branch exists.
   NOTE: This is designed to be callable from the make command line using the
-  helpers call-<macro> goal.
+  helpers call-${_macro} goal.
   For example:
     make ${_macro}.PARMS=<repo>:<branch> call-${_macro}
   Parameters:
@@ -299,6 +299,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
+$(call Declare-Callable-Macro,${_macro})
 define ${_macro}
 $(strip
   $(call Enter-Macro,$(0),repo=$(1) branch=$(2))
@@ -327,7 +328,7 @@ ${_macro}
   Run git to get a list of branches for a repo. The repo must have been
   declared at some point and must exist.
   NOTE: This is designed to be callable from the make command line using the
-  helpers call-<macro> goal.
+  helpers call-${_macro} goal.
   For example:
     make ${_macro}.PARMS=<repo> call-${_macro}
   Parameters:
@@ -335,6 +336,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
+$(call Declare-Callable-Macro,${_macro})
 define ${_macro}
 $(strip
   $(call Enter-Macro,$(0),repo=$(1))
@@ -365,7 +367,7 @@ ${_macro}
   Switch a repo to a different branch. The <repo>.repo_branch attribute is
   updated to indicate which branch.
   NOTE: This is designed to be callable from the make command line using the
-  helpers call-<macro> goal.
+  helpers call-${_macro} goal.
 
   For example:
     make ${_macro}.PARMS=<repo>:<branch> call-${_macro}
@@ -376,6 +378,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
+$(call Declare-Callable-Macro,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),repo=$(1) branch=$(2))
 $(if $(call repo-is-declared,$(1)),
@@ -416,7 +419,7 @@ ${_macro}
   Create a new branch in a repo and switch to the new branch. This does NOT
   change the <repo>.BRANCH sticky variable.
   NOTE: This is designed to be callable from the make command line using the
-  helpers call-<macro> goal.
+  helpers call-${_macro} goal.
   For example:
     make ${_macro}.PARMS=<repo>:<branch> call-$(_macro)
   Parameters:
@@ -425,6 +428,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
+$(call Declare-Callable-Macro,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),repo=$(1) branch=$(2))
 $(if $(call repo-is-declared,$(1)),
@@ -454,7 +458,7 @@ define _help
 ${_macro}
   Remove an existing branch from a repo.
   NOTE: This is designed to be callable from the make command line using the
-  helpers call-<macro> goal.
+  helpers call-${_macro} goal.
   For example:
     make ${_macro}.PARMS=<repo>:<branch> call-$(_macro)
   Parameters:
@@ -463,6 +467,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
+$(call Declare-Callable-Macro,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),repo=$(1) branch=$(2))
 $(if $(call repo-is-declared,$(1)),
@@ -485,6 +490,89 @@ endef
 $(call Add-Help-Section,repo-decl,Macros for declaring repos.)
 
 $(call Add-Help-Section,repo-install,Macros for cloning and creating repos.)
+
+_macro := remote-repo-exists
+define _help
+${_macro}
+  Check to see if a remote repo exists. A non-empty value is returned if
+  the repo exists.
+  NOTE: This is designed to be callable from the make command line using the
+  helpers call-${_macro} goal.
+  For example:
+    make ${_macro}.PARMS=<repo>:<branch> call-${_macro}
+  Parameters:
+    1 = The repo to check.
+    2 = The URL to check. If this is empty then the <repo>.URL variable.
+  Returns:
+    True if the remote repo exists.
+      See Run (help-helpers).
+endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
+$(call Declare-Callable-Macro,${_macro})
+define ${_macro}
+$(call Enter-Macro,$(0),repo=$(1) branch=$(2))
+$(if $(call repo-is-declared,$(1)),
+  $(if $(2),
+    $(eval _u_ := $(2)),
+  ,
+    $(eval _u_ := ${$(1).URL})
+  )
+  $(call Run,git ls-remote ${_u_} 2>/dev/null)
+  $(if ${Run_Rc},
+    $(call Signal-Error,Remote repo $(1) does not exist.)
+  ,
+    $(call Attention,Remote repo ${_u_} exists.)
+    ${True}
+  )
+,
+  $(call Signal-Error,Repo $(1) has not been declared.)
+)
+$(call Exit-Macro)
+endef
+
+_macro := set-repo-origin
+define _help
+${_macro}
+  Change the repo origin to a different URL. This is mostly intended to be used
+  when creating new repos but can be used to change the origin of an existing
+  repo.
+  NOTE: This is designed to be callable from the make command line using the
+  helpers call-${_macro} goal.
+  For example:
+    make ${_macro}.PARMS=<repo>:<url> call-$(_macro)
+  Parameters:
+    1 = The repo for which to set the origin.
+    2 = The new url. If this is empty then <repo>.URL is used. Otherwise,
+        <repo>.URL is set to this value.
+endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
+$(call Declare-Callable-Macro,${_macro})
+define ${_macro}
+$(call Enter-Macro,$(0),repo=$(1) url=$(2))
+$(if $(call repo-is-declared,$(1)),
+  $(if $(2),
+    $(eval _origin_ := $(2)),
+  ,
+    $(eval _origin_ := ${$(1).URL})
+  )
+  $(if $(call remote-repo-exists,$(1),$(2)),
+    $(call Run,cd ${$(1).path} && git remote set-url "origin" ${_origin_})
+    $(if ${Run_Rc},
+      $(call Signal-Error,Setting the remote origin ${_origin_} failed.)
+      $(call Warn,${Run_Output})
+    ,
+      $(eval $(1).repo_url := ${_origin_})
+    )
+  ,
+    $(call Signal-Error,$(1) is NOT a repo.)
+  )
+,
+  $(call Signal-Error,Repo $(1) has not been declared.)
+)
+$(call Exit-Macro)
+endef
 
 _macro := clone-repo
 define _help

@@ -189,17 +189,26 @@ endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
-_var := GIT_ACCOUNT
-$(call Sticky,${_var},StevenIsaacs)
+_var := GIT_USER
+$(call Sticky,${_var},git)
 define _help
 ${_var} = ${${_var}}
-  The default server account to use when installing or creating a repo.
+  The default server user account to use when installing or creating a repo.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := GIT_SERVER
-$(call Sticky,${_var},git@github.com)
+$(call Sticky,${_var},${GIT_USER}@painter)
+define _help
+${_var} = ${${_var}}
+  The default server to use when installing or creating a repo.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+
+_var := GIT_DIR
+$(call Sticky,${_var},repos)
 define _help
 ${_var} = ${${_var}}
   The default server to use when installing or creating a repo.
@@ -208,10 +217,30 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := DEFAULT_URL
-$(call Sticky,${_var},${GIT_SERVER}/${GIT_ACCOUNT})
+$(call Sticky,${_var},${GIT_SERVER}/${GIT_DIR})
 define _help
 ${_var} = ${${_var}}
   The default URL minus the repo name to use when installing or creating a repo.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+
+_var := DEFAULT_PROJECT_URL
+$(call Sticky,${_var},${DEFAULT_URL}/${PROJECTS_NODE})
+define _help
+${_var} = ${${_var}}
+  The default URL minus the repo name to use when installing or creating a
+  project repo.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+
+_var := DEFAULT_KIT_URL
+$(call Sticky,${_var},${DEFAULT_URL}/${KITS_NODE})
+define _help
+${_var} = ${${_var}}
+  The default URL minus the repo name to use when installing or creating a
+  kit repo.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})

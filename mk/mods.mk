@@ -377,6 +377,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
+$(call Declare-Callable-Macro,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),kit.mod=$(1))
 
@@ -429,6 +430,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
+$(call Declare-Callable-Macro,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),kit.mod=$(1) template=$(2))
 

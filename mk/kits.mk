@@ -365,9 +365,20 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
+$(call Declare-Callable-Macro,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),kit=$(1))
-
+$(call Clear-Errors)
+$(if ${$(1).URL},
+  $(call Attention,Using url:${$(1).URL})
+,
+  $(eval $(1).URL := ${DEFAULT_KIT_URL}/$(1))
+)
+$(if ${$(1).BRANCH},
+  $(call Attention,Using branch:${$(1).BRANCH})
+,
+  $(eval $(1).BRANCH := ${DEFAULT_BRANCH})
+)
 $(call declare-kit,$(1),${KITS_NODE})
 $(if ${Errors},
   $(call Attention,Unable to make a kit.)
@@ -407,6 +418,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
+$(call Declare-Callable-Macro,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),kit=$(1) template=$(2))
 

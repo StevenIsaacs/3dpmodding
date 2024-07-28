@@ -366,8 +366,20 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
+$(call Declare-Callable-Macro,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0),project=$(1))
+  $(call Clear-Errors)
+  $(if ${$(1).URL},
+  ,
+    $(eval $(1).URL := ${DEFAULT_PROJECT_URL}/$(1))
+  )
+  $(call Attention,Using url:${$(1).URL})
+  $(if ${$(1).BRANCH},
+  ,
+    $(eval $(1).BRANCH := ${DEFAULT_BRANCH})
+  )
+  $(call Attention,Using branch:${$(1).BRANCH})
   $(call declare-project,$(1),${PROJECTS_NODE})
   $(if ${Errors},
     $(call Attention,Unable to make a project.)
@@ -405,6 +417,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
+$(call Declare-Callable-Macro,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0),project=$(1) template=$(2))
 

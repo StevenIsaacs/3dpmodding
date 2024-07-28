@@ -116,6 +116,17 @@ Definitions:
 
   dev: The designer and/or developer of a project.
 
+Project Structure
+
+Projects use mods and mods use kits. To help avoid name collisions between
+kits projects use mod references to specify which mods to use. A mod reference
+has the form <kit>.<mod>. The referenced mod installs its kit if necessary. A
+project should not need to install a kit before using a mod. See help-mods
+for more information.
+
+To help identify the purpose of project and kit repos it is recommended project
+repo names be prefixed with mfw-prj- and kit repos be prefixed with mfw-kit-.
+
 Repositories and branches:
   As previously mentioned projects and kits are separate git repositories. Mods
   can be dependent upon the output of other projects and kits. Different mods
@@ -326,7 +337,7 @@ $(call Add-Help,${SegID})
 $(call Add-Help-Section,root_node,ModFW root node.)
 
 _var := ModFW_path
-${_var} := ${WorkingPath}
+${_var} := ${WorkingPath}/../
 define _help
 ${_var} := ${${_var}}
   This is the path to the directory containing the ModFW directory. This is used as the path to the root node for the ModFW node tree.
@@ -388,7 +399,7 @@ ifeq (${TESTING},)
   $(call Add-Help,${_var})
 
   _var := ${PROJECT}.URL
-  $(call Sticky,${_var},${DEFAULT_URL}/${PROJECT})
+  $(call Sticky,${_var})
   define _help
   ${_var} = ${${_var}}
       The URL to clone the project from.
@@ -430,13 +441,13 @@ define ${_macro}
 endef
 
 
+  $(call init-modfw)
   ifeq (${PROJECT},)
-    $(call Signal-Error,PROJECT must be defined.,exit)
+    $(call Signal-Error,PROJECT must be defined.)
   else
-    $(call init-modfw)
-
     $(call use-project,${PROJECT})
-    endif # PROJECT defined
+  endif
+
 endif # not TESTING
 
 $(call Add-Help-Section,appended,Appended make segment.)
