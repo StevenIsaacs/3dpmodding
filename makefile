@@ -33,10 +33,13 @@ _null := $(shell \
 MakeD := ModFW -- A modding framework.
 include ${_helpers}
 
-# Using a conditional here because of needing to include overrides.mk only if
-# it exists.
-
-$(call Use-Segment,overrides,Info)
+ifeq ($(call Is-Goal,test),)
+  _override := overrides
+else
+  _override := testing-overrides
+endif
+$(call Verbose,Overrides are in segment:${_override})
+$(call Use-Segment,${_override},Info)
 
 $(call Use-Segment,config)
 $(call Add-Segment-Path,${MK_NODE})
