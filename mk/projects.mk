@@ -70,11 +70,11 @@ $(call Add-Help-Section,options,Command line options.)
 
 $(call Add-Help-Section,project-vars,Variables for managing projects.)
 
-_var := active_project
+_var := projects
 ${_var} :=
 define _help
 ${_var}
-  The name of the active project. Only one project can be active at a time.
+  The list of declared projects.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
@@ -154,7 +154,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
-${_macro} = $(if $(filter $(1),${active_project}),1)
+${_macro} = $(if $(filter $(1),${projects}),1)
 
 _macro := project-exists
 define _help
@@ -229,35 +229,31 @@ $(if $(call project-is-declared,$(1)),
       $(call Signal-Error,\
         A node using project name $(1) has already been declared.)
     ,
-      $(if ${active_project},
-        $(call Signal-Error,A project has already been declared.)
+      $(eval _ud := $(call Require,\
+        PROJECTS_NODE ${project_node_names} $(1).URL $(1).BRANCH))
+      $(eval _ud += $(call Require,${project_node_names}))
+      $(if ${_ud},
+        $(call Signal-Error,Undefined variables:${_ud})
       ,
-        $(eval _ud := $(call Require,\
-          PROJECTS_NODE ${project_node_names} $(1).URL $(1).BRANCH))
-        $(eval _ud += $(call Require,${project_node_names}))
-        $(if ${_ud},
-          $(call Signal-Error,Undefined variables:${_ud})
-        ,
-          $(if $(call node-is-declared,$(2)),
-            $(call Verbose,Declaring project $(1).)
-            $(call declare-child-node,$(1),$(2))
-            $(call declare-repo,$(1))
-            $(foreach _node,${project_node_names},
-              $(call declare-child-node,$(1).${${_node}},$(1))
-            )
-            $(eval $(1).goals :=)
-            $(eval $(1).sticky_path := ${$(1).${PROJECT_STICKY_NODE}.path})
-            $(eval $(1).build_path := ${$(1).${BUILD_NODE}.path})
-            $(eval $(1).staging_path := ${$(1).${STAGING_NODE}.path})
-            $(eval $(1).tools_path := ${$(1).${TOOLS_NODE}.path})
-            $(eval $(1).bin_path := ${$(1).${BIN_NODE}.path})
-            $(eval $(1).lib_path := ${$(1).${LIB_NODE}.path})
-            $(eval $(1).kits_path := ${$(1).${KITS_NODE}.path})
-            $(eval active_project := $(1))
-          ,
-            $(call Signal-Error,\
-              Parent node $(2) for project $(1) is not declared.)
+        $(if $(call node-is-declared,$(2)),
+          $(call Verbose,Declaring project $(1).)
+          $(call declare-child-node,$(1),$(2))
+          $(call declare-repo,$(1))
+          $(foreach _node,${project_node_names},
+            $(call declare-child-node,$(1).${${_node}},$(1))
           )
+          $(eval $(1).goals :=)
+          $(eval $(1).sticky_path := ${$(1).${PROJECT_STICKY_NODE}.path})
+          $(eval $(1).build_path := ${$(1).${BUILD_NODE}.path})
+          $(eval $(1).staging_path := ${$(1).${STAGING_NODE}.path})
+          $(eval $(1).tools_path := ${$(1).${TOOLS_NODE}.path})
+          $(eval $(1).bin_path := ${$(1).${BIN_NODE}.path})
+          $(eval $(1).lib_path := ${$(1).${LIB_NODE}.path})
+          $(eval $(1).kits_path := ${$(1).${KITS_NODE}.path})
+          $(eval projects := $(1))
+        ,
+          $(call Signal-Error,\
+            Parent node $(2) for project $(1) is not declared.)
         )
       )
     )
@@ -290,7 +286,7 @@ $(if $(call project-is-declared,$(1)),
         $(foreach _att,${project_attributes},
           $(eval undefine $(1).${_att})
         )
-        $(eval active_project := )
+        $(eval projects := $(filter-out $(1),${projects}))
       ,
         $(call Signal-Error,Project $(1) is not a child node.)
       )
