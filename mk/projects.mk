@@ -443,7 +443,7 @@ endef
 _macro := rm-project
 define _help
 ${_macro}
-  Remove and existing project. The project node is declared to be a child of
+  Remove an existing project. The project node is declared to be a child of
   the PROJECTS_NODE node. The node is then removed.
 
   NOTE: This is designed to be callable from the make command line using the
@@ -472,6 +472,7 @@ define ${_macro}
     ,
       $(call Signal-Error,Project $(1) node does not exist.)
     )
+    $(call undeclare-node,$(1))
   )
   $(call Exit-Macro)
 endef
