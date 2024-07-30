@@ -465,9 +465,9 @@ define ${_macro}
   $(if $(call node-is-declared,$(1)),
     $(if $(call node-exists,$(1)),
       $(if $(2),
-        $(eval _p := $(2))
+        $(eval _p_ := $(2))
       ,
-        $(eval _p := Destroy node $(1)?)
+        $(eval _p_ := Destroy node $(1)?)
       )
       $(eval _rm := )
       $(if $(3),

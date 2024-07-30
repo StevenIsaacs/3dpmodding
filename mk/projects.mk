@@ -440,6 +440,42 @@ define ${_macro}
   $(call Exit-Macro)
 endef
 
+_macro := rm-project
+define _help
+${_macro}
+  Remove and existing project. The project node is declared to be a child of
+  the PROJECTS_NODE node. The node is then removed.
+
+  NOTE: This is designed to be callable from the make command line using the
+  helper call-${_macro} goal.
+  For example:
+    make ${_macro}.PARMS=<prj> call-${_macro}
+
+  Parameters:
+    1 = The node name of the project to remove(<prj>).
+endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
+$(call Declare-Callable-Macro,${_macro})
+define ${_macro}
+  $(call Enter-Macro,$(0),project=$(1))
+  $(call Clear-Errors)
+  $(call declare-child-node,$(1),${PROJECTS_NODE})
+  $(if ${Errors},
+    $(call Attention,Unable to remove project $(1).)
+  ,
+    $(if $(call node-exists,$(1)),
+      $(call rm-node,$(1),Remove project $(1)?)
+      $(if ${Errors},
+        $(call Warn,An error occurred when removing project $(1).)
+      )
+    ,
+      $(call Signal-Error,Project $(1) node does not exist.)
+    )
+  )
+  $(call Exit-Macro)
+endef
+
 $(call Add-Help-Section,project-use,The primary macro for using projects.)
 
 _macro := install-project
