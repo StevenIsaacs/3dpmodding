@@ -354,7 +354,7 @@ ${_macro}
   If the node for the kit has already been declared then the existing
   declaration is used.
 
-  Use rm-node to remove a kit.
+  Use rm-kit to remove a kit.
 
   NOTE: This is designed to be callable from the make command line using the
   helper call-${_macro} goal.
@@ -441,6 +441,43 @@ $(if ${Errors},
   )
 )
 $(call Exit-Macro)
+endef
+
+_macro := rm-kit
+define _help
+${_macro}
+  Remove an existing kit. The kit node is declared to be a child of
+  the KITS_NODE node within the ${PROJECT} project. The node is then removed.
+
+  NOTE: This is designed to be callable from the make command line using the
+  helper call-${_macro} goal.
+  For example:
+    make ${_macro}.PARMS=<kit> call-${_macro}
+
+  Parameters:
+    1 = The node name of the kit to remove(<prj>).
+endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
+$(call Declare-Callable-Macro,${_macro})
+define ${_macro}
+  $(call Enter-Macro,$(0),kit=$(1))
+  $(call Clear-Errors)
+  $(call declare-child-node,$(1),${KITS_NODE})
+  $(if ${Errors},
+    $(call Attention,Unable to remove kit $(1).)
+  ,
+    $(if $(call node-exists,$(1)),
+      $(call rm-node,$(1),Remove kit $(1) from project ${PROJECT}?)
+      $(if ${Errors},
+        $(call Warn,An error occurred when removing kit $(1).)
+      )
+    ,
+      $(call Signal-Error,Kit $(1) node does not exist.)
+    )
+     $(call undeclare-node,$(1))
+  )
+  $(call Exit-Macro)
 endef
 
 _macro := install-kit
