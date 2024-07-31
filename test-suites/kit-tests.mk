@@ -253,10 +253,12 @@ define ${.TestUN}
     $(call Signal-Error,Setup for ${.TestUN} failed.,exit)
   ,
     $(call Mark-Step,Verifying kit required variables.)
-    $(call Expect-Error,\
-              Undefined variables:${_kit}.URL ${_kit}.BRANCH)
+    $(call Expect-No-Error)
     $(call declare-kit,${_kit})
-    $(call Verify-Error)
+    $(call Verify-No-Error)
+    $(call undeclare-kit,${_kit})
+    $(call verify-kit-attributes,${_kit})
+    $(call verify-kit-nodes,${_kit})
 
     $(eval ${_kit}.URL := local)
     $(eval ${_kit}.BRANCH := main)

@@ -188,9 +188,17 @@ $(if $(call kit-is-declared,$(1)),
       $(call Signal-Error,\
         A node using kit name $(1) has already been declared.)
     ,
-      $(eval _ud := $(call Require,\
-        PROJECT KITS_NODE ${kit_node_names} $(1).URL $(1).BRANCH))
-      $(eval _ud += $(call Require,${kit_node_names}))
+      $(if ${$(1).URL},
+      ,
+        $(eval $(1).URL := ${DEFAULT_KIT_URL}/$(1))
+      )
+      $(call Attention,Using url:${$(1).URL})
+      $(if ${$(1).BRANCH},
+      ,
+        $(eval $(1).BRANCH := ${DEFAULT_BRANCH})
+      )
+      $(call Attention,Using branch:${$(1).BRANCH})
+      $(eval _ud := $(call Require,PROJECT KITS_NODE ${kit_node_names}))
       $(if ${_ud},
         $(call Signal-Error,Undefined variables:${_ud})
       ,

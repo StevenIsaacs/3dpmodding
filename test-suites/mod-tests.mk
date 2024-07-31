@@ -243,10 +243,11 @@ define ${.TestUN}
     $(eval _mod_ref := ${_kit}.${_mod})
 
     $(call Mark-Step,Verifying mod required variables.)
-    $(call Expect-Error,\
+    $(call Expect-No-Error,\
               Undefined variables:${_kit}.URL ${_kit}.BRANCH)
     $(call declare-mod,${_mod_ref})
-    $(call Verify-Error)
+    $(call Verify-No-Error)
+    $(call undeclare-mod,${_mod_ref})
 
     $(call Mark-Step,Verifying mod is not declared.)
     $(call verify-mod-attributes,${_mod_ref})
