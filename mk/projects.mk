@@ -217,9 +217,10 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),project=$(1))
+$(call Enter-Macro,$(0),project=$(1) parent=$(2))
+
 $(if $(call project-is-declared,$(1)),
-  $(call Warn,Project $(1) has already been declared.)
+  $(call Attention,Using existing declaration for project $(1).)
 ,
   $(if $(call repo-is-declared,$(1)),
     $(call Signal-Error,\
@@ -229,18 +230,19 @@ $(if $(call project-is-declared,$(1)),
       $(call Signal-Error,\
         A node using project name $(1) has already been declared.)
     ,
-      $(eval _ud := $(call Require,\
-        PROJECTS_NODE ${project_node_names} $(1).URL $(1).BRANCH))
-      $(eval _ud += $(call Require,${project_node_names}))
-      $(if ${_ud},
-        $(call Signal-Error,Undefined variables:${_ud})
-      ,
-        $(if $(call node-is-declared,$(2)),
+      $(if $(call node-is-declared,$(2)),
+        $(call Verbose,Checking variables for project:$(1))
+        $(eval _ud := $(call Require,\
+          PROJECTS_NODE ${project_node_names} $(1).URL $(1).BRANCH))
+        $(eval _ud += $(call Require,${project_node_names}))
+        $(if ${_ud},
+          $(call Signal-Error,Undefined variables:${_ud})
+        ,
           $(call Verbose,Declaring project $(1).)
           $(call declare-child-node,$(1),$(2))
           $(call declare-repo,$(1))
           $(foreach _node,${project_node_names},
-            $(call declare-child-node,$(1).${${_node}},$(1))
+            $(call declare-child-node,$(1).${${_node}},$(1),${${_node}})
           )
           $(eval $(1).goals :=)
           $(eval $(1).sticky_path := ${$(1).${PROJECT_STICKY_NODE}.path})
@@ -251,14 +253,15 @@ $(if $(call project-is-declared,$(1)),
           $(eval $(1).lib_path := ${$(1).${LIB_NODE}.path})
           $(eval $(1).kits_path := ${$(1).${KITS_NODE}.path})
           $(eval projects := $(1))
-        ,
-          $(call Signal-Error,\
-            Parent node $(2) for project $(1) is not declared.)
         )
+      ,
+        $(call Signal-Error,\
+          Parent node $(2) for project $(1) is not declared.)
       )
     )
   )
 )
+
 $(call Exit-Macro)
 endef
 
@@ -309,20 +312,28 @@ define _help
 ${_macro}
   Display project attributes.
   Parameters:
-    1 = The name of the project.
+    1 = An optional name of the project. This defaults to ${PROJECT}.
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
+$(call Declare-Callable-Macro,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0),project=$(1))
-  $(if $(call project-is-declared,$(1))
-    $(call Display-Vars,\
-      $(foreach _a,${project_attributes},$(1).${_a}) \
-      $(foreach _a,${project_node_names},$(1).${_a})
-    )
-    $(call display-repo,$(1))
+  $(if $(1),
+    $(eval _p_ := $(1))
   ,
-    $(call Warn,Project $(1) has not been declared.)
+    $(eval _p_ := ${PROJECT})
+  )
+  $(call declare-project,${_p_},${PROJECTS_NODE})
+  $(if $(call project-is-declared,${_p_}),
+    $(call Attention,Displaying project ${_p_})
+    $(call Display-Vars,\
+      $(foreach _a,${project_attributes},${_p_}.${_a}) \
+      $(foreach _a,${project_node_names},${_p_}.${_a})
+    )
+    $(call display-repo,${_p_})
+  ,
+    $(call Warn,Project ${_p_} has not been declared.)
   )
   $(call Exit-Macro)
 endef
@@ -376,7 +387,11 @@ define ${_macro}
     $(eval $(1).BRANCH := ${DEFAULT_BRANCH})
   )
   $(call Attention,Using branch:${$(1).BRANCH})
-  $(call declare-project,$(1),${PROJECTS_NODE})
+  $(if $(call project-is-declared,$(1)),
+    $(call Attention,Using existing declaration for project $(1).)
+  ,
+    $(call declare-project,$(1),${PROJECTS_NODE})
+  )
   $(if ${Errors},
     $(call Attention,Unable to make a project.)
   ,
@@ -417,7 +432,11 @@ $(call Declare-Callable-Macro,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0),project=$(1) template=$(2))
 
-  $(call declare-project,$(1),${PROJECTS_NODE})
+  $(if $(call project-is-declared,$(1)),
+    $(call Attention,Using existing declaration for project $(1).)
+  ,
+    $(call declare-project,$(1),${PROJECTS_NODE})
+  )
   $(if ${Errors},
     $(call Attention,Unable to make a project.)
   ,
@@ -460,7 +479,11 @@ $(call Declare-Callable-Macro,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0),project=$(1))
   $(call Clear-Errors)
-  $(call declare-child-node,$(1),${PROJECTS_NODE})
+  $(if project-is-declared,$(1),
+    $(call Attention,Using existing declaration for project $(1).)
+  ,
+    $(call declare-project,$(1),${PROJECTS_NODE})
+  )
   $(if ${Errors},
     $(call Attention,Unable to remove project $(1).)
   ,
@@ -472,7 +495,7 @@ define ${_macro}
     ,
       $(call Signal-Error,Project $(1) node does not exist.)
     )
-    $(call undeclare-node,$(1))
+    $(call undeclare-project,$(1))
   )
   $(call Exit-Macro)
 endef

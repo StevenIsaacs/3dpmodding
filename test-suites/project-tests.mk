@@ -216,7 +216,7 @@ define ${.TestUN}
     $(call Mark-Step,Verifying project required variables.)
     $(call Expect-Error,\
               Undefined variables:${_project}.URL ${_project}.BRANCH)
-    $(call declare-project,${_project})
+    $(call declare-project,${_project},${PROJECTS_NODE})
     $(call Verify-Error)
 
     $(eval ${_project}.URL := local)
@@ -261,9 +261,9 @@ define ${.TestUN}
     $(call verify-project-nodes,${_project})
 
     $(call Expect-No-Error)
-    $(call Expect-Warning,Project ${_project} has already been declared.)
+    $(call Expect-Message,Using existing declaration for project ${_project}.)
     $(call declare-project,${_project},${PROJECTS_NODE})
-    $(call Verify-Warning)
+    $(call Verify-Message)
     $(call Verify-No-Error)
 
     $(call Mark-Step,Verifying undeclaring the test project.)
@@ -362,11 +362,11 @@ define ${.TestUN}
     $(call verify-project-nodes,${_project})
 
     $(call Mark-Step,Verifying project can't be created more than once.)
-    $(call Expect-Warning,Project ${_project} has already been declared.)
+    $(call Expect-Message,Using existing declaration for project ${_project}.)
     $(call Expect-Error,Project ${_project} node already exists.)
     $(call mk-project,${_project})
     $(call Verify-Error)
-    $(call Verify-Warning)
+    $(call Verify-Message)
 
     $(call Test-Info,Teardown.)
     $(eval undefine ${_project}.URL)
@@ -393,6 +393,7 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
+  $(call Test-Info,Setup)
   $(eval _project := $(0).project)
   $(call Test-Info,Project node:${_project})
   $(eval _new_project := $(0).new-project)
@@ -409,6 +410,7 @@ define ${.TestUN}
     $(eval ${_new_project}.URL := local)
     $(eval ${_new_project}.BRANCH := main)
 
+    $(call Mark-Step,Verifying template project does NOT exist.)
     $(call Expect-Error,Template project ${_project} does not exist.)
     $(call mk-project-from-template,${_new_project},${_project})
     $(call Verify-Error)
@@ -416,6 +418,7 @@ define ${.TestUN}
     $(call verify-project-attributes,${_project})
     $(call verify-project-nodes,${_project})
 
+    $(call Mark-Step,Verifying template project exists.)
     $(call mk-project,${_project})
     $(call undeclare-project,${_project})
 
@@ -432,12 +435,17 @@ define ${.TestUN}
       $(call FAIL,Project ${_new_project} does not conform to ModFW project format.)
     )
 
-    $(call Expect-Warning,Project ${_new_project} has already been declared.)
+    $(call Mark-Step,\
+      Verifying using existing project declaration and error when node exists.)
+
+    $(call Expect-Message,\
+      Using existing declaration for project ${_new_project}.)
     $(call Expect-Error,Project ${_new_project} node already exists.)
     $(call mk-project-from-template,${_new_project},${_project})
     $(call Verify-Error)
-    $(call Verify-Warning)
+    $(call Verify-Message)
 
+    $(call Test-Info,Teardown)
     $(eval undefine ${_new_project}.URL)
     $(eval undefine ${_new_project}.BRANCH)
     $(eval undefine ${_project}.URL)

@@ -168,16 +168,15 @@ $(call Add-Help-Section,kit-decl,Macros for declaring kits.)
 
 _macro := declare-kit
 define _help
-  Declare a kit as a repo and a child of the $${PROJECT}.KITS_NODE node.
+  Declare a kit as a repo and a child of the $${PROJECT}.$${KITS_NODE} node.
   A kit can only be declared as a child of the current project.
   Parameters:
     1 = The name of the kit.
-    2 = The parent node for the kit.
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),kit=$(1) parent=$(2))
+$(call Enter-Macro,$(0),kit=$(1) parent=${PROJECT}.${KITS_NODE})
 $(if $(call kit-is-declared,$(1)),
   $(call Attention,Kit $(1) has already been declared.)
 ,
@@ -195,9 +194,9 @@ $(if $(call kit-is-declared,$(1)),
       $(if ${_ud},
         $(call Signal-Error,Undefined variables:${_ud})
       ,
-        $(if $(call node-is-declared,$(2)),
+        $(if $(call node-is-declared,${PROJECT}.${KITS_NODE}),
           $(call Verbose,Declaring kit $(1).)
-          $(call declare-child-node,$(1),$(2))
+          $(call declare-child-node,$(1),${PROJECT}.${KITS_NODE})
           $(call declare-repo,$(1))
           $(foreach _node,${kit_node_names},
             $(call declare-child-node,$(1).${${_node}},$(1))
@@ -209,7 +208,7 @@ $(if $(call kit-is-declared,$(1)),
           $(eval kits += $(1))
         ,
           $(call Signal-Error,\
-            Parent node $(2) for kit $(1) is not declared.)
+            Parent node ${PROJECT}.${KITS_NODE} for kit $(1) is not declared.)
         )
       )
     )
@@ -348,8 +347,8 @@ _macro := mk-kit
 define _help
 ${_macro}
   Create and initialize a new kit repo. The kit node is declared to be
-  a child of the KITS_NODE node. The node is then created and initialized
-  to be a repo.
+  a child of the $${PROJECT}.$${KITS_NODE} node. The node is then created and
+  initialized to be a repo.
 
   If the node for the kit has already been declared then the existing
   declaration is used.
@@ -379,7 +378,7 @@ $(if ${$(1).BRANCH},
 ,
   $(eval $(1).BRANCH := ${DEFAULT_BRANCH})
 )
-$(call declare-kit,$(1),${KITS_NODE})
+$(call declare-kit,$(1))
 $(if ${Errors},
   $(call Attention,Unable to make a kit.)
 ,
@@ -422,7 +421,7 @@ $(call Declare-Callable-Macro,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),kit=$(1) template=$(2))
 
-$(call declare-kit,$(1),${KITS_NODE})
+$(call declare-kit,$(1))
 $(if ${Errors},
   $(call Attention,Unable to make a kit.)
 ,
@@ -430,7 +429,7 @@ $(if ${Errors},
     $(call Signal-Error,Kit $(1) node already exists.)
     $(call undeclare-kit,$(1))
   ,
-    $(call declare-kit,$(2),${KITS_NODE})
+    $(call declare-kit,$(2))
     $(if $(call is-modfw-repo,$(2)),
       $(call mk-repo-from-template,$(1),$(2))
     ,
@@ -497,7 +496,7 @@ $(call Add-Help,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),kit=$(1))
 
-$(call declare-kit,$(1),${KITS_NODE})
+$(call declare-kit,$(1))
 $(if ${Errors},
   $(call Attention,Unable to install a kit.)
 ,

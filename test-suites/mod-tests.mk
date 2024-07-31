@@ -355,7 +355,7 @@ define ${.TestUN}
   $(eval ${_kit}.BRANCH := main)
 
   $(call declare-kit-parents)
-  $(call mk-node,${KITS_NODE})
+  $(call mk-node,${PROJECT}.${KITS_NODE})
 
   $(if ${Errors},
     $(call Signal-Error,Setup for ${.TestUN} failed.,exit)
@@ -432,7 +432,7 @@ define ${.TestUN}
   $(eval ${_kit}.BRANCH := main)
 
   $(call declare-kit-parents)
-  $(call mk-node,${KITS_NODE})
+  $(call mk-node,${PROJECT}.${KITS_NODE})
   $(call mk-kit,${_kit})
 
   $(if ${Errors},
@@ -518,7 +518,7 @@ define ${.TestUN}
   $(eval ${_kit}.BRANCH := main)
 
   $(call declare-kit-parents)
-  $(call mk-node,${KITS_NODE})
+  $(call mk-node,${PROJECT}.${KITS_NODE})
   $(call mk-kit,${_kit})
   $(call mk-mod,${_mod_ref})
 

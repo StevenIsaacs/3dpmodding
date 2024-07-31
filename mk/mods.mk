@@ -262,7 +262,7 @@ $(if $(call mod-is-declared,$(1)),
       $(if $(call kit-is-declared,${_k}),
         $(call Verbose,Using previously declared kit ${_k})
       ,
-        $(call declare-kit,${_k},${KITS_NODE})
+        $(call declare-kit,${_k})
       )
       $(if ${Errors},
         $(call Signal-Error,Declaration of kit ${_k} failed.)

@@ -35,6 +35,15 @@ endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
+_var := saved_project
+${_var} :=
+define _help
+${_var}
+  The PROJECT variable is saved here while running kit tests.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+
 _macro := declare-kit-parents
 define _help
   Declare the parents for a kit. The parent structure conforms to a normal
@@ -54,13 +63,17 @@ $(call Enter-Macro,$(0),\
   KITS_NODE=${KITS_NODE}\
 )
 
+$(eval saved_project := ${PROJECT})
+$(eval PROJECT := ${kit_project_node})
+$(eval ${PROJECT}.${KITS_NODE} := ${KITS_NODE})
+
 $(if ${TESTING_PATH},
   $(call PASS,TESTING_PATH=${TESTING_PATH})
 ,
   $(call FAIL,TESTING_PATH is not defined.)
 )
 
-$(foreach _v,PROJECTS_NODE kit_project_node KITS_NODE,
+$(foreach _v,PROJECTS_NODE PROJECT ${PROJECT}.${KITS_NODE},
   $(if ${${_v}},
     $(call PASS,Var ${_v} = ${${_v}})
     $(if $(call node-is-declared,${_v}),
@@ -74,13 +87,14 @@ $(foreach _v,PROJECTS_NODE kit_project_node KITS_NODE,
 )
 
 $(call declare-root-node,${PROJECTS_NODE},${TESTING_PATH})
-$(call declare-child-node,${kit_project_node},${PROJECTS_NODE})
-$(call declare-child-node,${KITS_NODE},${kit_project_node})
+$(call declare-child-node,${PROJECT},${PROJECTS_NODE})
+$(call declare-child-node,\
+  ${PROJECT}.${KITS_NODE},${PROJECT},${KITS_NODE})
 
-$(if $(call node-exists,${kit_project_node}),
-  $(call FAIL,The node ${kit_project_node} should NOT exist.)
+$(if $(call node-exists,${PROJECT}),
+  $(call FAIL,The node ${PROJECT} should NOT exist.)
 ,
-  $(call PASS,The node ${kit_project_node} does not exist.)
+  $(call PASS,The node ${PROJECT} does not exist.)
 )
 
 $(if ${.Failed},
@@ -102,6 +116,7 @@ $(call Enter-Macro,$(0))
 $(call undeclare-node-descendants,${PROJECTS_NODE})
 $(call undeclare-root-node,${PROJECTS_NODE})
 
+$(eval PROJECT := ${saved_project})
 $(call Exit-Macro)
 endef
 
@@ -247,19 +262,21 @@ define ${.TestUN}
     $(eval ${_kit}.BRANCH := main)
 
     $(call Mark-Step,Verifying kit is not declared.)
+    $(eval PROJECT := foobar)
     $(call Expect-Error,\
-      Parent node foobar for kit ${_kit} is not declared.)
-    $(call declare-kit,${_kit},foobar)
+      Parent node foobar.${KITS_NODE} for kit ${_kit} is not declared.)
+    $(call declare-kit,${_kit})
     $(call Verify-Error)
     $(call verify-kit-attributes,${_kit})
     $(call verify-kit-nodes,${_kit})
+    $(eval PROJECT := ${kit_project_node})
 
     $(call Mark-Step,Verifying kit node already declared.)
-    $(call declare-child-node,${_kit},${KITS_NODE})
+    $(call declare-child-node,${_kit},${PROJECT}.${KITS_NODE})
 
     $(call Expect-Error,\
       A node using kit name ${_kit} has already been declared.)
-    $(call declare-kit,${_kit},${KITS_NODE})
+    $(call declare-kit,${_kit})
     $(call Verify-Error)
     $(call verify-kit-attributes,${_kit})
     $(call verify-kit-nodes,${_kit})
@@ -268,7 +285,7 @@ define ${.TestUN}
 
     $(call Expect-Error,\
       A repo using kit name ${_kit} has already been declared.)
-    $(call declare-kit,${_kit},${KITS_NODE})
+    $(call declare-kit,${_kit})
     $(call Verify-Error)
     $(call verify-kit-attributes,${_kit})
     $(call verify-kit-nodes,${_kit})
@@ -278,7 +295,7 @@ define ${.TestUN}
 
     $(call Mark-Step,Verifying kit can be declared.)
     $(call Expect-No-Error)
-    $(call declare-kit,${_kit},${KITS_NODE})
+    $(call declare-kit,${_kit})
     $(call Verify-No-Error)
 
     $(call verify-kit-attributes,${_kit},defined)
@@ -286,7 +303,7 @@ define ${.TestUN}
 
     $(call Expect-No-Error)
     $(call Expect-Message,Kit ${_kit} has already been declared.)
-    $(call declare-kit,${_kit},${KITS_NODE})
+    $(call declare-kit,${_kit})
     $(call Verify-Message)
     $(call Verify-No-Error)
 
@@ -303,7 +320,7 @@ define ${.TestUN}
 
     $(call Mark-Step,Verifying can redeclare the same kit.)
     $(call Expect-No-Error)
-    $(call declare-kit,${_kit},${KITS_NODE})
+    $(call declare-kit,${_kit})
     $(call Verify-No-Error)
 
     $(call Test-Info,Undeclaring kit nodes.)
@@ -323,7 +340,7 @@ define ${.TestUN}
     $(call undeclare-kit,${_kit})
     $(call Verify-Error)
 
-    $(call declare-child-node,${_kit},${KITS_NODE})
+    $(call declare-child-node,${_kit},${PROJECT}.${KITS_NODE})
     $(call declare-repo,${_kit})
 
     $(call Expect-No-Error)
@@ -505,14 +522,14 @@ define ${.TestUN}
     $(eval ${_kit}.BRANCH := main)
 
     $(call Test-Info,Creating the source kit repo.)
-    $(call declare-kit,${_kit},${kit_project_node})
+    $(call declare-kit,${_kit})
     $(call mk-kit,${_kit})
 
     $(eval ${_kit}.URL := ${${_kit}.path})
 
     $(call undeclare-kit,${_kit})
 
-    $(call mk-node,${KITS_NODE})
+    $(call mk-node,${PROJECT}.${KITS_NODE})
 
     $(call Mark-Step,Verifying message that kit segment is incomplete.)
     $(call Expect-Message,\
