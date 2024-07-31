@@ -79,7 +79,7 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := node_attributes
-${_var} := name node_un var parent children path
+${_var} := name node_un var parent children path dir
 define _help
 ${_var}
   ModFW components are organized into a classic tree structure. Each node of a
@@ -99,6 +99,8 @@ ${_var}
     This is a list of node names of all children of this node.
   <node>.path
     The full path to the node in the file system.
+  <node>.dir
+    The name of the directory for the node.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
@@ -271,6 +273,7 @@ define ${_macro}
       $(eval $(1).name := $(1))
       $(eval $(1).var := $(call To-Shell-Var,$(1)))
       $(eval $(1).path := $(2)/$(1))
+      $(eval $(1).dir := $(1))
       $(eval $(1).node_un := $(1))
       $(eval $(1).parent := )
       $(eval $(1).children := )
@@ -335,8 +338,10 @@ define ${_macro}
         $(if $(3),
           $(call Info,Using $(3) as node directory name.)
           $(eval $(1).path := ${$(2).path}/$(3))
+          $(eval $(1).dir := $(3))
         ,
           $(eval $(1).path := ${$(2).path}/$(1))
+          $(eval $(1).dir := $(1))
         )
         $(eval $(1).parent := $(2))
         $(eval $(1).node_un := ${$(1).parent}.$(1))
