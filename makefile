@@ -445,7 +445,13 @@ endef
   ifeq (${PROJECT},)
     $(call Signal-Error,PROJECT must be defined.)
   else
-    $(call use-project,${PROJECT})
+    $(call declare-project,${PROJECT},${PROJECTS_NODE})
+    ifneq ($(call project-exists,${PROJECT}),)
+      $(call Use-Project,${PROJECT})
+    endif
+    ifneq ($(findstring call-,${Goals}),)
+      $(call Attention,Calling a callable macro.)
+    endif
   endif
 
 endif # not TESTING
