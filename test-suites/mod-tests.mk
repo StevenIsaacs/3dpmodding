@@ -269,7 +269,7 @@ define ${.TestUN}
 
     $(call undeclare-child-node,${_mod_ref})
 
-    $(eval ${_kit}.URL := local)
+    $(eval ${_kit}.URL := ${LOCAL_REPO})
     $(eval ${_kit}.BRANCH := main)
 
     $(call Mark-Step,Verifying mod can be declared.)
@@ -352,7 +352,7 @@ define ${.TestUN}
   $(eval _mod_ref := ${_kit}.${_mod})
   $(call Test-Info,Mod node:${_mod})
 
-  $(eval ${_kit}.URL := local)
+  $(eval ${_kit}.URL := ${LOCAL_REPO})
   $(eval ${_kit}.BRANCH := main)
 
   $(call declare-kit-parents)
@@ -429,7 +429,7 @@ define ${.TestUN}
   $(call Test-Info,Mod node:${_mod})
   $(call Test-Info,New mod node:${_new_mod})
 
-  $(eval ${_kit}.URL := local)
+  $(eval ${_kit}.URL := ${LOCAL_REPO})
   $(eval ${_kit}.BRANCH := main)
 
   $(call declare-kit-parents)
@@ -515,7 +515,7 @@ define ${.TestUN}
   $(eval _mod_ref := ${_kit}.${_mod})
   $(call Test-Info,Mod node:${_mod})
 
-  $(eval ${_kit}.URL := local)
+  $(eval ${_kit}.URL := ${LOCAL_REPO})
   $(eval ${_kit}.BRANCH := main)
 
   $(call declare-kit-parents)

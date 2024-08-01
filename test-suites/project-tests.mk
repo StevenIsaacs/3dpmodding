@@ -219,7 +219,7 @@ define ${.TestUN}
     $(call declare-project,${_project},${PROJECTS_NODE})
     $(call Verify-Error)
 
-    $(eval ${_project}.URL := local)
+    $(eval ${_project}.URL := ${LOCAL_REPO})
     $(eval ${_project}.BRANCH := main)
 
     $(call Mark-Step,Verifying project is not declared.)
@@ -342,7 +342,7 @@ define ${.TestUN}
   $(if ${.Failed},
     $(call Signal-Error,Setup for ${.TestUN} failed.,exit)
   ,
-    $(eval ${_project}.URL := local)
+    $(eval ${_project}.URL := ${LOCAL_REPO})
     $(eval ${_project}.BRANCH := main)
 
     $(call Mark-Step,Verifying project can be created.)
@@ -404,10 +404,10 @@ define ${.TestUN}
   $(if ${.Failed},
     $(call FAIL,Preconditions for ${.TestUN} are not correct.)
   ,
-    $(eval ${_project}.URL := local)
+    $(eval ${_project}.URL := ${LOCAL_REPO})
     $(eval ${_project}.BRANCH := main)
 
-    $(eval ${_new_project}.URL := local)
+    $(eval ${_new_project}.URL := ${LOCAL_REPO})
     $(eval ${_new_project}.BRANCH := main)
 
     $(call Mark-Step,Verifying template project does NOT exist.)
@@ -482,7 +482,7 @@ define ${.TestUN}
   $(if ${.Failed},
     $(call FAIL,Preconditions for ${.TestUN} are not correct.)
   ,
-    $(eval ${_project}.URL := local)
+    $(eval ${_project}.URL := ${LOCAL_REPO})
     $(eval ${_project}.BRANCH := main)
 
     $(eval _src_projects := src-projects)

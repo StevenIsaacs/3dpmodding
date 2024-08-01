@@ -260,7 +260,7 @@ define ${.TestUN}
     $(call verify-kit-attributes,${_kit})
     $(call verify-kit-nodes,${_kit})
 
-    $(eval ${_kit}.URL := local)
+    $(eval ${_kit}.URL := ${LOCAL_REPO})
     $(eval ${_kit}.BRANCH := main)
 
     $(call Mark-Step,Verifying kit is not declared.)
@@ -385,7 +385,7 @@ define ${.TestUN}
   $(if ${.Failed},
     $(call Signal-Error,Setup for ${.TestUN} failed.,exit)
   ,
-    $(eval ${_kit}.URL := local)
+    $(eval ${_kit}.URL := ${LOCAL_REPO})
     $(eval ${_kit}.BRANCH := main)
 
     $(call Mark-Step,Verifying kit can be created.)
@@ -446,10 +446,10 @@ define ${.TestUN}
   $(if ${.Failed},
     $(call FAIL,Preconditions for ${.TestUN} are not correct.)
   ,
-    $(eval ${_kit}.URL := local)
+    $(eval ${_kit}.URL := ${LOCAL_REPO})
     $(eval ${_kit}.BRANCH := main)
 
-    $(eval ${_new_kit}.URL := local)
+    $(eval ${_new_kit}.URL := ${LOCAL_REPO})
     $(eval ${_new_kit}.BRANCH := main)
 
     $(call Mark-Step,Verifying template kit must exist.)
@@ -520,7 +520,7 @@ define ${.TestUN}
   $(if ${.Failed},
     $(call FAIL,Preconditions for ${.TestUN} are not correct.)
   ,
-    $(eval ${_kit}.URL := local)
+    $(eval ${_kit}.URL := ${LOCAL_REPO})
     $(eval ${_kit}.BRANCH := main)
 
     $(call Test-Info,Creating the source kit repo.)
