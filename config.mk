@@ -217,7 +217,7 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := DEFAULT_URL
-$(call Sticky,${_var},${GIT_USER}@${GIT_SERVER}/${GIT_DIR})
+$(call Sticky,${_var},${GIT_SERVER}:${GIT_DIR})
 define _help
 ${_var} = ${${_var}}
   The default URL minus the repo name to use when installing or creating a repo.
