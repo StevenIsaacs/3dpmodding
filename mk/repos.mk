@@ -576,7 +576,7 @@ define ${_macro}
 $(call Enter-Macro,$(0),repo=$(1) url=$(2))
 $(if $(call repo-is-declared,$(1)),
   $(if $(2),
-    $(eval _origin_ := $(2)),
+    $(eval _origin_ := $(2))
   ,
     $(if ${$(1).URL},
       $(eval _origin_ := ${$(1).URL})
