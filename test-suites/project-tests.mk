@@ -509,6 +509,12 @@ define ${.TestUN}
     ,
       $(call FAIL,Make segment for project ${_project} was NOT loaded.)
     )
+
+    $(call Expect-Message,\
+      Project ${_project} is already in use.)
+    $(call use-project,${_project})
+    $(call Verify-Message)
+
     $(eval undefine ${_project}.URL)
     $(eval undefine ${_project}.BRANCH)
 

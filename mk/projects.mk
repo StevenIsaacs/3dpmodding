@@ -79,6 +79,17 @@ endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
+_var := active_project
+${_var} :=
+define _help
+${_var}
+  The project currently in use. Only one project can be in use in a session.
+  A project is in use when its segment has been loaded. This is used by
+  use-project and will equal PROJECT.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+
 _var := project_ignored_nodes
 ${_var} := KITS_NODE BUILD_NODE STAGING_NODE TOOLS_NODE BIN_NODE LIB_NODE
 define _help
@@ -252,7 +263,7 @@ $(if $(call project-is-declared,$(1)),
           $(eval $(1).bin_path := ${$(1).${BIN_NODE}.path})
           $(eval $(1).lib_path := ${$(1).${LIB_NODE}.path})
           $(eval $(1).kits_path := ${$(1).${KITS_NODE}.path})
-          $(eval projects := $(1))
+          $(eval projects += $(1))
         )
       ,
         $(call Signal-Error,\
@@ -560,8 +571,8 @@ help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0),project=$(1))
-  $(if ${${$(1).seg_un}.SegID},
-    $(call Verbose,Project $(1) is already in use.)
+  $(if ${active_project},
+    $(call Attention,Project $(1) is already in use.)
   ,
     $(call Info,Using project:$(1))
     $(call install-project,$(1))
@@ -575,7 +586,9 @@ define ${_macro}
           $(call mk-node,$(1).${${_node}})
         )
       )
+      $(call Redirect-Sticky,${$(1).sticky_path})
       $(call Use-Segment,${$(1).seg_f})
+      $(eval active_project := $(1))
     )
   )
   $(call Exit-Macro)

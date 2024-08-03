@@ -342,7 +342,7 @@ define ${.TestUN}
   $(call Begin-Test,$(0))
 
   $(eval _rn := $(0).mmr1)
-  $(eval ${_rn}.URL := test)
+  $(eval ${_rn}.URL := ${LOCAL_REPO})
   $(eval ${_rn}.BRANCH := test)
 
   $(call Mark-Step,Testing repo is not declared.)

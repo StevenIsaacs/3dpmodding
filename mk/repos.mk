@@ -183,6 +183,18 @@ ${_macro} = \
     $(wildcard ${$(1).seg_f}) \
   )
 
+_macro := is-remote-repo
+define _help
+${_macro}
+  Returns ${LOCAL_REPO} if the repo is remote. A remote repo URL will always
+  have a colon (:).
+  Paramters:
+    1 = The repo to check.
+endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
+${_macro} = $(findstring :,${$(1).repo_url})
+
 $(call Add-Help-Section,repo-info,Macros for getting repo information.)
 
 _macro := get-repo-url
@@ -496,34 +508,36 @@ define _help
 ${_macro}
   Check to see if a remote repo exists. A non-empty value is returned if
   the repo exists.
-  NOTE: This is designed to be callable from the make command line using the
-  helpers call-${_macro} goal.
-  For example:
-    make ${_macro}.PARMS=<repo>:<branch> call-${_macro}
   Parameters:
     1 = The repo to check.
-    2 = The URL to check. If this is empty then the <repo>.URL variable.
+    2 = The URL to check. If this is empty then the <repo>.repo_url variable.
   Returns:
     True if the remote repo exists.
       See Run (help-helpers).
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
-$(call Declare-Callable-Macro,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),repo=$(1) branch=$(2))
 $(if $(call repo-is-declared,$(1)),
   $(if $(2),
-    $(eval _u_ := $(2)),
+    $(eval _u_ := $(2))
   ,
-    $(eval _u_ := ${$(1).URL})
+    $(eval _u_ := ${$(1).repo_url})
   )
-  $(call Run,git ls-remote ${_u_} 2>/dev/null)
-  $(if ${Run_Rc},
-    $(call Signal-Error,Remote repo $(1) does not exist.)
+  $(if $(call is-remote-repo,$(1)),
+    $(call Run,git ls-remote ${_u_} 2>/dev/null)
+    $(if ${Run_Rc},
+      $(call Attention,Remote repo $(1) does not exist.)
+      $(eval Run_Rc := )
+      ${False}
+    ,
+      $(call Attention,Remote repo ${_u_} exists.)
+      ${True}
+    )
   ,
-    $(call Attention,Remote repo ${_u_} exists.)
-    ${True}
+    $(call Attention,Repo $(1) is a local repo -- cannot check remote.)
+    ${False}
   )
 ,
   $(call Signal-Error,Repo $(1) has not been declared.)
@@ -537,14 +551,23 @@ ${_macro}
   Change the repo origin to a different URL. This is mostly intended to be used
   when creating new repos but can be used to change the origin of an existing
   repo.
+
+  TODO
+  For a new repo the repo must first be created on the server.
+    Login to the server.
+    Create the repo. cd <dir>&& git init --bare <repo>
+
+    On the client:
+    git remote add <repo> git@<server>:/<pathtorepos>/<repo>
+    git push --set-upstream <repo> <branch>
+
   NOTE: This is designed to be callable from the make command line using the
   helpers call-${_macro} goal.
   For example:
     make ${_macro}.PARMS=<repo>:<url> call-$(_macro)
   Parameters:
     1 = The repo for which to set the origin.
-    2 = The new url. If this is empty then <repo>.URL is used. Otherwise,
-        <repo>.URL is set to this value.
+    2 = The new url. If this is empty then <repo>.URL is used.
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
@@ -555,18 +578,36 @@ $(if $(call repo-is-declared,$(1)),
   $(if $(2),
     $(eval _origin_ := $(2)),
   ,
-    $(eval _origin_ := ${$(1).URL})
+    $(if ${$(1).URL},
+      $(eval _origin_ := ${$(1).URL})
+    ,
+      $(call Signal-Error,URL has not been specified.)
+    )
   )
-  $(if $(call remote-repo-exists,$(1),$(2)),
-    $(call Run,cd ${$(1).path} && git remote set-url "origin" ${_origin_})
+  $(if $(Errors),
+    $(call Attention,An error occurred -- not setting origin.)
+  ,
+    $(call Run,cd ${$(1).path} && git remote get-url origin)
+    $(if ${Run_Rc},
+      $(call Run,cd ${$(1).path} && git remote add origin ${_origin_})
+      $(if $(call remote-repo-exists,$(1),${_origin_}),
+      ,
+        $(call Attention,Added remote -- be sure to create the remote repo.)
+      )
+    ,
+      $(if $(call remote-repo-exists,$(1),${_origin_}),
+        $(call Run,cd ${$(1).path} && git remote set-url origin ${_origin_})
+      ,
+        $(call Signal-Error,\
+          Cannot set remote url -- the remote repo does not exist.)
+      )
+    )
     $(if ${Run_Rc},
       $(call Signal-Error,Setting the remote origin ${_origin_} failed.)
       $(call Warn,${Run_Output})
     ,
       $(eval $(1).repo_url := ${_origin_})
     )
-  ,
-    $(call Signal-Error,$(1) is NOT a repo.)
   )
 ,
   $(call Signal-Error,Repo $(1) has not been declared.)
@@ -701,23 +742,29 @@ $(if $(call repo-is-declared,$(1)),
       $(call Info,Node $(1) is already a repo.)
     ,
       $(call Run,git init -b ${$(1).repo_branch} ${$(1).path})
-    )
-    $(if ${Run_Rc},
-      $(call Signal-Error,Error when initializing repo $(1).)
-    ,
-      $(if $(wildcard ${$(1).seg_f}),
-        $(call Info,Using existing makefile segment.)
-      ,
-        $(call Info,Generating makefile segment for repo:$(1))
-        $(call Gen-Segment-File,\
-          $(1),${$(1).seg_f},<edit this description for>:$(1))
-      )
-      $(call Run, \
-        cd ${$(1).path} && \
-        git add . && git commit . -m "New repo $(1) initialized."
-      )
       $(if ${Run_Rc},
-        $(call Signal-Error,Error when committing repo $(1) files.)
+        $(call Signal-Error,Error when initializing repo $(1).)
+      ,
+        $(if $(wildcard ${$(1).seg_f}),
+          $(call Info,Using existing makefile segment.)
+        ,
+          $(call Info,Generating makefile segment for repo:$(1))
+          $(call Gen-Segment-File,\
+            $(1),${$(1).seg_f},<edit this description for repo>:$(1))
+        )
+        $(call Run, \
+          cd ${$(1).path} && \
+          git add . && git commit . -m "New repo $(1) initialized."
+        )
+        $(if ${Run_Rc},
+          $(call Signal-Error,Error when committing repo $(1) files.)
+        ,
+          $(if $(call is-remote-repo,$(1)),
+            $(call set-repo-origin,$(1))
+          ,
+            $(call Attention,Repo $(1) is a local repo -- not setting origin.)
+          )
+        )
       )
     )
   )
