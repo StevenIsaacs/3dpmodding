@@ -207,7 +207,7 @@ $(if $(call kit-is-declared,$(1)),
           $(call declare-child-node,$(1),${PROJECT}.${KITS_NODE})
           $(call declare-repo,$(1))
           $(foreach _node,${kit_node_names},
-            $(call declare-child-node,$(1).${${_node}},$(1))
+            $(call declare-child-node,$(1).${${_node}},$(1),${${_node}})
           )
           $(eval $(1).goals :=)
           $(eval $(1).mods_path := ${$(1).${MODS_NODE}.path})
