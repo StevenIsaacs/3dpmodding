@@ -427,7 +427,6 @@ $(call Add-Help,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0))
 
-  $(call Add-Segment-Path,${MK_NODE})
   $(call Use-Segment,projects)
 
   $(call declare-root-node,${ModFW_node},${ModFW_path})
@@ -447,7 +446,7 @@ endef
   else
     $(call declare-project,${PROJECT},${PROJECTS_NODE})
     ifneq ($(call project-exists,${PROJECT}),)
-      $(call Use-Project,${PROJECT})
+      $(call use-project,${PROJECT})
     endif
     ifneq ($(findstring call-,${Goals}),)
       $(call Attention,Calling a callable macro.)
