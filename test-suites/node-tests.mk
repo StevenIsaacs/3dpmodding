@@ -34,17 +34,17 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),node=$(1))
   $(if $(call node-is-declared,$(1)),
     $(call FAIL,Node $(1) should not be declared.)
   ,
     $(call PASS,Node $(1) is not declared.)
   )
   $(foreach _a,${node_attributes},
-    $(if $(call Is-Not-Defined,${_a}),
-      $(call PASS,Node attribute ${_a} is not defined.)
+    $(if $(call Is-Not-Defined,$(1).${_a}),
+      $(call PASS,Node attribute $(1).${_a} is not defined.)
     ,
-      $(call FAIL,Node attribute ${_a} is defined.)
+      $(call FAIL,Node attribute $(1).${_a} is defined.)
     )
   )
   $(call Exit-Macro)
@@ -60,17 +60,17 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),node=$(1))
   $(if $(call node-is-declared,$(1)),
     $(call PASS,Node $(1) is declared.)
   ,
-    $(call FAIL,Node $(1) is not be declared.)
+    $(call FAIL,Node $(1) is not declared.)
   )
   $(foreach _a,${node_attributes},
-    $(if $(call Is-Not-Defined,${_a}),
-      $(call FAIL,Node attribute ${_a} is not defined.)
+    $(if $(call Is-Not-Defined,$(1).${_a}),
+      $(call FAIL,Node attribute $(1).${_a} is not defined.)
     ,
-      $(call PASS,Node attribute ${_a} is defined.)
+      $(call PASS,Node attribute $(1).${_a} is defined.)
     )
   )
   $(call Exit-Macro)
@@ -87,7 +87,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),node=$(1))
   $(call verify-node-is-declared,$(1))
   $(if $(call node-exists,$(1)),
     $(call PASS,Node $(1) has a valid path.)
@@ -109,7 +109,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),node=$(1))
   $(call verify-node-is-declared,$(1))
   $(if $(call node-exists,$(1)),
     $(call FAIL,Node $(1) has a valid path and should not.)
@@ -130,7 +130,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),node=$(1))
   $(call verify-node-is-declared,$(1))
   $(if ${$(1).parent},
     $(call FAIL,Node $(1) has a parent and should not.)
@@ -151,7 +151,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),node=$(1))
   $(call verify-node-is-declared,$(1))
   $(if ${$(1).parent},
     $(call PASS,Node $(1) is a child node.)
@@ -173,11 +173,11 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),node=$(1))
   $(call verify-node-is-declared,$(1))
   $(if ${$(1).parent},
     $(call PASS,Node $(1) is a child node.)
-    $(if $(filter $(1),${${$(1).parent}.children})
+    $(if $(filter $(1),${${$(1).parent}.children}),
       $(call PASS,Node $(1) is a child of ${$(1).parent}.)
     ,
       $(call FAIL,Node $(1) is NOT a child of ${$(1).parent}.)
@@ -199,12 +199,12 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1))
+  $(call Enter-Macro,$(0),node=$(1) parent=$(2))
   $(call verify-node-is-declared,$(1))
   $(call verify-node-is-declared,$(2))
   $(if ${$(1).parent},
     $(call PASS,Node $(1) is a child node.)
-    $(if $(filter $(1),${$(2).children})
+    $(if $(filter $(1),${$(2).children}),
       $(call PASS,Node $(1) is a child of $(2).)
     ,
       $(call FAIL,Node $(1) is NOT a child of $(2).)
@@ -227,8 +227,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-  $(call Enter-Macro,$(0),$(1) $(2))
-  $(call verify-node-not-declared,$(1))
+  $(call Enter-Macro,$(0),node=$(1) parent=$(2))
   $(call verify-node-is-declared,$(2))
   $(if $(call is-a-child-of,$(1),$(2)),
     $(call FAIL,Node $(1) is a child of $(2).)
@@ -240,10 +239,10 @@ endef
 
 $(call Add-Help-Section,test_list,Tests for verifying nodes.)
 
-$(call Declare-Test,nonexistent-nodes)
+$(call Declare-Test,declare-root-nodes)
 define _help
 ${.TestUN}
-  Verify messages, warnings and, errors for when nodes do not exist.
+  Verify declaring and undeclaring root nodes.
 endef
 help-${.TestUN} := $(call _help)
 $(call Add-Help,${.TestUN})
@@ -252,30 +251,7 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(call Test-Info,Testing node has not been declared.)
-  $(eval _node := does-not-exist)
-  $(call verify-node-not-declared,${_node})
-
-  $(call Test-Info,Testing node does not exist.)
-  $(call verify-node-does-not-exist,${_node})
-
-  $(call End-Test)
-  $(call Exit-Macro)
-endef
-
-$(call Declare-Test,declare-root-nodes)
-define _help
-${.TestUN}
-  Verify declaring and undeclaring root nodes.
-endef
-help-${.TestUN} := $(call _help)
-$(call Add-Help,${.TestUN})
-${.TestUN}.Prereqs := ${.SuiteN}.nonexistent-nodes
-define ${.TestUN}
-  $(call Enter-Macro,$(0))
-  $(call Begin-Test,$(0))
-
-  $(eval _node := drn1)
+  $(eval _rn := drn1)
   $(call verify-node-not-declared,${_rn})
 
   $(call Test-Info,Verify root node must have a path.)
@@ -286,15 +262,15 @@ define ${.TestUN}
 
   $(call verify-node-not-declared,${_rn})
 
-  $(call Test-Info,Verify root node can be declared.)
+  $(call Mark-Step,Verify root node can be declared.)
 
   $(call Expect-No-Error)
-  $(call declare-root-node,${_rn},${PROJECTS_PATH})
+  $(call declare-root-node,${_rn},${TESTING_PATH})
   $(call Verify-No-Error)
 
   $(call verify-node-is-declared,${_rn})
 
-  $(call Test-Info,Verify root node can be undeclared.)
+  $(call Mark-Step,Verify root node can be undeclared.)
 
   $(call Expect-No-Error)
   $(call undeclare-root-node,${_rn})
@@ -302,11 +278,36 @@ define ${.TestUN}
 
   $(call verify-node-not-declared,${_rn})
 
-  $(call Test-Info,Verify root node cannot be undeclared more than once.)
+  $(call Mark-Step,Verify root node cannot be undeclared more than once.)
 
   $(call Expect-Error,Node ${_rn} is NOT declared -- NOT undeclaring.)
   $(call undeclare-root-node,${_rn})
   $(call Verify-Error)
+
+  $(call End-Test)
+  $(call Exit-Macro)
+endef
+
+$(call Declare-Test,nonexistent-nodes)
+define _help
+${.TestUN}
+  Verify messages, warnings and, errors for when nodes do not exist.
+endef
+help-${.TestUN} := $(call _help)
+$(call Add-Help,${.TestUN})
+${.TestUN}.Prereqs := ${.SuiteN}.declare-root-nodes
+define ${.TestUN}
+  $(call Enter-Macro,$(0))
+  $(call Begin-Test,$(0))
+
+  $(call Mark-Step,Testing node has not been declared.)
+  $(eval _node := does-not-exist)
+  $(call verify-node-not-declared,${_node})
+
+  $(call Mark-Step,Testing node does not exist.)
+  $(call declare-root-node,${_node},${TESTING_PATH})
+  $(call verify-node-does-not-exist,${_node})
+  $(call undeclare-root-node,${_node})
 
   $(call End-Test)
   $(call Exit-Macro)
@@ -319,25 +320,25 @@ ${.TestUN}
 endef
 help-${.TestUN} := $(call _help)
 $(call Add-Help,${.TestUN})
-${.TestUN}.Prereqs := ${.SuiteN}.declare-root-nodes
+${.TestUN}.Prereqs := ${.SuiteN}.nonexistent-nodes
 define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(eval _rn := ${Seg}.crn1)
+  $(eval _rn := $(0).crn1)
 
-  $(call Test-Info,Testing node is not declared.)
+  $(call Mark-Step,Testing node is not declared.)
   $(call verify-node-not-declared,${_rn})
 
-  $(call Test-Info,Testing node does not exist.)
-  $(call declare-root-node,${_rn},${PROJECTS_PATH})
+  $(call Mark-Step,Testing node does not exist.)
+  $(call declare-root-node,${_rn},${TESTING_PATH})
   $(call verify-node-does-not-exist,${_rn})
 
-  $(call Test-Info,Testing node can be created.)
+  $(call Mark-Step,Testing node can be created.)
   $(call mk-node,${_rn})
   $(call verify-node-exists,${_rn})
 
-  $(call rm-node,${_rn})
+  $(call rm-node,${_rn},,y)
   $(call verify-node-does-not-exist,${_rn})
 
   $(call undeclare-root-node,${_rn})
@@ -358,29 +359,27 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(eval _rn := ${Seg}.dcnr1)
+  $(eval _rn := $(0).dcnr1)
   $(eval _cn := dcnc1)
 
   $(call verify-node-not-declared,${_rn})
   $(call verify-node-not-declared,${_cn})
 
-  $(call Test-Info,Verify root node must have a path.)
+  $(call Mark-Step,Verify root node must have a path.)
 
-  $(call Expect-Error,The parent for node ${_cn} has not been specified.)
+  $(call Expect-Error,The parent node has not been specified.)
   $(call declare-child-node,${_cn})
   $(call Verify-Error)
 
-  $(call Test-Info,Verify parent node must have been declared.)
-
+  $(call Mark-Step,Verify parent node must have been declared.)
   $(call Expect-Error,Parent node ${_rn} has not been declared.)
   $(call declare-child-node,${_cn},${_rn})
   $(call Verify-Error)
 
   $(call verify-node-not-declared,${_cn})
 
-  $(call Test-Info,Verify child node can be declared.)
-
-  $(call declare-root-node,${_rn},${PROJECTS_PATH})
+  $(call Mark-Step,Verify child node can be declared.)
+  $(call declare-root-node,${_rn},${TESTING_PATH})
 
   $(call Expect-No-Error)
   $(call declare-child-node,${_cn},${_rn})
@@ -388,12 +387,12 @@ define ${.TestUN}
 
   $(call verify-node-is-declared,${_cn})
 
+  $(call Mark-Step,Verify child is a child of its parent.)
   $(call verify-is-child-of-parent,${_cn})
 
   $(call verify-is-child-of-node,${_cn},${_rn})
 
-  $(call Test-Info,Verify child node can be undeclared.)
-
+  $(call Mark-Step,Verify child node can be undeclared.)
   $(call Expect-No-Error)
   $(call undeclare-child-node,${_cn})
   $(call Verify-No-Error)
@@ -402,8 +401,7 @@ define ${.TestUN}
 
   $(call verify-is-not-child-of-node,${_cn},${_rn})
 
-  $(call Test-Info,Verify child node cannot be undeclared more than once.)
-
+  $(call Mark-Step,Verify child node cannot be undeclared more than once.)
   $(call Expect-Error,Node ${_cn} is NOT declared -- NOT undeclaring.)
   $(call undeclare-child-node,${_cn})
   $(call Verify-Error)
@@ -422,51 +420,70 @@ endef
 help-${.TestUN} := $(call _help)
 $(call Add-Help,${.TestUN})
 ${.TestUN}.Prereqs := \
-  ${.SuiteN}.declare-root-nodes \
   ${.SuiteN}.declare-child-nodes
 define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(eval _rn := ${Seg}.dgcnr1)
+  $(eval _rn := $(0).dgcnr1)
   $(eval _cn := dgcnc1)
-  $(eval _gcn := dgcngc1)
+  $(eval _gcn1 := dgcngc1)
+  $(eval _gcn2 := dgcngc2)
+  $(eval _ggcn1 := dgcnggc1)
 
   $(call verify-node-not-declared,${_rn})
   $(call verify-node-not-declared,${_cn})
-  $(call verify-node-not-declared,${_gcn})
+  $(call verify-node-not-declared,${_gcn1})
 
-  $(call declare-root-node,${_rn},${PROJECTS_PATH})
+  $(call declare-root-node,${_rn},${TESTING_PATH})
   $(call declare-child-node,${_cn},${_rn})
 
   $(call Expect-No-Error)
-  $(call declare-child-node,${_gcn},${_cn})
+  $(call declare-child-node,${_gcn1},${_cn})
   $(call Verify-No-Error)
 
-  $(call verify-node-is-declared,${_gcn})
+  $(call verify-node-is-declared,${_gcn1})
 
-  $(call verify-is-child-of-parent,${_gcn})
-  $(call verify-is-child-of-node,${_gcn},${_cn})
-  $(call verify-is-not-child-of-node,${_gcn},${_rn})
+  $(call verify-is-child-of-parent,${_gcn1})
+  $(call verify-is-child-of-node,${_gcn1},${_cn})
+  $(call verify-is-not-child-of-node,${_gcn1},${_rn})
 
-  $(call Test-Info,Verify child node cannot be undeclared.)
-  $(call Expect-Error,Child node $(1) has children -- NOT undeclaring.)
+  $(call Mark-Step,Verify child node cannot be undeclared.)
+  $(call Expect-Error,Child node ${_cn} has children -- NOT undeclaring.)
   $(call undeclare-child-node,${_cn})
   $(call Verify-Error)
 
-  $(call Test-Info,Verify grandchild node can be undeclared.)
+  $(call Mark-Step,Verify grandchild node can be undeclared.)
   $(call Expect-No-Error)
-  $(call undeclare-child-node,${_gcn})
+  $(call undeclare-child-node,${_gcn1})
   $(call Verify-No-Error)
 
-  $(call verify-node-not-declared,${_gcn})
+  $(call verify-node-not-declared,${_gcn1})
 
-  $(call verify-is-not-child-of-node,${_gcn},${_cn})
+  $(call verify-is-not-child-of-node,${_gcn1},${_cn})
 
-  $(call Test-Info,Verify child node can now be undeclared.)
+  $(call Mark-Step,Verify child node can now be undeclared.)
   $(call Expect-No-Error)
   $(call undeclare-child-node,${_cn})
   $(call Verify-No-Error)
+
+  $(call verify-node-not-declared,${_cn})
+  $(call verify-node-not-declared,${_gcn1})
+
+  $(call Mark-Step,Verifying undeclaring descendants.)
+  $(call declare-child-node,${_cn},${_rn})
+  $(call declare-child-node,${_gcn1},${_cn})
+  $(call declare-child-node,${_ggcn1},${_gcn1})
+  $(call declare-child-node,${_gcn2},${_cn})
+
+  $(call display-node-descendants,${_rn})
+  $(call undeclare-node-descendants,${_rn})
+  $(call display-node-descendants,${_rn})
+
+  $(call verify-node-not-declared,${_gcn2})
+  $(call verify-node-not-declared,${_ggcn1})
+  $(call verify-node-not-declared,${_gcn1})
+  $(call verify-node-not-declared,${_cn})
 
   $(call undeclare-root-node,${_rn})
 
@@ -488,14 +505,14 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(eval _rn := ${Seg}.ccnr1)
+  $(eval _rn := $(0).ccnr1)
   $(eval _cn := ccnc1)
 
-  $(call Test-Info,Testing node is not declared.)
+  $(call Mark-Step,Testing node is not declared.)
   $(call verify-node-not-declared,${_rn})
 
   $(call Test-Info,Creating test root node.)
-  $(call declare-root-node,${_rn},${PROJECTS_PATH})
+  $(call declare-root-node,${_rn},${TESTING_PATH})
   $(call mk-node,${_rn})
 
   $(call Test-Info,Creating test child node.)
@@ -503,13 +520,13 @@ define ${.TestUN}
   $(call mk-node,${_cn})
   $(call verify-node-exists,${_cn})
 
-  $(call rm-node,${_cn})
+  $(call rm-node,${_cn},,y)
   $(call verify-node-does-not-exist,${_cn})
 
   $(call undeclare-child-node,${_cn})
 
   $(call Test-Info,Destroying test child node.)
-  $(call rm-node,${_rn})
+  $(call rm-node,${_rn},,y)
   $(call undeclare-root-node,${_rn})
 
 
@@ -531,42 +548,44 @@ define ${.TestUN}
   $(call Enter-Macro,$(0))
   $(call Begin-Test,$(0))
 
-  $(eval _rn := ${Seg}.cgcnr1)
+  $(eval _rn := $(0).cgcnr1)
   $(eval _cn := cgcnc1)
   $(eval _gcn := cgcngc1)
 
-  $(call Test-Info,Testing node is not declared.)
+  $(call Mark-Step,Testing node is not declared.)
   $(call verify-node-not-declared,${_rn})
 
   $(call Test-Info,Creating test root node.)
-  $(call declare-root-node,${_rn},${PROJECTS_PATH})
+  $(call declare-root-node,${_rn},${TESTING_PATH})
   $(call mk-node,${_rn})
 
   $(call Test-Info,Creating test child node.)
   $(call declare-child-node,${_cn},${_rn})
   $(call mk-node,${_cn})
 
-  $(call Test-Info,Creating test child node.)
+  $(call Mark-Step,Verifying creation of test child node.)
   $(call declare-child-node,${_gcn},${_cn})
   $(call mk-node,${_gcn})
   $(call verify-node-exists,${_gcn})
 
   $(call display-node-tree,${_rn})
 
-  $(call rm-node,${_gcn})
+  $(call rm-node,${_gcn},,y)
   $(call verify-node-does-not-exist,${_gcn})
 
   $(call display-node-tree,${_rn})
 
-  $(call rm-node,${_cn})
+  $(call rm-node,${_cn},,y)
   $(call verify-node-does-not-exist,${_cn})
 
-  $(call undeclare-child-node,${_cn})
-
   $(call Test-Info,Destroying test child node.)
-  $(call rm-node,${_rn})
-  $(call undeclare-root-node,${_rn})
+  $(call rm-node,${_rn},,y)
+  $(call undeclare-node-descendants,${_rn})
 
+  $(call verify-node-not-declared,${_gcn})
+  $(call verify-node-not-declared,${_cn})
+  $(call display-node-tree,${_rn})
+  $(call undeclare-root-node,${_rn})
 
   $(call End-Test)
   $(call Exit-Macro)

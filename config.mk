@@ -5,6 +5,9 @@
 $(call Last-Segment-UN)
 ifndef ${LastSegUN}.SegID
 $(call Enter-Segment,ModFW config variables.)
+$(call Display-Segs)
+$(call Display-Seg-Attributes,${SegUN})
+
 # -----
 define _help
 Make segment: ${Seg}.mk
@@ -37,7 +40,17 @@ _var := MK_NODE
 $(call Sticky,${_var},mk)
 define _help
 ${_var} = ${${_var}}
-    The name of the directory containing the ModFW makefile segments.
+  The name of the directory containing the ModFW makefile segments.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+
+_var := TESTING_PATH
+$(call Sticky,${_var},${TmpPath}/testing)
+define _help
+${_var} = ${${_var}}
+  The path to the root node which will contain test nodes. This is used to
+  avoid polluting the projects directory.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
@@ -46,10 +59,20 @@ _var := PROJECTS_PATH
 $(call Sticky,${_var},${ModFW_path})
 define _help
 ${_var} = ${${_var}}
-    The path to the root node which will contain project nodes. This can be used
-    to avoid polluting the ModFW directory itself.
-    However, this defaults to the path to ModFW itself as defined by
-    ModFW_path. Use this to change the location where projects are installed.
+  The path to the root node which will contain project nodes. This can be used
+  to avoid polluting the ModFW directory itself.
+  However, this defaults to the path to ModFW itself as defined by
+  ModFW_path. Use this to change the location where projects are installed.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+
+_var := STICKY_NODE
+$(call Sticky,${_var},${STICKY_DIR})
+define _help
+${_var} = ${${_var}}
+  The name of the node containing the overall sticky variables. This defaults
+  to the helpers variable STICKY_DIR.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
@@ -58,25 +81,25 @@ _var := PROJECTS_NODE
 $(call Sticky,${_var},projects)
 define _help
 ${_var} = ${${_var}}
-    The name of the root node containing the project nodes.
+  The name of the root node containing the project nodes.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := KITS_NODE
-$(call Sticky,${_var},projects)
+$(call Sticky,${_var},kits)
 define _help
 ${_var} = ${${_var}}
-    The name of the directory containing the kit repos.
+  The name of the directory containing the kit repos.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := MODS_NODE
-$(call Sticky,${_var},projects)
+$(call Sticky,${_var},mods)
 define _help
 ${_var} = ${${_var}}
-    The name of the directory containing the mods within a kit repo.
+  The name of the directory containing the mods within a kit repo.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
@@ -85,8 +108,8 @@ _var := PROJECT_STICKY_NODE
 $(call Sticky,${_var},${STICKY_NODE})
 define _help
 ${_var} = ${${_var}}
-    The name of the directory containing the project specific sticky variables.
-    This defaults to the Helpers variable STICKY_NODE.
+  The name of the directory containing the project specific sticky variables.
+  This defaults to the variable STICKY_NODE.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
@@ -128,7 +151,7 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := LIB_NODE
-$(call Sticky,${_var},bin)
+$(call Sticky,${_var},lib)
 define _help
 ${_var} = ${${_var}}
   The the name of the directory where libraries used to build projects are
@@ -147,10 +170,10 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := TESTS_NODE
-$(call Sticky,${_var},test)
+$(call Sticky,${_var},test-suites)
 define _help
 ${_var} = ${${_var}}
-  The name of the directory where downloaded files are stored.
+  The name of the directory where the testing segment is stored.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
@@ -166,17 +189,26 @@ endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
-_var := GIT_ACCOUNT
-$(call Sticky,${_var},StevenIsaacs)
+_var := GIT_USER
+$(call Sticky,${_var},git)
 define _help
 ${_var} = ${${_var}}
-  The default server account to use when installing or creating a repo.
+  The default server user account to use when installing or creating a repo.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := GIT_SERVER
-$(call Sticky,${_var},git@github.com/StevenIsaacs)
+$(call Sticky,${_var},painter)
+define _help
+${_var} = ${${_var}}
+  The default server to use when installing or creating a repo.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+
+_var := GIT_DIR
+$(call Sticky,${_var},repos)
 define _help
 ${_var} = ${${_var}}
   The default server to use when installing or creating a repo.
@@ -185,10 +217,30 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := DEFAULT_URL
-$(call Sticky,${_var},${GIT_SERVER}/${GIT_ACCOUNT})
+$(call Sticky,${_var},${GIT_SERVER}:${GIT_DIR})
 define _help
 ${_var} = ${${_var}}
   The default URL minus the repo name to use when installing or creating a repo.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+
+_var := DEFAULT_PROJECT_URL
+$(call Sticky,${_var},${DEFAULT_URL}/${PROJECTS_NODE})
+define _help
+${_var} = ${${_var}}
+  The default URL minus the repo name to use when installing or creating a
+  project repo.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+
+_var := DEFAULT_KIT_URL
+$(call Sticky,${_var},${DEFAULT_URL}/${KITS_NODE})
+define _help
+${_var} = ${${_var}}
+  The default URL minus the repo name to use when installing or creating a
+  kit repo.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
@@ -220,26 +272,26 @@ are sub-directories of the ModFW directory.
 
 >-ModFW_node # All other nodes are children of this node.
   --.git
-    | Files managed by git
+    | Files managed by git.
   | .gitignore # Ignores STICKY_NODE, DOWNLOADS_NODE and, PROJECTS_NODE.
-  | makefile
+  | makefile (The top level makefile.)
   >-$${MK_NODE} = ${MK_NODE}
-    ModFW makefile segments
+    | ModFW makefile segments.
   >-$${TESTS_NODE} = ${TESTS_NODE}
-    ModFW makefile segments for testing ModFW
+    | ModFW makefile segments for testing ModFW.
 
   The following nodes are not part of the ModFW repo.
 
   >-$${STICKY_NODE} = ${STICKY_NODE}
-    Top level sticky variable save files. Ths location of this node is defined
-    by STICKY_PATH which is defined by the helpers (see help-helpers).
+    | Top level sticky variable save files. Ths location of this node is defined
+      by STICKY_PATH which is defined by the helpers (see help-helpers).
   >-$${DOWNLOADS_NODE} = ${DOWNLOADS_NODE}
-    Where downloaded tools and components are stored. Multiple projects can
-    reference these to avoid redundant downloads. The variable DOWNLOADS_PATH
-    defines the location of this node.
+    | Where downloaded tools and components are stored. Multiple projects can
+      reference these to avoid redundant downloads. The variable DOWNLOADS_PATH
+      defines the location of this node.
   >-$${PROJECTS_NODE} = ${PROJECTS_NODE}
-    Contains all projects. The location of this node is defined by
-    PROJECTS_PATH.
+    | Contains all projects. The location of this node is defined by
+      PROJECTS_PATH.
 
     The PROJECTS_NODE contains all of the installed projects. Each project is a
     separate repo.
@@ -264,49 +316,51 @@ are sub-directories of the ModFW directory.
     >-$${PROJECT} = ${PROJECT} <project> (repo)
       | .gitignore (ignores projects, tools, bin, build and staging)
       | <project>.mk
-      | project defined files
+      | Project defined files.
       --.git
-        | Files managed by git
+        | Files managed by git.
       >-$${PROJECT}.$${STICKY_NODE} = ${STICKY_NODE}
-        | project specific sticky variable save files
+        | Project specific sticky variable save files. These sticky variables
+          ARE part of the git repo.
       >-$${PROJECT}.$${BUILD_NODE} = ${BUILD_NODE}
-        | project build files
+        | Project build files.
       >-$${PROJECT}.$${STAGING_NODE} ${STAGING_NODE}
-        | project staged files
+        | Project staged files.
       >-$${PROJECT}.$${TOOLS_NODE}
         >-<tool>
-          | tool specific files used for building the tools
+          | Tool specific files used for building the tools.
         >-<tool>...
       >-$${PROJECT}.$${LIB_NODE}
         >-<lib>
-          | installed library files
+          | Installed library files.
         >-<lib>...
       >-$${PROJECT}.$${BIN_NODE}
-        | installed tools and utilities
+        | Installed tools and utilities.
       >-$${PROJECT}.$${KITS_NODE} = ${KITS_NODE}
         A project contains a collection of kits needed to build the project.
         Each kit is a separate repo.
         >-<kit> (repo) (see help-kits)
           --.git
-            | Files managed by git
+            | Files managed by git.
           | .gitignore
           | <kit>.mk
-          | kit defined files
+          | Kit defined files.
           >-<kit>.$${MODS_NODE} = ${MODS_NODE}
             A kit contains a collection of mods. The mods are part of the
             containing kit repo.
             >-<kit>.<mod> (see help-mods)
               | <mod>.mk
-              | mod defined files
+              | .gitignore
+              | Mod defined files.
               >-<kit>.<mod>.$${BUILD_NODE}
-                | mod build files
+                | Mod build files.
               >-<kit>.<mod>.$${STAGING_NODE}
-                | mod staged files
+                | Mod staged files.
             >-<kit>.<mod>...
           >-<kit>.$${BUILD_NODE}
-            | kit build files
+            | Kit build files.
           >-<kit>.$${STAGING_NODE}
-            | kit staged files
+            | Kit staged files.
         >-<kit>... (repo)
     >-<project>... (repo)
 
@@ -317,16 +371,21 @@ $(call Add-Help,${_h})
 # +++++
 # Postamble
 # Define help only if needed.
-_h := $(or $(call Is-Goal,help-${SegUN}),$(call Is-Goal,help-${SegID}))
-ifneq (${_h},)
-$(call Attention,Generating help for:${Seg})
-define _help
+$(call Verbose,Seg=${Seg} SegUN=${SegUN} SegID=${SegID})
+__h := \
+  $(or \
+    $(call Is-Goal,help-${Seg}),\
+    $(call Is-Goal,help-${SegUN}),\
+    $(call Is-Goal,help-${SegID}))
+ifneq (${__h},)
+define __help
 $(call Display-Help-List,${SegID})
 endef
 ${__h} := ${__help}
-endif
+endif # help goal message.
+
 $(call Exit-Segment)
-else
+else # <u>SegID exists
 $(call Check-Segment-Conflicts)
-endif # SegId
+endif # <u>SegID
 # -----

@@ -33,9 +33,17 @@ _null := $(shell \
 MakeD := ModFW -- A modding framework.
 include ${_helpers}
 
-# Using a conditional here because of needing to include overrides.mk only if
-# it exists.
--include overrides.mk
+# ModFW always has a log file.
+LOG_FILE := ${WorkingDir}.log
+$(call Enable-Log-File)
+
+ifeq ($(call Is-Goal,test),)
+  _override := overrides
+else
+  _override := testing-overrides
+endif
+$(call Verbose,Overrides are in segment:${_override})
+$(call Use-Segment,${_override},Info)
 
 $(call Use-Segment,config)
 $(call Add-Segment-Path,${MK_NODE})
@@ -45,8 +53,9 @@ Makefile: ${Seg}
 Usage: make [<option>=<value> ...] [<goal>]
 
 This is the top level make file for ModFW. NOTE: ModFW is not a build system.
-Instead, ModFW is intended to integrate a variety of build systems which are
-used to build both software and hardware components and projects.
+Instead, ModFW is an integration tool. ModFW is intended to integrate a variety
+of build systems which are used to build both software and hardware components
+and projects.
 
 This make file and the included make segments define a framework for developing
 new projects or modifying existing projects. A project can consist of both
@@ -100,24 +109,23 @@ Definitions:
   comp: A ModFW component. A component can be a mod, kit, or project. All
   ModFW components contain at minimum a makefile segment having the same name.
 
-  tree: ModFW uses a tree structure to organize components needed to assemble
-  deliverables. This structure is similar to a classic tree structure as
-  described here: https://en.wikipedia.org/wiki/Tree_(data_structure)
-
-  node: A node for related files. A node is implemented as a directory
-  in the file system. A node can be contained in another node (parent).
-  Conversely, a node can contain other nodes (children). Semantically, a node serves to differentiate directories which are part of the ModFW structure apart from unrelated directories. A node must at minimum contain a makefile segment (seg) having the same name as the node itself. See help-nodes for
-  more information.
-
-  root node: A root node has no parent but has children. The ModFW directory is
-  a root node. Typically the project and kit directories are children of the
-  ModFW node but can exist in other locations making them root nodes as well.
-
-  forest: A number of unconnected trees.
+  node: A data structure which describes a ModFW related directory. Nodes are
+  organized into a tree structure. See help-nodes for more information.
 
   repo: A node which is also a clone of a git repository.
 
   dev: The designer and/or developer of a project.
+
+Project Structure
+
+Projects use mods and mods use kits. To help avoid name collisions between
+kits projects use mod references to specify which mods to use. A mod reference
+has the form <kit>.<mod>. The referenced mod installs its kit if necessary. A
+project should not need to install a kit before using a mod. See help-mods
+for more information.
+
+To help identify the purpose of project and kit repos it is recommended project
+repo names be prefixed with mfw-prj- and kit repos be prefixed with mfw-kit-.
 
 Repositories and branches:
   As previously mentioned projects and kits are separate git repositories. Mods
@@ -329,7 +337,7 @@ $(call Add-Help,${SegID})
 $(call Add-Help-Section,root_node,ModFW root node.)
 
 _var := ModFW_path
-${_var} := ${WorkingPath}
+${_var} := ${WorkingPath}/../
 define _help
 ${_var} := ${${_var}}
   This is the path to the directory containing the ModFW directory. This is used as the path to the root node for the ModFW node tree.
@@ -391,7 +399,7 @@ ifeq (${TESTING},)
   $(call Add-Help,${_var})
 
   _var := ${PROJECT}.URL
-  $(call Sticky,${_var},${DEFAULT_URL}/${PROJECT})
+  $(call Sticky,${_var})
   define _help
   ${_var} = ${${_var}}
       The URL to clone the project from.
@@ -420,31 +428,32 @@ define ${_macro}
   $(call Enter-Macro,$(0))
 
   $(call Add-Segment-Path,${MK_NODE})
-  $(call Use-Segment,nodes)
+  $(call Use-Segment,projects)
 
   $(call declare-root-node,${ModFW_node},${ModFW_path})
 
-  $(foreach _child,STICKY_NODE MK_NODE DOWNLOADS_NODE,
+  $(foreach _child,STICKY_NODE MK_NODE DOWNLOADS_NODE PROJECTS_NODE,
    $(call declare-child-node,${${_child}},${ModFW_node})
    $(call mk-node,${${_child}})
   )
 
-  $(call declare-child-node,${PROJECTS_NODE},${ModFW_node})
-  $(call mk-node,${PROJECTS_NODE})
-  $(call declare-child-node,${DOWNLOADS_NODE},${ModFW_node})
-  $(call mk-node,${DOWNLOADS_NODE})
   $(call Exit-Macro)
 endef
 
-$(call init-modfw)
 
+  $(call init-modfw)
   ifeq (${PROJECT},)
     $(call Signal-Error,PROJECT must be defined.)
   else
-    $(call Use-Segment,projects)
+    $(call declare-project,${PROJECT},${PROJECTS_NODE})
+    ifneq ($(call project-exists,${PROJECT}),)
+      $(call Use-Project,${PROJECT})
+    endif
+    ifneq ($(findstring call-,${Goals}),)
+      $(call Attention,Calling a callable macro.)
+    endif
+  endif
 
-    $(call use-project,${PROJECT})
-    endif # PROJECT defined
 endif # not TESTING
 
 $(call Add-Help-Section,appended,Appended make segment.)

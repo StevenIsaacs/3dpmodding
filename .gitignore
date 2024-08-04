@@ -1,5 +1,7 @@
+plan
 remove
 .vscode
+.venv
 *workspace
 testing
 ModFW.mm
