@@ -270,7 +270,8 @@ $(if $(call mod-is-declared,$(1)),
         $(call Verbose,Declaring mod $(1).)
         $(eval $(1).kit := ${_k})
         $(eval $(1).mod := ${_m})
-        $(call declare-child-node,$(1),${_k},${_m})
+        $(call Verbose,Kit=${_k} Mod:${_m})
+        $(call declare-child-node,$(1),${_k}.${MODS_NODE},${_m})
         $(foreach _node,${mod_node_names},
           $(call declare-child-node,$(1).${${_node}},$(1),${${_node}})
         )
