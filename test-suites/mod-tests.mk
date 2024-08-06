@@ -50,7 +50,7 @@ $(if $(2),
   ,
     $(call FAIL,Mod $(1) is NOT declared.)
   )
-  $(if $(call kit-is-declared,${$(1).parent}),
+  $(if $(call node-is-declared,${$(1).parent}),
     $(call PASS,Mod parent ${$(1).parent} is declared.)
   ,
     $(call FAIL,Mod parent ${$(1).parent} is NOT declared.)
@@ -61,9 +61,10 @@ $(if $(2),
     $(call FAIL,Mod kit ${$(1).kit} is NOT declared.)
   )
   $(if $(filter ${$(1).parent},${$(1).kit}),
-    $(call PASS,Mod $(1) parent and kit are the same.)
+    $(call Test-Info,Parent=${$(1).parent} Kit=${$(1).kit})
+    $(call FAIL,Mod $(1) parent and kit are the same.)
   ,
-    $(call FAIL,Mod $(1) parent and kit are NOT the same.)
+    $(call PASS,Mod $(1) parent and kit are NOT the same.)
   )
   $(foreach _att,${mod_attributes},
     $(if $(filter undefined,$(origin $(1).${_att})),
