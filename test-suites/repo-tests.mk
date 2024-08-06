@@ -226,8 +226,8 @@ define ${.TestUN}
   $(call verify-repo-is-declared,${_rn})
   $(call Test-Info,${_rn}.repo_url = ${${_rn}.repo_url})
   $(call Expect-Vars,\
-    ${_rn}.repo_url:${DEFAULT_URL}/${_rn} \
-    ${_rn}.repo_branch:${DEFAULT_BRANCH} \
+    ${_rn}.repo_url=${DEFAULT_URL}/${_rn} \
+    ${_rn}.repo_branch=${DEFAULT_BRANCH} \
     )
 
   $(call Mark-Step,Verify repo can be undeclared.)
@@ -245,8 +245,8 @@ define ${.TestUN}
   $(call Verify-No-Error)
   $(call verify-repo-is-declared,${_rn})
   $(call Expect-Vars,\
-    ${_rn}.repo_url:${${_rn}.URL} \
-    ${_rn}.repo_branch:${${_rn}.BRANCH} \
+    ${_rn}.repo_url=${${_rn}.URL} \
+    ${_rn}.repo_branch=${${_rn}.BRANCH} \
     )
 
   $(call Test-Info,Verify same repo can't be re-declared.)
@@ -254,8 +254,8 @@ define ${.TestUN}
   $(call declare-repo,${_rn},${${_rn}.URL},${${_rn}.BRANCH})
   $(call Verify-Warning)
   $(call Expect-Vars,\
-    ${_rn}.repo_url:${${_rn}.URL} \
-    ${_rn}.repo_branch:${${_rn}.BRANCH} \
+    ${_rn}.repo_url=${${_rn}.URL} \
+    ${_rn}.repo_branch=${${_rn}.BRANCH} \
     )
 
   $(call Expect-No-Error)
@@ -275,8 +275,8 @@ define ${.TestUN}
   $(call Verify-No-Error)
   $(call verify-repo-is-declared,${_rn})
   $(call Expect-Vars,\
-    ${_rn}.repo_url:${${_rn}.URL} \
-    ${_rn}.repo_branch:${${_rn}.BRANCH} \
+    ${_rn}.repo_url=${${_rn}.URL} \
+    ${_rn}.repo_branch=${${_rn}.BRANCH} \
     )
 
   $(call Expect-No-Error)
