@@ -195,7 +195,8 @@ define ${_macro}
 $(strip
   $(call Enter-Macro,$(0),project=$(1))
   $(if $(call is-modfw-repo,$(1)),
-    $(call Run,grep $(1) ${$(1).seg_f})
+    $(call Verbose,Checking segment:${$(1).seg_f})
+    $(call Run,grep $(1) ${$(1).seg_f},quiet)
     $(if ${Run_Rc},
       $(call Verbose,grep returned:${Run_Rc})
     ,

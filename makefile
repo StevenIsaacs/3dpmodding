@@ -444,10 +444,7 @@ endef
   ifeq (${PROJECT},)
     $(call Signal-Error,PROJECT must be defined.)
   else
-    $(call declare-project,${PROJECT},${PROJECTS_NODE})
-    ifneq ($(call project-exists,${PROJECT}),)
-      $(call use-project,${PROJECT})
-    endif
+    $(call use-project,${PROJECT})
     ifneq ($(findstring call-,${Goals}),)
       $(call Attention,Calling a callable macro.)
     endif
@@ -478,7 +475,7 @@ endif
 # The entire project.
 #----------------------------------------------------------------------------
 
-# mod_deps is defined by the mod.
+# project_deps is defined by the project.
 all: ${MAKEFILE_LIST} ${project_deps}
 
 # cleaners is defined by the kit and the mod.

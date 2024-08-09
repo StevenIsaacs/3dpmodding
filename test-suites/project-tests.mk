@@ -493,10 +493,13 @@ define ${.TestUN}
     $(call mk-project,${_project})
 
     $(eval ${_project}.URL := ${${_project}.path})
+    $(call Test-Info,Clone project url:${${_project}.URL})
 
     $(call undeclare-project,${_project})
 
     $(call mk-node,${PROJECTS_NODE})
+
+    $(call Mark-Step,Verifying using a clone of a local project.)
 
     $(call Expect-Message,\
       Segment ${_project} has not yet been completed.)

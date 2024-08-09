@@ -116,7 +116,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
-${_macro} = $(if $(filter $(1),${nodes}),1)
+${_macro} = $(if $(and $(1),$(filter $(1),${nodes})),1)
 
 _macro := node-exists
 define _help
@@ -195,22 +195,22 @@ define ${_macro}
       $(foreach _a,${node_attributes},$(1).${_a})
     )
     $(if ${$(1).path},
-      $(call Test-Info,Node $(1) can be a node.)
+      $(call Info,Node $(1) can be a node.)
     ,
-      $(call Test-Info,Node $(1) is NOT a valid node.)
+      $(call Info,Node $(1) is NOT a valid node.)
     )
     $(if ${$(1).parent},
-      $(call Test-Info,Node $(1) is a child node.)
+      $(call Info,Node $(1) is a child node.)
     ,
-      $(call Test-Info,Node $(1) is a root node.)
+      $(call Info,Node $(1) is a root node.)
     )
     $(if $(call node-exists,$(1)),
-      $(call Test-Info,Node $(1) path exists.)
+      $(call Info,Node $(1) path exists.)
     ,
-      $(call Test-Info,Node $(1) path does not exist.)
+      $(call Info,Node $(1) path does not exist.)
     )
   ,
-    $(call Test-Info,Node $(1) is not a member of ${nodes})
+    $(call Info,Node $(1) is not a member of ${nodes})
   )
   $(call Exit-Macro)
 endef
@@ -231,19 +231,19 @@ define ${_macro}
       $(foreach _a,${node_attributes},$(1).${_a})
     )
     $(if ${$(1).path},
-      $(call Test-Info,Node $(1) can be a node.)
+      $(call Info,Node $(1) can be a node.)
     ,
-      $(call Test-Info,Node $(1) is NOT a valid node.)
+      $(call Info,Node $(1) is NOT a valid node.)
     )
     $(if $(call node-exists,$(1)),
-      $(call Test-Info,Node $(1) path exists.)
+      $(call Info,Node $(1) path exists.)
       $(eval $(call Run,tree $(1).path))
-      $(call Test-Info:${Run_Output})
+      $(call Info:${Run_Output})
     ,
-      $(call Test-Info,Node $(1) path does not exist.)
+      $(call Info,Node $(1) path does not exist.)
     )
   ,
-    $(call Test-Info,Node $(1) is not a member of ${nodes})
+    $(call Info,Node $(1) is not a member of ${nodes})
   )
   $(call Exit-Macro)
 endef
@@ -272,7 +272,7 @@ define ${_macro}
       $(eval nodes += $(1))
       $(eval $(1).name := $(1))
       $(eval $(1).var := $(call To-Shell-Var,$(1)))
-      $(eval $(1).path := $(2)/$(1))
+      $(eval $(1).path := $(abspath $(2)/$(1)))
       $(eval $(1).dir := $(1))
       $(eval $(1).node_un := $(1))
       $(eval $(1).parent := )
@@ -340,7 +340,8 @@ define ${_macro}
           $(eval $(1).path := ${$(2).path}/$(3))
           $(eval $(1).dir := $(3))
         ,
-          $(eval $(1).path := ${$(2).path}/$(1))
+          $(call Verbose,Parent path:${$(2).path})
+          $(eval $(1).path := $(abspath ${$(2).path}/$(1)))
           $(eval $(1).dir := $(1))
         )
         $(eval $(1).parent := $(2))
@@ -440,7 +441,7 @@ define ${_macro}
     $(if $(call node-exists,$(1)),
       $(call Attention,The directory for node $(1) exists -- not creating.)
     ,
-      $(call Run,mkdir -p ${$(1).path})
+      $(call Run,mkdir -p ${$(1).path},quiet)
     )
   ,
     $(call Signal-Error,Node $(1) has not been declared.)
@@ -488,7 +489,7 @@ define ${_macro}
       $(call Attention,Response is:${_rm})
       $(if ${_rm},
         $(call Attention,Removing node $(1))
-        $(call Run,rm -rf ${$(1).path})
+        $(call Run,rm -rf ${$(1).path},quiet)
       )
     ,
       $(call Verbose,Node $(1) does not exist -- not removing.)

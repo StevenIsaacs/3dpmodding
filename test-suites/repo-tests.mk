@@ -236,26 +236,27 @@ define ${.TestUN}
   $(call Verify-No-Error)
   $(call verify-repo-not-declared,${_rn})
 
-  $(eval ${_rn}.URL := test_url)
-  $(eval ${_rn}.BRANCH := test)
+  $(eval ${_rn}.URL_PARM := test_url)
+  $(eval ${_rn}.BRANCH_PARM := test)
 
-  $(call Mark-Step,Verify repo can be declared using the defaults.)
+  $(call Mark-Step,\
+    Verify repo can be declared using the url and branch parameters.)
   $(call Expect-No-Error)
-  $(call declare-repo,${_rn},${${_rn}.URL},${${_rn}.BRANCH})
+  $(call declare-repo,${_rn},${${_rn}.URL_PARM},${${_rn}.BRANCH_PARM})
   $(call Verify-No-Error)
   $(call verify-repo-is-declared,${_rn})
   $(call Expect-Vars,\
-    ${_rn}.repo_url=${${_rn}.URL} \
-    ${_rn}.repo_branch=${${_rn}.BRANCH} \
+    ${_rn}.repo_url=${${_rn}.URL_PARM} \
+    ${_rn}.repo_branch=${${_rn}.BRANCH_PARM} \
     )
 
   $(call Test-Info,Verify same repo can't be re-declared.)
   $(call Expect-Warning,Repo ${_rn} has already been declared.)
-  $(call declare-repo,${_rn},${${_rn}.URL},${${_rn}.BRANCH})
+  $(call declare-repo,${_rn},${${_rn}.URL_PARM},${${_rn}.BRANCH_PARM})
   $(call Verify-Warning)
   $(call Expect-Vars,\
-    ${_rn}.repo_url=${${_rn}.URL} \
-    ${_rn}.repo_branch=${${_rn}.BRANCH} \
+    ${_rn}.repo_url=${${_rn}.URL_PARM} \
+    ${_rn}.repo_branch=${${_rn}.BRANCH_PARM} \
     )
 
   $(call Expect-No-Error)
@@ -271,12 +272,12 @@ define ${.TestUN}
   $(call Mark-Step,Verify repo can be declared with a specified branch.)
 
   $(call Expect-No-Error)
-  $(call declare-repo,${_rn},${${_rn}.URL},${${_rn}.BRANCH})
+  $(call declare-repo,${_rn},${${_rn}.URL_PARM},${${_rn}.BRANCH_PARM})
   $(call Verify-No-Error)
   $(call verify-repo-is-declared,${_rn})
   $(call Expect-Vars,\
-    ${_rn}.repo_url=${${_rn}.URL} \
-    ${_rn}.repo_branch=${${_rn}.BRANCH} \
+    ${_rn}.repo_url=${${_rn}.URL_PARM} \
+    ${_rn}.repo_branch=${${_rn}.BRANCH_PARM} \
     )
 
   $(call Expect-No-Error)
@@ -285,8 +286,8 @@ define ${.TestUN}
   $(call verify-repo-not-declared,${_rn})
 
   $(call undeclare-root-node,${_rn})
-  $(eval undefine ${_rn}.URL)
-  $(eval undefine ${_rn}.BRANCH)
+  $(eval undefine ${_rn}.URL_PARM)
+  $(eval undefine ${_rn}.BRANCH_PARM)
 
   $(call End-Test)
   $(call Exit-Macro)

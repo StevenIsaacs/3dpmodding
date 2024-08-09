@@ -218,7 +218,7 @@ define ${_macro}
 $(strip
   $(call Enter-Macro,$(0),kit.mod=$(1))
   $(if $(wildcard ${$(1).seg_f}),
-    $(call Run,grep ${$(1).mod} ${$(1).seg_f})
+    $(call Run,grep ${$(1).mod} ${$(1).seg_f},quiet)
     $(if ${Run_Rc},
       $(call Verbose,grep returned:${Run_Rc})
     ,
@@ -457,7 +457,7 @@ $(if ${Errors},
             $(call Attention,Mod $(1) already exists.)
           ,
             $(call Info,Basing mod $(1) on mod $(2))
-            $(call Run,cp -r ${$(2).path} ${$(1).path})
+            $(call Run,cp -r ${$(2).path} ${$(1).path},quiet)
             $(if ${Run_Rc},
               $(call Signal-Error,\
                 Copying template mod $(2) to the new kit $(1) failed.)
