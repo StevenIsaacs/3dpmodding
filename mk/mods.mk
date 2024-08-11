@@ -418,7 +418,6 @@ $$(call Add-Help,$${_macro})
 $.define $${_macro}
 $$(call Enter-Macro,$$(0),Context=$$(1))
 $$(call Info,Initializing mod $(1) for context $$(1).)
-#  Place init code in a separate make file segment so this can be generic.
 $$(if $${$(1).$$(1).context},
   $$(call Signal-Error,Mod $(1) context $$(1) has already been declared.)
 $.,
