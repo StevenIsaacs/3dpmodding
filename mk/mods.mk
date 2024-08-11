@@ -48,6 +48,16 @@ $(call Add-Help,${SegID})
 
 $(call Add-Help-Section,mod-vars,Variables for managing mods.)
 
+_var := this_mod
+${_var} :=
+define _help
+${_var}
+  The name of the current mod being used. The mod segment can use this
+  variable to access mod attributes.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+
 _var := mods
 ${_var} :=
 define _help
@@ -364,6 +374,127 @@ $(if $(call mod-is-declared,$(1)),
 $(call Exit-Macro)
 endef
 
+_macro := gen-mod-segment-text
+define ${_macro}
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# $(strip $(2))
+#----------------------------------------------------------------------------
+# +++++
+$$(call Last-Segment-UN)
+$.ifndef $${LastSegUN}.SegID
+$$(call Enter-Segment,$(2))
+# -----
+
+$.define _help
+Make segment: $${Seg}.mk
+
+<Overview of makefile segment>
+
+Command line goals:
+  # Describe additional goals provided by the segment.
+  help-$${SegUN}
+    Display this help.
+$.endef
+help-$${SegID} := $$(call _help)
+$$(call Add-Help,$${SegID})
+
+_macro := declare-mod-$(1)-context
+$.define _help
+$${_macro}
+  Establish a new $${Seg} context for a mod which is using this mod. This is
+  designed to be called by the mod or project using this mod which allows this
+  mod to be used by multiple mods or multiple times by the same mod.
+
+  If it exists, a context makefile segment, named $${Seg}-context.mk, is
+  included to define context specific variables, macros and goals. The variable
+  new_context is defined and is intended to be used by the included file to
+  name context specific symbols.
+
+  Parameters:
+    1 = The name to use to establish a new context for a user of this segment.
+$.endef
+help-$${_macro} := $$(call _help)
+$$(call Add-Help,$${_macro})
+$.define $${_macro}
+$$(call Enter-Macro,$$(0),Context=$$(1))
+$$(call Info,Initializing mod $(1) for context $$(1).)
+#  Place init code in a separate make file segment so this can be generic.
+$$(if $${$(1).$$(1).context},
+  $$(call Signal-Error,Mod $(1) context $$(1) has already been declared.)
+$.,
+  $$(eval $(1).$$(1).context := $$(1))
+  $$(eval new_context := $(1).$$(1))
+  $.-include $${$(1).path}/$${$(1).mod}-context.mk
+$.)
+$$(call Exit-Macro)
+$.endef
+
+# Add variables, macros, goals, and recipes here.
+# Remove the following line after completing this segment.
+$$(call Attention,Mod segment $${Seg} has not yet been completed.)
+$$(call Verbose,SegUN = $${SegUN})
+
+# The command line goal for the segment.
+$${LastSegUN}: $${SegF}
+
+# +++++
+# Postamble
+# Define help only if needed.
+$.__h := $$(or $\
+  $$(call Is-Goal,help-$${Seg}),$\\
+  $$(call Is-Goal,help-$${SegUN}),$\\
+  $$(call Is-Goal,help-$${SegID}))
+$.ifneq ($${__h},)
+$.define __help
+$$(call Display-Help-List,$${SegID})
+$.endef
+$${__h} := $${__help}
+$.endif # help goal message.
+
+$$(call Exit-Segment)
+$.else # $$(call Last-Segment-Basename).SegID exists
+$$(call Check-Segment-Conflicts)
+$.endif # $$(call Last-Segment-Basename).SegID
+# -----
+
+endef
+# Help is at the end of the macro declaration in this case because the
+# macro is used to generate a portion of the help.
+define _help
+${_macro}
+  This generates segment text which can then be written to a file.
+  Parameters:
+    1 = The name of the node to associate with the segment.
+    2 = A one line description.
+  For example:
+  $$(call Gen-Segment,This is a sample mod segment.)
+  generates:
+$(call gen-mod-segment-text,<kit>.<mod>,This is a sample mod segment.)
+endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
+
+_macro := gen-mod-segment
+define _help
+${_macro}
+  This uses Gen-Segment-Text to generate a segment file and writes it to the
+  specified file.
+  Parameters:
+    1 = The <kit>.<mod> reference for the mod. This is used to name the segment
+        file, associated variable and, specific goals.
+    2 = The full path to where to write the segment file.
+    3 = A one line description.
+endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
+define ${_macro}
+  $(call Enter-Macro,$(0),Seg=$(1) Path=$(2) Desc=$(call To-String,$(3)))
+  $(file >$(2),$(call gen-mod-segment-text,$(1),$(3)))
+  $(call Attention,\
+    Segment file for mod $(1) has been generated -- remember to customize.)
+  $(call Exit-Macro)
+endef
+
 _macro := mk-mod
 define _help
 ${_macro}
@@ -395,7 +526,7 @@ $(if ${Errors},
         $(call Signal-Error,A node $(1) already exists.)
       ,
         $(call mk-node,$(1))
-        $(call Gen-Segment-File,${$(1).mod},${$(1).seg_f},\
+        $(call gen-mod-segment,$(1),${$(1).seg_f},\
           <Mod:${$(1).mod} edit this description>)
         $(call add-file-to-repo,${$(1).kit},${$(1).seg_f})
         $(file >${$(1).path}/.gitignore,$(call gen-mod-gitignore,$(1)))
@@ -505,6 +636,7 @@ $(if ${Errors},
             $(call mk-node,$(1).${${_node}})
           )
         )
+        $(eval this-mod := $(1))
         $(call Use-Segment,${$(1).seg_f})
       ,
         $(call Signal-Error,Mod $(1) is not a ModFW style mod.)

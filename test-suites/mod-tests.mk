@@ -529,7 +529,7 @@ define ${.TestUN}
   ,
     $(call Mark-Step,Verifying mod segment can be loaded and reports error.)
     $(call Expect-Message,\
-      Segment ${_mod} has not yet been completed.)
+      Mod segment ${_mod} has not yet been completed.)
     $(call use-mod,${_mod_ref})
     $(call Verify-Message)
 

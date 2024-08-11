@@ -34,6 +34,16 @@ $(call Add-Help,${SegID})
 
 $(call Add-Help-Section,kit-vars,Variables for managing kits.)
 
+_var := this_kit
+${_var} :=
+define _help
+${_var}
+  The name of the current kit being used. The kit segment can use this
+  variable to access kit attributes.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+
 _var := kits
 ${_var} :=
 define _help
@@ -560,6 +570,7 @@ $(if ${${$(1).seg_un}.SegID},
         $(call mk-node,$(1).${${_node}})
       )
     )
+    $(eval this-kit := $(1))
     $(call Use-Segment,${$(1).seg_f})
   )
 )
