@@ -116,7 +116,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
-${_macro} = $(if $(and $(1),$(filter $(1),${nodes})),1)
+${_macro} = $(if $(1),$(filter $(1),${nodes}),1)
 
 _macro := node-exists
 define _help
@@ -224,6 +224,7 @@ ${_macro}
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
+$(call Declare-Callable-Macro,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0),node=$(1))
   $(if $(call node-is-declared,$(1))
@@ -237,7 +238,8 @@ define ${_macro}
     )
     $(if $(call node-exists,$(1)),
       $(call Info,Node $(1) path exists.)
-      $(eval $(call Run,tree $(1).path))
+      $(eval $(call Run,tree -d ${$(1).path},quiet))
+      $(eval $(call Run,find ${$(1).path} -name "*.mk",quiet))
       $(call Info:${Run_Output})
     ,
       $(call Info,Node $(1) path does not exist.)
