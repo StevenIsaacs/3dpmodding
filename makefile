@@ -187,7 +187,9 @@ ignored in .gitignore). The overrides.mk file is loaded immediately. None of
 the helpers are available. Therefore overrides should only define variables
 which would otherwise be defined on the command line.
 
-Additional project, kit and mod specific overrides can be declared and maintained in a project repository. Unlike overrides.mk the helpers will be available to the project overrides. See help-projects for more information.
+Additional project, kit and mod specific overrides can be declared and
+maintained in a project repository. Unlike overrides.mk the helpers will be
+available to the project overrides. See help-projects for more information.
 
 Makefile processing:
 ModFW divides makefile processing into two distinct phases; pre-process and
