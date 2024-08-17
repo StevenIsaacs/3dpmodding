@@ -144,7 +144,7 @@ ${_var}
     from kits and mods and placed here.
   $${PROJECT}.tools_path
     Where the project specific build tools are stored. Typically, tools are
-    build in this directory and then installed in the project bin or lib
+    built in this directory and then installed in the project bin or lib
     directories.
   $${PROJECT}.bin_path
     Where the project specific tools and utilities are installed.
