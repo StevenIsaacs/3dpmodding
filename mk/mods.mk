@@ -65,6 +65,14 @@ ${_var}
   The list of declared mods.
 endef
 
+_var := mod_prefixes
+${_var} :=
+define _help
+${_var}
+  The list of registered mod prefixes. This is used to avoid situations where
+  multiple mods use the same prefix. Each prefix must be unique.
+endef
+
 _var := mod_ignored_nodes
 ${_var} := BUILD_NODE STAGING_NODE
 define _help
@@ -95,7 +103,7 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := mod_attributes
-${_var} := goals kit mod seg_f
+${_var} := goals kit mod prefix seg_f
 define _help
 ${_var}
   A mod is basically a tree node and has the same attributes as the node.
@@ -108,6 +116,11 @@ ${_var}
     of the mod parent node.
   <kit>.<mod>.mod
     The mod name portion of the mod reference.
+  <kit>.<mod>.prefixes
+    The registered prefix for the mod. This is used to help make mod specific
+    symbols unique without using lengthy <kit>.<mod> references. A mod prefix
+    must be registered using register-mod-prefix in order to ensure prefixes
+    do not conflict with other mods.
   <kit>.<mod>.seg_f
     The path and file name of the makefile segment for the mod.
 
@@ -199,6 +212,15 @@ help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 ${_macro} = $(if $(filter $(1),${mods}),1)
 
+_macro := prefix-is-registered
+define _help
+${_macro}
+  Returns a non-empty value if the mod prefix is already registered.
+endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
+${_macro} = $(if $(filter $(1),${mod_prefixes}),1)
+
 _macro := mod-exists
 define _help
 ${_macro}
@@ -280,6 +302,7 @@ $(if $(call mod-is-declared,$(1)),
         $(call Verbose,Declaring mod $(1).)
         $(eval $(1).kit := ${_k})
         $(eval $(1).mod := ${_m})
+        $(eval $(1).prefixes :=)
         $(call Verbose,Kit=${_k} Mod:${_m})
         $(call declare-child-node,$(1),${_k}.${MODS_NODE},${_m})
         $(foreach _node,${mod_node_names},
@@ -345,6 +368,50 @@ endef
 
 $(call Add-Help-Section,mod-install,Macros for installing or creating mods.)
 
+_macro := register-mod-prefix
+define _help
+${_macro}
+  Register a prefix to be used by a mod for symbol names to avoid symbol
+  name conflicts with other mods and to avoid lengthy <kit>.<mod> references.
+  A prefix must be unique. A detected prefix conflict triggers an error exit.
+
+  A mod can register multiple prefixes.
+
+  Registration also defines a variable using the prefix as the variable name.
+  This variable contains the <kit>.<mod> reference.
+
+  The prefix for a mod can be retrieved using the <kit>.<mod>.prefixes
+  attribute.
+
+  WARNING: Mods must register themselves.
+
+  Parameters:
+    1 = The <kit>.<mod> reference to the mod.
+    2 = The prefix to associate with the mod.
+endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
+define ${_macro}
+$(call Enter-Macro,$(0),mod=$(1) prefix=$(2))
+$(if $(call mod-is-declared,$(1)),
+  $(if $(filter $(2),${$(1).prefixes}),
+    $(call Attention,Mod $(1) has already registered prefix $(2).)
+  ,
+    $(if $(call prefix-is-registered,$(2)),
+      $(call Signal-Error,Mod prefix $(2) is already registered.,exit)
+    ,
+      $(eval $(1).prefixes += $(2))
+      $(eval $(2) := $(1))
+      $(eval mod_prefixes += $(2))
+    )
+  )
+,
+  $(call Signal-Error,\
+    Mod $(1) has not been declared - cannot register prefix.)
+)
+$(call Exit-Macro)
+endef
+
 _macro := display-mod
 define _help
 ${_macro}
@@ -398,43 +465,73 @@ $.endef
 help-$${SegID} := $$(call _help)
 $$(call Add-Help,$${SegID})
 
-_macro := declare-mod-$(1)-context
+# Register a prefix to be used as a shorthand reference to the mod. This prefix
+# must be unique. Other modules which need to use the prefix can retrieve its
+# name from the <kit>.<mod>.prefixes attribute.
+# A mod can register multiple prefixes.
+# TODO: Change <prefix> to the actual prefix name throughout this module.
+$$(call register-mod-prefix,$${this_mod},<prefix>)
+
+# TODO: Remove the following line after completing this segment.
+$$(call Attention,TODO: Add common variables, macros, goals, and recipes here.)
+$$(call Verbose,SegUN = $${SegUN})
+
+$$(call Add-Help-Section,<variable declarations>)
+
+_var := <var>
+$${_var} :=
+$.define _help
+$${_var}
+  This is a template for declaring mod specific variables.
+$.endef
+
+$$(call Add-Help-Section,Mod specific macros.)
+
+$$(call Add-Help-Section,Context declaration.)
+
+_macro := <macro>
+$${_macro} :=
+$.define _help
+$${_macro}
+  This is a template for declaring mod specific macros.
+$.endef
+help-$${_macro} := $$(call _help)
+$$(call Add-Help,$${_macro})
+$.define $${_macro}
+$$(call Enter-Macro,$$(0),Context=$$(1))
+# TODO: Put macro code here.
+$$(call Exit-Macro)
+$.endef
+
+_macro := <prefix>.declare-mod-context
 $.define _help
 $${_macro}
   Establish a new $${Seg} context for a mod which is using this mod. This is
   designed to be called by the mod or project using this mod which allows this
   mod to be used by multiple mods or multiple times by the same mod.
 
-  If it exists, a context makefile segment, named $${Seg}-context.mk, is
-  included to define context specific variables, macros and goals. The variable
-  new_context is defined and is intended to be used by the included file to
-  name context specific symbols.
-
   Parameters:
-    1 = The name to use to establish a new context for a user of this segment.
+    1 = The name or registered prefix to use to establish a new context for a
+        user of this segment.
 $.endef
 help-$${_macro} := $$(call _help)
 $$(call Add-Help,$${_macro})
 $.define $${_macro}
 $$(call Enter-Macro,$$(0),Context=$$(1))
 $$(call Info,Initializing mod $(1) for context $$(1).)
-$$(if $${$(1).$$(1).context},
-  $$(call Signal-Error,Mod $(1) context $$(1) has already been declared.)
+$$(if $${<prefix>.$$(1).context},
+  $$(call Signal-Error,Mod ${<prefix>} context $$(1) has already been declared.)
 $.,
-  $$(eval $(1).$$(1).context := $$(1))
-  $$(eval new_context := $(1).$$(1))
-  $.-include $${$(1).path}/$${$(1).mod}-context.mk
+  $$(eval <prefix>.$$(1).context := $$(1))
+  $$(eval new_context := <prefix>.$$(1))
+  # TODO:Add context specific code here.
+
 $.)
 $$(call Exit-Macro)
 $.endef
 
-# Add variables, macros, goals, and recipes here.
-# Remove the following line after completing this segment.
-$$(call Attention,Mod segment $${Seg} has not yet been completed.)
-$$(call Verbose,SegUN = $${SegUN})
-
 # The command line goal for the segment.
-$${LastSegUN}: $${SegF}
+$${this_mod}: $${SegF}
 
 # +++++
 # Postamble
@@ -635,7 +732,7 @@ $(if ${Errors},
             $(call mk-node,$(1).${${_node}})
           )
         )
-        $(eval this-mod := $(1))
+        $(eval this_mod := $(1))
         $(call Use-Segment,${$(1).seg_f})
       ,
         $(call Signal-Error,Mod $(1) is not a ModFW style mod.)
