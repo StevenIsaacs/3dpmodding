@@ -60,7 +60,6 @@ ${_var}
     The branch to switch to after cloning the repo. This is also used to derive
     the name of the node in which the repo resides.
 
-
   The node attributes are:
 ${help-node_attributes}
 endef
