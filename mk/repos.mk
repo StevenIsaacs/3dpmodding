@@ -984,7 +984,7 @@ $(call Enter-Macro,$(0),repo=$(1))
 $(if $(call node-exists,$(1)),
   $(call Verbose,The repo node $(1) already exists -- not cloning.)
 ,
-  $(call Run,git clone -b ${$(1).repo_branch} ${$(1).repo_url} ${$(1).path})
+  $(call Run,git clone ${$(1).repo_url} ${$(1).path})
   $(if ${Run_Rc},
     $(call Signal-Error,Clone of repo $(1) from ${$(1).repo_url} failed.)
   ,
