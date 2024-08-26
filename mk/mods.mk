@@ -103,7 +103,7 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := mod_attributes
-${_var} := goals kit mod prefix seg_f
+${_var} := goals kit mod prefixes seg_f
 define _help
 ${_var}
   A mod is basically a tree node and has the same attributes as the node.
@@ -117,14 +117,10 @@ ${_var}
   <kit>.<mod>.mod
     The mod name portion of the mod reference.
   <kit>.<mod>.prefixes
-    The registered prefix for the mod. This is used to help make mod specific
-    symbols unique without using lengthy <kit>.<mod> references. A mod prefix
-    must be registered using register-mod-prefix in order to ensure prefixes
-    do not conflict with other mods.
-  <kit>.<mod>.seg_f
-    The path and file name of the makefile segment for the mod.
-
-${help-node-attributes}
+    The list of registered prefixes for the mod. This is used to help make mod
+    specific symbols unique without using lengthy <kit>.<mod> references. A mod
+    prefix must be registered using register-mod-prefix in order to ensure
+    prefixes do not conflict with other mods.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
@@ -324,6 +320,7 @@ endef
 
 _macro := undeclare-mod
 define _help
+${_macro}
   Remove a mod declaration. If undeclaring the mod results in the containing
   kit no longer having any declared mods then the kit is also undeclared.
   Parameters:
@@ -465,31 +462,34 @@ $.endef
 help-$${SegID} := $$(call _help)
 $$(call Add-Help,$${SegID})
 
+# Customize this segment then remove this error.
+$$(call Signal-Error,Mod segment $${this_mod} has not been completed.)
+
 # Register a prefix to be used as a shorthand reference to the mod. This prefix
 # must be unique. Other modules which need to use the prefix can retrieve its
 # name from the <kit>.<mod>.prefixes attribute.
 # A mod can register multiple prefixes.
-# TODO: Change <prefix> to the actual prefix name throughout this module.
-$$(call register-mod-prefix,$${this_mod},<prefix>)
+# TODO: Change _prefix to the actual prefix name throughout this module.
+$$(call Attention,TODO:Declare prefix(es) for this mod.)
+$$(eval _prefix := $${this_mod})
+$$(call register-mod-prefix,$${this_mod},$${_prefix})
 
 # TODO: Remove the following line after completing this segment.
 $$(call Attention,TODO: Add common variables, macros, goals, and recipes here.)
 $$(call Verbose,SegUN = $${SegUN})
 
-$$(call Add-Help-Section,<variable declarations>)
+$$(call Add-Help-Section,${_prefix}_vars,<variable declarations>)
 
-_var := <var>
+_var := $${_prefix}.var
 $${_var} :=
 $.define _help
 $${_var}
   This is a template for declaring mod specific variables.
 $.endef
 
-$$(call Add-Help-Section,Mod specific macros.)
+$$(call Add-Help-Section,${_prefix}_macros,Mod specific macros.)
 
-$$(call Add-Help-Section,Context declaration.)
-
-_macro := <macro>
+_macro := $${_prefix}.macro
 $${_macro} :=
 $.define _help
 $${_macro}
@@ -503,7 +503,7 @@ $$(call Enter-Macro,$$(0),Context=$$(1))
 $$(call Exit-Macro)
 $.endef
 
-_macro := <prefix>.declare-mod-context
+_macro := $${_prefix}.declare-mod-context
 $.define _help
 $${_macro}
   Establish a new $${Seg} context for a mod which is using this mod. This is
@@ -519,10 +519,10 @@ $$(call Add-Help,$${_macro})
 $.define $${_macro}
 $$(call Enter-Macro,$$(0),Context=$$(1))
 $$(call Info,Initializing mod $(1) for context $$(1).)
-$$(if $${<prefix>.$$(1).context},
-  $$(call Signal-Error,Mod ${<prefix>} context $$(1) has already been declared.)
+$$(if $${$${_prefix}.$$(1).context},
+  $$(call Signal-Error,Mod ${$${_prefix}} context $$(1) has already been declared.)
 $.,
-  $$(eval <prefix>.$$(1).context := $$(1))
+  $$(eval $${_prefix}.$$(1).context := $$(1))
   $$(eval new_context := <prefix>.$$(1))
   # TODO:Add context specific code here.
 
@@ -594,7 +594,9 @@ endef
 _macro := mk-mod
 define _help
 ${_macro}
-  Declare and initialize a new mod within a kit. A makefile segment is generated from a template. The dev must then complete the makefile segment before attempting a build. The kit is installed if necessary.
+  Declare and initialize a new mod within a kit. A makefile segment is
+  generated from a template. The dev must then complete the makefile segment
+  before attempting a build. The kit is installed if necessary.
 
   NOTE: This is designed to be callable from the make command line using the
   helpers call-<macro> goal.

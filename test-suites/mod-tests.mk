@@ -528,10 +528,10 @@ define ${.TestUN}
     $(call Signal-Error,Setup for ${.TestUN} failed.,exit)
   ,
     $(call Mark-Step,Verifying mod segment can be loaded and reports error.)
-    $(call Expect-Message,\
-      Mod segment ${_mod} has not yet been completed.)
+    $(call Expect-Error,\
+      Mod segment ${_mod_ref} has not been completed.)
     $(call use-mod,${_mod_ref})
-    $(call Verify-Message)
+    $(call Verify-Error)
 
     $(if ${${_mod}.${_mod}.SegID},
       $(call PASS,Make segment for mod ${_mod_ref} was loaded.)
