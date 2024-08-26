@@ -403,7 +403,7 @@ ${_macro}
   Parameters:
     1 = The repo to switch the branch.
     2 = The name of the branch to switch to. If this is empty then
-        <repo>.BRANCH is used.
+        <repo>.repo_branch is used.
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
@@ -415,7 +415,7 @@ $(if $(call repo-is-declared,$(1)),
     $(if $(2),
       $(eval _b_ := $(2))
     ,
-      $(eval _b_ := ${$(1).BRANCH})
+      $(eval _b_ := ${$(1).repo_branch})
     )
     $(eval _ab_ := $(call get-active-branch,$(1)))
     $(if $(filter ${_b_},${_ab_}),
@@ -453,7 +453,8 @@ ${_macro}
     make ${_macro}.PARMS=<repo>:<branch> call-$(_macro)
   Parameters:
     1 = The repo in which to create the new branch.
-    2 = The name of the branch to create.
+    2 = The name of the branch to create. If this is empty then
+        <repo>.repo_branch is used.
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
@@ -462,15 +463,20 @@ define ${_macro}
 $(call Enter-Macro,$(0),repo=$(1) branch=$(2))
 $(if $(call repo-is-declared,$(1)),
   $(if $(call repo-exists,$(1)),
-    $(if $(call repo-branch-exists,$(1),$(2)),
-      $(call Signal-Error,Branch $(2) already exists in repo $(1).)
+    $(if $(2),
+      $(eval _b_ := $(2))
     ,
-      $(call Run,git -C ${$(1).path} switch -c $(2))
+      $(eval _b_ := ${$(1).repo_branch})
+    )
+    $(if $(call repo-branch-exists,$(1),${_b_}),
+      $(call Attention,Branch ${_b_} already exists in repo $(1).)
+    ,
+      $(call Run,git -C ${$(1).path} switch -c ${_b_})
       $(if ${Run_Rc},
-        $(call Signal-Error,Creating new branch ${_2} failed.)
+        $(call Signal-Error,Creating new branch ${_b_} failed.)
         $(call Warn,${Run_Output})
       ,
-        $(eval $(1).repo_branch := $(2))
+        $(eval $(1).repo_branch := {_b_})
       )
     )
   ,
@@ -974,6 +980,8 @@ define _help
 ${_macro}
   Use git to clone either a local or remote repo to a declared repo directory
   and switch to the specified branch. The repo node cannot exist.
+  The repo branch is set to <repo>.repo_branch. If the branch does not exist
+  the branch is created.
   Parameters:
     1 = The name of a previously declared repo.
 endef
@@ -989,7 +997,7 @@ $(if $(call node-exists,$(1)),
     $(call Signal-Error,Clone of repo $(1) from ${$(1).repo_url} failed.)
   ,
     $(if $(call repo-exists,$(1)),
-      $(call switch-branch,$(1))
+      $(call Attention,Repo $(1) has been cloned.)
     ,
       $(call Signal-Error,Was not able to clone ${$(1).repo_url} to repo $(1).)
     )

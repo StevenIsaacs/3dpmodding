@@ -747,9 +747,9 @@ define ${.TestUN}
     $(call FAIL,Branch ${_b} does not exist.)
   )
 
-  $(call Expect-Error,Branch ${_b} already exists in repo ${_cn}.)
+  $(call Expect-Message,Branch ${_b} already exists in repo ${_cn}.)
   $(call mk-branch,${_cn},${_b})
-  $(call Verify-Error)
+  $(call Verify-Message)
 
   $(eval _ab := $(call get-active-branch,${_cn}))
   $(call Test-Info,Active branch is: ${_ab})
