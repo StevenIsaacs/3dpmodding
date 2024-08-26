@@ -544,8 +544,20 @@ $(if ${Errors},
       $(if $(call is-modfw-repo,$(1)),
         $(call Verbose,Project $(1) is a ModFW repo.)
       ,
-        $(call Signal-Error,Project $(1) is not a ModFW repo.)
-        $(if ${VERBOSE},$(call display-project,$(1)))
+        $(if $(and \
+            $(wildcard ${$(1).path}/$(1).mk),\
+            $(wildcard ${$(1).path}/.gitignore)),
+          $(call switch-branch,$(1))
+        ,
+          $(call Attention,\
+            Initializing project $(1) from bare or non-ModFW repo.)
+          $(call mk-branch,$(1))
+          $(call Gen-Segment-File,\
+            $(1),${$(1).seg_f},<edit this description for repo>:$(1))
+          $(call add-file-to-repo,$(1),${$(1).seg_f})
+          $(call gen-kit-gitignore,$(1))
+          $(call add-file-to-repo,$(1),${$(1).path}/.gitignore)
+        )
       )
     )
   ,
