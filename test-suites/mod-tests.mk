@@ -12,7 +12,7 @@ Make segment: ${Seg}.mk
 This test suite verifies the macros related to managing ModFW mods.
 
 The focus is on managing a standard ModFW mod directory structure. To do
-so the variables PROJECTS_NODE, PROJECTS_PATH, and PROJECT are used. These
+so the variables PROJECTS_DIR, PROJECTS_PATH, and PROJECT are used. These
 should be defined either in config.mk or test-modfw.mk.
 
 Unlike other test suites this suite uses another test suite, namely kit-tests.
@@ -259,7 +259,7 @@ define ${.TestUN}
     $(call verify-kit-nodes,${_kit})
 
     $(call Mark-Step,Verifying mod node already declared.)
-    $(call declare-child-node,${_mod_ref},${PROJECTS_NODE})
+    $(call declare-child-node,${_mod_ref},${PROJECTS_DIR})
 
     $(call Expect-Error,\
       A node having the mod name ${_mod_ref} has already been declared.)
@@ -357,7 +357,7 @@ define ${.TestUN}
   $(eval ${_kit}.BRANCH := main)
 
   $(call declare-kit-parents)
-  $(call mk-node,${PROJECT}.${KITS_NODE})
+  $(call mk-node,${PROJECT}.${KITS_DIR})
 
   $(if ${Errors},
     $(call Signal-Error,Setup for ${.TestUN} failed.,exit)
@@ -402,7 +402,7 @@ define ${.TestUN}
     $(call undeclare-mod,${_mod_ref})
     $(call undeclare-kit,${_kit})
   )
-  $(call rm-node,${PROJECTS_NODE},,y)
+  $(call rm-node,${PROJECTS_DIR},,y)
   $(call undeclare-kit-parents)
 
   $(call End-Test)
@@ -434,7 +434,7 @@ define ${.TestUN}
   $(eval ${_kit}.BRANCH := main)
 
   $(call declare-kit-parents)
-  $(call mk-node,${PROJECT}.${KITS_NODE})
+  $(call mk-node,${PROJECT}.${KITS_DIR})
   $(call mk-kit,${_kit})
 
   $(if ${Errors},
@@ -492,7 +492,7 @@ define ${.TestUN}
     $(call undeclare-kit,${_kit})
   )
 
-  $(call rm-node,${PROJECTS_NODE},,y)
+  $(call rm-node,${PROJECTS_DIR},,y)
   $(call undeclare-kit-parents)
 
   $(call End-Test)
@@ -520,7 +520,7 @@ define ${.TestUN}
   $(eval ${_kit}.BRANCH := main)
 
   $(call declare-kit-parents)
-  $(call mk-node,${PROJECT}.${KITS_NODE})
+  $(call mk-node,${PROJECT}.${KITS_DIR})
   $(call mk-kit,${_kit})
   $(call mk-mod,${_mod_ref})
 
@@ -549,7 +549,7 @@ define ${.TestUN}
     $(call undeclare-kit,${_kit})
   )
 
-  $(call rm-node,${PROJECTS_NODE},,y)
+  $(call rm-node,${PROJECTS_DIR},,y)
   $(call undeclare-kit-parents)
 
   $(call End-Test)

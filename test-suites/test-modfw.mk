@@ -28,14 +28,14 @@ $(call Add-Help,${SegID})
 TESTING := 1
 
 # Reroute all output to the testing directory.
-PROJECTS_NODE := test-bed
+PROJECTS_DIR := test-bed
 PROJECT := test-project
 
 $(call Use-Segment,$(HELPERS_PATH)/test-helpers.mk)
 
 $(call Info,Running test cases:${CASES})
 
-$(call Run-Suites,${TESTS_NODE},${CASES})
+$(call Run-Suites,${TESTS_DIR},${CASES})
 
 # +++++
 # Postamble

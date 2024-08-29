@@ -91,7 +91,7 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := project_ignored_nodes
-${_var} := KITS_NODE BUILD_NODE STAGING_NODE TOOLS_NODE BIN_NODE LIB_NODE
+${_var} := KITS_DIR BUILD_DIR STAGING_DIR TOOLS_DIR BIN_DIR LIB_DIR
 define _help
 ${_var}
   These nodes are not part of the git repository and are therefore ignored using
@@ -101,7 +101,7 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := project_node_names
-${_var} := PROJECT_STICKY_NODE ${project_ignored_nodes}
+${_var} := PROJECT_STICKY_DIR ${project_ignored_nodes}
 define _help
 ${_var}
   A project is intended to be self contained meaning all components used to
@@ -218,7 +218,7 @@ $(call Add-Help-Section,project-decl,Macros for declaring projects.)
 
 _macro := declare-project
 define _help
-  Declare a project as a repo and a child of the $${PROJECTS_NODE} node.
+  Declare a project as a repo and a child of the $${PROJECTS_DIR} node.
 
   NOTE: Only one project can be declared at a time.
 
@@ -245,7 +245,7 @@ $(if $(call project-is-declared,$(1)),
       $(if $(call node-is-declared,$(2)),
         $(call Verbose,Checking variables for project:$(1))
         $(eval _ud := $(call Require,\
-          PROJECTS_NODE ${project_node_names} $(1).URL $(1).BRANCH))
+          PROJECTS_DIR ${project_node_names} $(1).URL $(1).BRANCH))
         $(eval _ud += $(call Require,${project_node_names}))
         $(if ${_ud},
           $(call Signal-Error,Undefined variables:${_ud})
@@ -257,13 +257,13 @@ $(if $(call project-is-declared,$(1)),
             $(call declare-child-node,$(1).${${_node}},$(1),${${_node}})
           )
           $(eval $(1).goals :=)
-          $(eval $(1).sticky_path := ${$(1).${PROJECT_STICKY_NODE}.path})
-          $(eval $(1).build_path := ${$(1).${BUILD_NODE}.path})
-          $(eval $(1).staging_path := ${$(1).${STAGING_NODE}.path})
-          $(eval $(1).tools_path := ${$(1).${TOOLS_NODE}.path})
-          $(eval $(1).bin_path := ${$(1).${BIN_NODE}.path})
-          $(eval $(1).lib_path := ${$(1).${LIB_NODE}.path})
-          $(eval $(1).kits_path := ${$(1).${KITS_NODE}.path})
+          $(eval $(1).sticky_path := ${$(1).${PROJECT_STICKY_DIR}.path})
+          $(eval $(1).build_path := ${$(1).${BUILD_DIR}.path})
+          $(eval $(1).staging_path := ${$(1).${STAGING_DIR}.path})
+          $(eval $(1).tools_path := ${$(1).${TOOLS_DIR}.path})
+          $(eval $(1).bin_path := ${$(1).${BIN_DIR}.path})
+          $(eval $(1).lib_path := ${$(1).${LIB_DIR}.path})
+          $(eval $(1).kits_path := ${$(1).${KITS_DIR}.path})
           $(eval projects += $(1))
         )
       ,
@@ -336,7 +336,7 @@ define ${_macro}
   ,
     $(eval _p_ := ${PROJECT})
   )
-  $(call declare-project,${_p_},${PROJECTS_NODE})
+  $(call declare-project,${_p_},${PROJECTS_DIR})
   $(if $(call project-is-declared,${_p_}),
     $(call Attention,Displaying project ${_p_})
     $(call Display-Vars,\
@@ -374,7 +374,7 @@ _macro := mk-project
 define _help
 ${_macro}
   Create and initialize a new project repo. The project node is declared to be
-  a child of the PROJECTS_NODE node. The node is then created and initialized
+  a child of the PROJECTS_DIR node. The node is then created and initialized
   to be a repo.
 
   NOTE: This is designed to be callable from the make command line using the
@@ -404,7 +404,7 @@ define ${_macro}
   $(if $(call project-is-declared,$(1)),
     $(call Attention,Using existing declaration for project $(1).)
   ,
-    $(call declare-project,$(1),${PROJECTS_NODE})
+    $(call declare-project,$(1),${PROJECTS_DIR})
   )
   $(if ${Errors},
     $(call Attention,Unable to make a project.)
@@ -428,8 +428,8 @@ endef
 _macro := mk-project-from-template
 define _help
 ${_macro}
-  Declare and create a new project in the PROJECTS_NODE node using another
-  project in the PROJECTS_NODE node as a template.
+  Declare and create a new project in the PROJECTS_DIR node using another
+  project in the PROJECTS_DIR node as a template.
 
   NOTE: This is designed to be callable from the make command line using the
   helper call-<macro> goal.
@@ -449,7 +449,7 @@ define ${_macro}
   $(if $(call project-is-declared,$(1)),
     $(call Attention,Using existing declaration for project $(1).)
   ,
-    $(call declare-project,$(1),${PROJECTS_NODE})
+    $(call declare-project,$(1),${PROJECTS_DIR})
   )
   $(if ${Errors},
     $(call Attention,Unable to make a project.)
@@ -458,7 +458,7 @@ define ${_macro}
       $(call Signal-Error,Project $(1) node already exists.)
       $(call undeclare-project,$(1))
     ,
-      $(call declare-child-node,$(2),${PROJECTS_NODE})
+      $(call declare-child-node,$(2),${PROJECTS_DIR})
       $(call declare-repo,$(2))
       $(if $(call is-modfw-repo,$(2)),
         $(call mk-repo-from-template,$(1),$(2))
@@ -477,7 +477,7 @@ _macro := rm-project
 define _help
 ${_macro}
   Remove an existing project. The project node is declared to be a child of
-  the PROJECTS_NODE node. The node is then removed.
+  the PROJECTS_DIR node. The node is then removed.
 
   NOTE: This is designed to be callable from the make command line using the
   helper call-${_macro} goal.
@@ -496,7 +496,7 @@ define ${_macro}
   $(if project-is-declared,$(1),
     $(call Attention,Using existing declaration for project $(1).)
   ,
-    $(call declare-project,$(1),${PROJECTS_NODE})
+    $(call declare-project,$(1),${PROJECTS_DIR})
   )
   $(if ${Errors},
     $(call Attention,Unable to remove project $(1).)
@@ -520,7 +520,7 @@ _macro := install-project
 define _help
 ${_macro}
   Use this to install a project repo. This declares and clones an existing repo
-  into the $${PROJECTS_NODE} node directory.
+  into the $${PROJECTS_DIR} node directory.
 
   If the project has already been declared then the existing project
   declaration is used.
@@ -533,7 +533,7 @@ $(call Add-Help,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),project=$(1))
 
-$(call declare-project,$(1),${PROJECTS_NODE})
+$(call declare-project,$(1),${PROJECTS_DIR})
 $(if ${Errors},
   $(call Attention,Unable to install a project.)
 ,
@@ -572,10 +572,10 @@ _macro := use-project
 define _help
 ${_macro}
   Declares a project which in turn declares a project node as a child of the
-  PROJECTS_NODE node. If the project repo doesn't exist locally then it is
-  installed into the PROJECTS_NODE node.
+  PROJECTS_DIR node. If the project repo doesn't exist locally then it is
+  installed into the PROJECTS_DIR node.
 
-  NOTE: The PROJECTS_NODE node must have been previously declared and must exist.
+  NOTE: The PROJECTS_DIR node must have been previously declared and must exist.
 
   Parameters:
     1 = The name of the project to use.

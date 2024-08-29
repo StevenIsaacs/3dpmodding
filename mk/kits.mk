@@ -54,7 +54,7 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := kit_ignored_nodes
-${_var} := BUILD_NODE STAGING_NODE
+${_var} := BUILD_DIR STAGING_DIR
 define _help
 ${_var}
   These nodes are not part of the git repository and therefore are ignored using
@@ -64,7 +64,7 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := kit_node_names
-${_var} := MODS_NODE $(kit_ignored_nodes)
+${_var} := MODS_DIR $(kit_ignored_nodes)
 define _help
 ${_var}
   A kit is a repo which contains a number of mods. A kit also defines context
@@ -178,7 +178,7 @@ $(call Add-Help-Section,kit-decl,Macros for declaring kits.)
 
 _macro := declare-kit
 define _help
-  Declare a kit as a repo and a child of the $${PROJECT}.$${KITS_NODE} node.
+  Declare a kit as a repo and a child of the $${PROJECT}.$${KITS_DIR} node.
   A kit can only be declared as a child of the current project.
   Parameters:
     1 = The name of the kit.
@@ -186,7 +186,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),kit=$(1) parent=${PROJECT}.${KITS_NODE})
+$(call Enter-Macro,$(0),kit=$(1) parent=${PROJECT}.${KITS_DIR})
 $(if $(call kit-is-declared,$(1)),
   $(call Attention,Kit $(1) has already been declared.)
 ,
@@ -208,25 +208,25 @@ $(if $(call kit-is-declared,$(1)),
         $(eval $(1).BRANCH := ${DEFAULT_BRANCH})
       )
       $(call Attention,Using branch:${$(1).BRANCH})
-      $(eval _ud := $(call Require,PROJECT KITS_NODE ${kit_node_names}))
+      $(eval _ud := $(call Require,PROJECT KITS_DIR ${kit_node_names}))
       $(if ${_ud},
         $(call Signal-Error,Undefined variables:${_ud})
       ,
-        $(if $(call node-is-declared,${PROJECT}.${KITS_NODE}),
+        $(if $(call node-is-declared,${PROJECT}.${KITS_DIR}),
           $(call Verbose,Declaring kit $(1).)
-          $(call declare-child-node,$(1),${PROJECT}.${KITS_NODE})
+          $(call declare-child-node,$(1),${PROJECT}.${KITS_DIR})
           $(call declare-repo,$(1))
           $(foreach _node,${kit_node_names},
             $(call declare-child-node,$(1).${${_node}},$(1),${${_node}})
           )
           $(eval $(1).goals :=)
-          $(eval $(1).mods_path := ${$(1).${MODS_NODE}.path})
-          $(eval $(1).build_path := ${$(1).${BUILD_NODE}.path})
-          $(eval $(1).staging_path := ${$(1).${STAGING_NODE}.path})
+          $(eval $(1).mods_path := ${$(1).${MODS_DIR}.path})
+          $(eval $(1).build_path := ${$(1).${BUILD_DIR}.path})
+          $(eval $(1).staging_path := ${$(1).${STAGING_DIR}.path})
           $(eval kits += $(1))
         ,
           $(call Signal-Error,\
-            Parent node ${PROJECT}.${KITS_NODE} for kit $(1) is not declared.)
+            Parent node ${PROJECT}.${KITS_DIR} for kit $(1) is not declared.)
         )
       )
     )
@@ -367,7 +367,7 @@ _macro := mk-kit
 define _help
 ${_macro}
   Create and initialize a new kit repo. The kit node is declared to be
-  a child of the $${PROJECT}.$${KITS_NODE} node. The node is then created and
+  a child of the $${PROJECT}.$${KITS_DIR} node. The node is then created and
   initialized to be a repo.
 
   If the node for the kit has already been declared then the existing
@@ -421,8 +421,8 @@ endef
 _macro := mk-kit-from-template
 define _help
 ${_macro}
-  Declare and create a new kit in the KTTS_NODE node using another
-  kit in the KITS_NODE node as a template.
+  Declare and create a new kit in the KTTS_DIR node using another
+  kit in the KITS_DIR node as a template.
   NOTE: This is designed to be callable from the make command line using the
   helper call-<macro> goal.
 
@@ -466,7 +466,7 @@ _macro := rm-kit
 define _help
 ${_macro}
   Remove an existing kit. The kit node is declared to be a child of
-  the KITS_NODE node within the ${PROJECT} project. The node is then removed.
+  the KITS_DIR node within the ${PROJECT} project. The node is then removed.
 
   NOTE: This is designed to be callable from the make command line using the
   helper call-${_macro} goal.
@@ -482,7 +482,7 @@ $(call Declare-Callable-Macro,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0),kit=$(1))
   $(call Clear-Errors)
-  $(call declare-child-node,$(1),${KITS_NODE})
+  $(call declare-child-node,$(1),${KITS_DIR})
   $(if ${Errors},
     $(call Attention,Unable to remove kit $(1).)
   ,
@@ -503,7 +503,7 @@ _macro := install-kit
 define _help
 ${_macro}
   Use this to install a kit repo. This declares and clones an existing repo into
-  the $${KITS_NODE} node directory.
+  the $${KITS_DIR} node directory.
 
   If the kit has already been declared then the existing kit declaration is
   used.
@@ -555,7 +555,7 @@ _macro := use-kit
 define _help
 ${_macro}
   Use this to install a kit repo in the kit. This clones an existing repo into
-  the $${KITS_NODE} node directory.
+  the $${KITS_DIR} node directory.
 
   NOTE: This is intended to be called only from use-mod.
 

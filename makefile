@@ -46,7 +46,7 @@ $(call Verbose,Overrides are in segment:${_override})
 $(call Use-Segment,${_override},Info)
 
 $(call Use-Segment,config)
-$(call Add-Segment-Path,${MK_NODE})
+$(call Add-Segment-Path,${MK_DIR})
 
 define _help
 Makefile: ${Seg}
@@ -423,6 +423,9 @@ define _help
 ${_macro}
   Initialize the ModFW makefiles. Among other things this declares the
   project root node and its top level children.
+
+  NOTE: This is a macro because of an idiosyncrasy in the make parser
+  causing problems when creating nodes.
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
@@ -433,9 +436,13 @@ define ${_macro}
 
   $(call declare-root-node,${ModFW_node},${ModFW_path})
 
-  $(foreach _child,STICKY_NODE MK_NODE DOWNLOADS_NODE PROJECTS_NODE,
-   $(call declare-child-node,${${_child}},${ModFW_node})
-   $(call mk-node,${${_child}})
+  $(foreach _child,STICKY MK DOWNLOADS PROJECTS BUILD TOOLS,
+    $(call declare-child-node,${${_child}_DIR},${ModFW_node})
+    $(call mk-node,${${_child}})
+  )
+  $(foreach _child,BIN LIB INC,
+    $(call declare-child-node,${${_child}_DIR},${TOOLS_DIR})
+    $(call mk-node,${${_child}})
   )
 
   $(call Exit-Macro)

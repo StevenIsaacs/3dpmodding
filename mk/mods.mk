@@ -74,7 +74,7 @@ ${_var}
 endef
 
 _var := mod_ignored_nodes
-${_var} := BUILD_NODE STAGING_NODE
+${_var} := BUILD_DIR STAGING_DIR
 define _help
 ${_var}
   These nodes are not part of the git repository and therefore are ignored using
@@ -91,12 +91,12 @@ ${_var}
   also defines context for the mods within a kit.
 
   Mod node names:
-  <kit>.<mod>.$${BUILD_NODE} (default = ${BUILD_NODE})
+  <kit>.<mod>.$${BUILD_DIR} (default = ${BUILD_DIR})
     The name of the build artifact directory within the kit build directory.
-    This is a child of the <kit>.$${BUILD_NODE} node.
-  <kit>.<mod>.$${STAGING_NODE} (default = ${STAGING_NODE})
+    This is a child of the <kit>.$${BUILD_DIR} node.
+  <kit>.<mod>.$${STAGING_DIR} (default = ${STAGING_DIR})
     The name of the staging artifact directory within the kit staging directory.
-    This is a child of the <kit>.$${STAGING_NODE} node.
+    This is a child of the <kit>.$${STAGING_DIR} node.
 
 endef
 help-${_var} := $(call _help)
@@ -274,7 +274,7 @@ endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
-$(call Enter-Macro,$(0),kit.mod=$(1) KITS_NODE=${KITS_NODE})
+$(call Enter-Macro,$(0),kit.mod=$(1) KITS_DIR=${KITS_DIR})
 
 $(if $(call mod-is-declared,$(1)),
   $(call Attention,Mod $(1) has already been declared.)
@@ -300,7 +300,7 @@ $(if $(call mod-is-declared,$(1)),
         $(eval $(1).mod := ${_m})
         $(eval $(1).prefixes :=)
         $(call Verbose,Kit=${_k} Mod:${_m})
-        $(call declare-child-node,$(1),${_k}.${MODS_NODE},${_m})
+        $(call declare-child-node,$(1),${_k}.${MODS_DIR},${_m})
         $(foreach _node,${mod_node_names},
           $(call declare-child-node,$(1).${${_node}},$(1),${${_node}})
         )
@@ -480,7 +480,7 @@ $$(call Verbose,SegUN = $${SegUN})
 
 $$(call Add-Help-Section,${_prefix}_vars,<variable declarations>)
 
-_var := $${_prefix}.var
+_var := $${_prefix}_var
 $${_var} :=
 $.define _help
 $${_var}
@@ -489,7 +489,7 @@ $.endef
 
 $$(call Add-Help-Section,${_prefix}_macros,Mod specific macros.)
 
-_macro := $${_prefix}.macro
+_macro := $${_prefix}_macro
 $${_macro} :=
 $.define _help
 $${_macro}
@@ -503,7 +503,7 @@ $$(call Enter-Macro,$$(0),Context=$$(1))
 $$(call Exit-Macro)
 $.endef
 
-_macro := $${_prefix}.declare-mod-context
+_macro := $${_prefix}-declare-mod-context
 $.define _help
 $${_macro}
   Establish a new $${Seg} context for a mod which is using this mod. This is

@@ -36,7 +36,7 @@ $(call Add-Help,${SegID})
 
 $(call Add-Help-Section,dirs,Directory names.)
 
-_var := MK_NODE
+_var := MK_DIR
 $(call Sticky,${_var},mk)
 define _help
 ${_var} = ${${_var}}
@@ -67,7 +67,7 @@ endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
-_var := STICKY_NODE
+_var := STICKY_DIR
 $(call Sticky,${_var},${STICKY_DIR})
 define _help
 ${_var} = ${${_var}}
@@ -77,7 +77,7 @@ endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
-_var := PROJECTS_NODE
+_var := PROJECTS_DIR
 $(call Sticky,${_var},projects)
 define _help
 ${_var} = ${${_var}}
@@ -86,7 +86,7 @@ endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
-_var := KITS_NODE
+_var := KITS_DIR
 $(call Sticky,${_var},kits)
 define _help
 ${_var} = ${${_var}}
@@ -95,7 +95,7 @@ endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
-_var := MODS_NODE
+_var := MODS_DIR
 $(call Sticky,${_var},mods)
 define _help
 ${_var} = ${${_var}}
@@ -104,17 +104,17 @@ endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
-_var := PROJECT_STICKY_NODE
-$(call Sticky,${_var},${STICKY_NODE})
+_var := PROJECT_STICKY_DIR
+$(call Sticky,${_var},${STICKY_DIR})
 define _help
 ${_var} = ${${_var}}
   The name of the directory containing the project specific sticky variables.
-  This defaults to the variable STICKY_NODE.
+  This defaults to the variable STICKY_DIR.
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
-_var := BUILD_NODE
+_var := BUILD_DIR
 $(call Sticky,${_var},build)
 define _help
 ${_var} = ${${_var}}
@@ -123,7 +123,7 @@ endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
-_var := STAGING_NODE
+_var := STAGING_DIR
 $(call Sticky,${_var},staging)
 define _help
 ${_var} = ${${_var}}
@@ -132,17 +132,8 @@ endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
-_var := TOOLS_NODE
+_var := TOOLS_DIR
 $(call Sticky,${_var},tools)
-define _help
-${_var} = ${${_var}}
-  The the name of the directory where tools are stored and built if necessary.
-endef
-help-${_var} := $(call _help)
-$(call Add-Help,${_var})
-
-_var := BIN_NODE
-$(call Sticky,${_var},bin)
 define _help
 ${_var} = ${${_var}}
   The the name of the directory where tools are installed.
@@ -150,7 +141,16 @@ endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
-_var := LIB_NODE
+_var := BIN_DIR
+$(call Sticky,${_var},bin)
+define _help
+${_var} = ${${_var}}
+  The the name of the directory where tool executables are installed.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+
+_var := LIB_DIR
 $(call Sticky,${_var},lib)
 define _help
 ${_var} = ${${_var}}
@@ -160,7 +160,16 @@ endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
-_var := DOWNLOADS_NODE
+_var := INC_DIR
+$(call Sticky,${_var},inc)
+define _help
+${_var} = ${${_var}}
+  The the name of the directory where include files are stored.
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+
+_var := DOWNLOADS_DIR
 $(call Sticky,${_var},downloads)
 define _help
 ${_var} = ${${_var}}
@@ -169,7 +178,7 @@ endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
-_var := TESTS_NODE
+_var := TESTS_DIR
 $(call Sticky,${_var},test-suites)
 define _help
 ${_var} = ${${_var}}
@@ -226,7 +235,7 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := DEFAULT_PROJECT_URL
-$(call Sticky,${_var},${DEFAULT_URL}/${PROJECTS_NODE})
+$(call Sticky,${_var},${DEFAULT_URL}/${PROJECTS_DIR})
 define _help
 ${_var} = ${${_var}}
   The default URL minus the repo name to use when installing or creating a
@@ -236,7 +245,7 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := DEFAULT_KIT_URL
-$(call Sticky,${_var},${DEFAULT_URL}/${KITS_NODE})
+$(call Sticky,${_var},${DEFAULT_URL}/${KITS_DIR})
 define _help
 ${_var} = ${${_var}}
   The default URL minus the repo name to use when installing or creating a
@@ -273,27 +282,37 @@ are sub-directories of the ModFW directory.
 >-ModFW_node # All other nodes are children of this node.
   --.git
     | Files managed by git.
-  | .gitignore # Ignores STICKY_NODE, DOWNLOADS_NODE and, PROJECTS_NODE.
+  | .gitignore # Ignores STICKY_DIR, DOWNLOADS_DIR and, PROJECTS_DIR.
   | makefile (The top level makefile.)
-  >-$${MK_NODE} = ${MK_NODE}
+  >-$${MK_DIR} = ${MK_DIR}
     | ModFW makefile segments.
-  >-$${TESTS_NODE} = ${TESTS_NODE}
+  >-$${TESTS_DIR} = ${TESTS_DIR}
     | ModFW makefile segments for testing ModFW.
 
   The following nodes are not part of the ModFW repo.
 
-  >-$${STICKY_NODE} = ${STICKY_NODE}
+  >-$${STICKY_DIR} = ${STICKY_DIR}
     | Top level sticky variable save files. Ths location of this node is defined
       by STICKY_PATH which is defined by the helpers (see help-helpers).
-  >-$${DOWNLOADS_NODE} = ${DOWNLOADS_NODE}
+  >-$${DOWNLOADS_DIR} = ${DOWNLOADS_DIR}
     | Where downloaded tools and components are stored. Multiple projects can
       reference these to avoid redundant downloads. The variable DOWNLOADS_PATH
       defines the location of this node.
-  >-$${PROJECTS_NODE} = ${PROJECTS_NODE}
+  >-$${PROJECTS_DIR} = ${PROJECTS_DIR}
     | Contains all projects. The location of this node is defined by
       PROJECTS_PATH.
+  >-$${BUILD_DIR} = ${BUILD_DIR}
+    | Where tools are built.
+  >-$${TOOLS_DIR} = ${TOOLS_DIR}
+    | Where tools are installed. These tools can be shared across projects.
+    >-$${BIN_DIR}
+      Where tool executables are installed.
+    >-$${LIB_DIR}
+      Where shared libraries are installed.
+    >-$${INC_DIR}
+      Where shared include files are installed.
 
-    The PROJECTS_NODE contains all of the installed projects. Each project is a
+    The PROJECTS_DIR contains all of the installed projects. Each project is a
     separate repo.
 
     The active project is the top level or focus. The project then "uses" one or
@@ -319,24 +338,24 @@ are sub-directories of the ModFW directory.
       | Project defined files.
       --.git
         | Files managed by git.
-      >-$${PROJECT}.$${STICKY_NODE} = ${STICKY_NODE}
+      >-$${PROJECT}.$${STICKY_DIR} = ${STICKY_DIR}
         | Project specific sticky variable save files. These sticky variables
           ARE part of the git repo.
-      >-$${PROJECT}.$${BUILD_NODE} = ${BUILD_NODE}
+      >-$${PROJECT}.$${BUILD_DIR} = ${BUILD_DIR}
         | Project build files.
-      >-$${PROJECT}.$${STAGING_NODE} ${STAGING_NODE}
+      >-$${PROJECT}.$${STAGING_DIR} ${STAGING_DIR}
         | Project staged files.
-      >-$${PROJECT}.$${TOOLS_NODE}
+      >-$${PROJECT}.$${TOOLS_DIR}
         >-<tool>
           | Tool specific files used for building the tools.
         >-<tool>...
-      >-$${PROJECT}.$${LIB_NODE}
+      >-$${PROJECT}.$${LIB_DIR}
         >-<lib>
           | Installed library files.
         >-<lib>...
-      >-$${PROJECT}.$${BIN_NODE}
+      >-$${PROJECT}.$${BIN_DIR}
         | Installed tools and utilities.
-      >-$${PROJECT}.$${KITS_NODE} = ${KITS_NODE}
+      >-$${PROJECT}.$${KITS_DIR} = ${KITS_DIR}
         A project contains a collection of kits needed to build the project.
         Each kit is a separate repo.
         >-<kit> (repo) (see help-kits)
@@ -345,21 +364,21 @@ are sub-directories of the ModFW directory.
           | .gitignore
           | <kit>.mk
           | Kit defined files.
-          >-<kit>.$${MODS_NODE} = ${MODS_NODE}
+          >-<kit>.$${MODS_DIR} = ${MODS_DIR}
             A kit contains a collection of mods. The mods are part of the
             containing kit repo.
             >-<kit>.<mod> (see help-mods)
               | <mod>.mk
               | .gitignore
               | Mod defined files.
-              >-<kit>.<mod>.$${BUILD_NODE}
+              >-<kit>.<mod>.$${BUILD_DIR}
                 | Mod build files.
-              >-<kit>.<mod>.$${STAGING_NODE}
+              >-<kit>.<mod>.$${STAGING_DIR}
                 | Mod staged files.
             >-<kit>.<mod>...
-          >-<kit>.$${BUILD_NODE}
+          >-<kit>.$${BUILD_DIR}
             | Kit build files.
-          >-<kit>.$${STAGING_NODE}
+          >-<kit>.$${STAGING_DIR}
             | Kit staged files.
         >-<kit>... (repo)
     >-<project>... (repo)

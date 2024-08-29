@@ -12,7 +12,7 @@ Make segment: ${Seg}.mk
 This test suite verifies the macros related to managing ModFW projects.
 
 The focus is on managing a standard ModFW project directory structure. To do
-so the variables PROJECTS_NODE, PROJECTS_PATH, and PROJECT are used. These
+so the variables PROJECTS_DIR, PROJECTS_PATH, and PROJECT are used. These
 should be defined either in config.mk or test-modfw.mk.
 
 Command line goals:
@@ -40,7 +40,7 @@ $(call Add-Help,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),\
   TESTING_PATH=${TESTING_PATH}\
-  PROJECTS_NODE=${PROJECTS_NODE}\
+  PROJECTS_DIR=${PROJECTS_DIR}\
 )
 
 $(if ${TESTING_PATH},
@@ -49,7 +49,7 @@ $(if ${TESTING_PATH},
   $(call FAIL,TESTING_PATH is not defined.)
 )
 
-$(foreach _v,PROJECTS_NODE,
+$(foreach _v,PROJECTS_DIR,
   $(if ${${_v}},
     $(call PASS,Var ${_v} = ${${_v}})
     $(if $(call node-is-declared,${_v}),
@@ -62,7 +62,7 @@ $(foreach _v,PROJECTS_NODE,
   )
 )
 
-$(call declare-root-node,${PROJECTS_NODE},${TESTING_PATH})
+$(call declare-root-node,${PROJECTS_DIR},${TESTING_PATH})
 
 $(call Exit-Macro)
 endef
@@ -76,7 +76,7 @@ $(call Add-Help,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0))
 
-$(call undeclare-root-node,${PROJECTS_NODE})
+$(call undeclare-root-node,${PROJECTS_DIR})
 
 $(call Exit-Macro)
 endef
@@ -216,7 +216,7 @@ define ${.TestUN}
     $(call Mark-Step,Verifying project required variables.)
     $(call Expect-Error,\
               Undefined variables:${_project}.URL ${_project}.BRANCH)
-    $(call declare-project,${_project},${PROJECTS_NODE})
+    $(call declare-project,${_project},${PROJECTS_DIR})
     $(call Verify-Error)
 
     $(eval ${_project}.URL := ${LOCAL_REPO})
@@ -231,11 +231,11 @@ define ${.TestUN}
     $(call verify-project-nodes,${_project})
 
     $(call Mark-Step,Verifying project node already declared.)
-    $(call declare-child-node,${_project},${PROJECTS_NODE})
+    $(call declare-child-node,${_project},${PROJECTS_DIR})
 
     $(call Expect-Error,\
       A node using project name ${_project} has already been declared.)
-    $(call declare-project,${_project},${PROJECTS_NODE})
+    $(call declare-project,${_project},${PROJECTS_DIR})
     $(call Verify-Error)
     $(call verify-project-attributes,${_project})
     $(call verify-project-nodes,${_project})
@@ -244,7 +244,7 @@ define ${.TestUN}
 
     $(call Expect-Error,\
       A repo using project name ${_project} has already been declared.)
-    $(call declare-project,${_project},${PROJECTS_NODE})
+    $(call declare-project,${_project},${PROJECTS_DIR})
     $(call Verify-Error)
     $(call verify-project-attributes,${_project})
     $(call verify-project-nodes,${_project})
@@ -254,7 +254,7 @@ define ${.TestUN}
 
     $(call Mark-Step,Verifying project can be declared.)
     $(call Expect-No-Error)
-    $(call declare-project,${_project},${PROJECTS_NODE})
+    $(call declare-project,${_project},${PROJECTS_DIR})
     $(call Verify-No-Error)
 
     $(call verify-project-attributes,${_project},defined)
@@ -262,7 +262,7 @@ define ${.TestUN}
 
     $(call Expect-No-Error)
     $(call Expect-Message,Using existing declaration for project ${_project}.)
-    $(call declare-project,${_project},${PROJECTS_NODE})
+    $(call declare-project,${_project},${PROJECTS_DIR})
     $(call Verify-Message)
     $(call Verify-No-Error)
 
@@ -279,7 +279,7 @@ define ${.TestUN}
 
     $(call Mark-Step,Verifying can redeclare the same project.)
     $(call Expect-No-Error)
-    $(call declare-project,${_project},${PROJECTS_NODE})
+    $(call declare-project,${_project},${PROJECTS_DIR})
     $(call Verify-No-Error)
 
     $(call Test-Info,Undeclaring project nodes.)
@@ -299,7 +299,7 @@ define ${.TestUN}
     $(call undeclare-project,${_project})
     $(call Verify-Error)
 
-    $(call declare-child-node,${_project},${PROJECTS_NODE})
+    $(call declare-child-node,${_project},${PROJECTS_DIR})
     $(call declare-repo,${_project})
 
     $(call Expect-No-Error)
@@ -372,7 +372,7 @@ define ${.TestUN}
     $(eval undefine ${_project}.URL)
     $(eval undefine ${_project}.BRANCH)
 
-    $(call rm-node,${PROJECTS_NODE},,y)
+    $(call rm-node,${PROJECTS_DIR},,y)
     $(call undeclare-project,${_project})
     $(call undeclare-project-parents)
   )
@@ -451,7 +451,7 @@ define ${.TestUN}
     $(eval undefine ${_project}.URL)
     $(eval undefine ${_project}.BRANCH)
 
-    $(call rm-node,${PROJECTS_NODE},,y)
+    $(call rm-node,${PROJECTS_DIR},,y)
 
     $(call undeclare-project,${_new_project})
     $(call undeclare-project,${_project})
@@ -497,7 +497,7 @@ define ${.TestUN}
 
     $(call undeclare-project,${_project})
 
-    $(call mk-node,${PROJECTS_NODE})
+    $(call mk-node,${PROJECTS_DIR})
 
     $(call Mark-Step,Verifying using a clone of a local project.)
 
@@ -523,7 +523,7 @@ define ${.TestUN}
 
     $(call rm-node,${_src_projects},,y)
 
-    $(call rm-node,${PROJECTS_NODE},,y)
+    $(call rm-node,${PROJECTS_DIR},,y)
 
     $(call undeclare-project,${_project})
     $(call undeclare-node,${_src_projects})

@@ -12,7 +12,7 @@ Make segment: ${Seg}.mk
 This test suite verifies the macros related to managing ModFW kits.
 
 The focus is on managing a standard ModFW kit directory structure. To do
-so the variables PROJECTS_NODE, PROJECTS_PATH, and PROJECT are used. These
+so the variables PROJECTS_DIR, PROJECTS_PATH, and PROJECT are used. These
 should be defined either in config.mk or test-modfw.mk.
 
 Command line goals:
@@ -58,14 +58,14 @@ $(call Add-Help,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),\
   TESTING_PATH=${TESTING_PATH}\
-  PROJECTS_NODE=${PROJECTS_NODE}\
+  PROJECTS_DIR=${PROJECTS_DIR}\
   kit_project_node=${kit_project_node}\
-  KITS_NODE=${KITS_NODE}\
+  KITS_DIR=${KITS_DIR}\
 )
 
 $(eval saved_project := ${PROJECT})
 $(eval PROJECT := ${kit_project_node})
-$(eval ${PROJECT}.${KITS_NODE} := ${KITS_NODE})
+$(eval ${PROJECT}.${KITS_DIR} := ${KITS_DIR})
 
 $(if ${TESTING_PATH},
   $(call PASS,TESTING_PATH=${TESTING_PATH})
@@ -73,7 +73,7 @@ $(if ${TESTING_PATH},
   $(call FAIL,TESTING_PATH is not defined.)
 )
 
-$(foreach _v,PROJECTS_NODE PROJECT ${PROJECT}.${KITS_NODE},
+$(foreach _v,PROJECTS_DIR PROJECT ${PROJECT}.${KITS_DIR},
   $(if ${${_v}},
     $(call PASS,Var ${_v} = ${${_v}})
     $(if $(call node-is-declared,${_v}),
@@ -86,10 +86,10 @@ $(foreach _v,PROJECTS_NODE PROJECT ${PROJECT}.${KITS_NODE},
   )
 )
 
-$(call declare-root-node,${PROJECTS_NODE},${TESTING_PATH})
-$(call declare-child-node,${PROJECT},${PROJECTS_NODE})
+$(call declare-root-node,${PROJECTS_DIR},${TESTING_PATH})
+$(call declare-child-node,${PROJECT},${PROJECTS_DIR})
 $(call declare-child-node,\
-  ${PROJECT}.${KITS_NODE},${PROJECT},${KITS_NODE})
+  ${PROJECT}.${KITS_DIR},${PROJECT},${KITS_DIR})
 
 $(if $(call node-exists,${PROJECT}),
   $(call FAIL,The node ${PROJECT} should NOT exist.)
@@ -113,8 +113,8 @@ $(call Add-Help,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0))
 
-$(call undeclare-node-descendants,${PROJECTS_NODE})
-$(call undeclare-root-node,${PROJECTS_NODE})
+$(call undeclare-node-descendants,${PROJECTS_DIR})
+$(call undeclare-root-node,${PROJECTS_DIR})
 
 $(eval PROJECT := ${saved_project})
 $(call Exit-Macro)
@@ -266,7 +266,7 @@ define ${.TestUN}
     $(call Mark-Step,Verifying kit is not declared.)
     $(eval PROJECT := foobar)
     $(call Expect-Error,\
-      Parent node foobar.${KITS_NODE} for kit ${_kit} is not declared.)
+      Parent node foobar.${KITS_DIR} for kit ${_kit} is not declared.)
     $(call declare-kit,${_kit})
     $(call Verify-Error)
     $(call verify-kit-attributes,${_kit})
@@ -274,7 +274,7 @@ define ${.TestUN}
     $(eval PROJECT := ${kit_project_node})
 
     $(call Mark-Step,Verifying kit node already declared.)
-    $(call declare-child-node,${_kit},${PROJECT}.${KITS_NODE})
+    $(call declare-child-node,${_kit},${PROJECT}.${KITS_DIR})
 
     $(call Expect-Error,\
       A node using kit name ${_kit} has already been declared.)
@@ -342,7 +342,7 @@ define ${.TestUN}
     $(call undeclare-kit,${_kit})
     $(call Verify-Error)
 
-    $(call declare-child-node,${_kit},${PROJECT}.${KITS_NODE})
+    $(call declare-child-node,${_kit},${PROJECT}.${KITS_DIR})
     $(call declare-repo,${_kit})
 
     $(call Expect-No-Error)
@@ -417,7 +417,7 @@ define ${.TestUN}
 
     $(call undeclare-kit,${_kit})
   )
-  $(call rm-node,${PROJECTS_NODE},,y)
+  $(call rm-node,${PROJECTS_DIR},,y)
   $(call undeclare-kit-parents)
 
   $(call End-Test)
@@ -493,7 +493,7 @@ define ${.TestUN}
     $(call undeclare-kit,${_kit})
   )
 
-  $(call rm-node,${PROJECTS_NODE},,y)
+  $(call rm-node,${PROJECTS_DIR},,y)
   $(call undeclare-kit-parents)
 
   $(call End-Test)
@@ -531,7 +531,7 @@ define ${.TestUN}
 
     $(call undeclare-kit,${_kit})
 
-    $(call mk-node,${PROJECT}.${KITS_NODE})
+    $(call mk-node,${PROJECT}.${KITS_DIR})
 
     $(call Mark-Step,Verifying message that kit segment is incomplete.)
     $(call Expect-Message,\
@@ -550,7 +550,7 @@ define ${.TestUN}
 
     $(call undeclare-kit,${_kit})
   )
-  $(call rm-node,${PROJECTS_NODE},,y)
+  $(call rm-node,${PROJECTS_DIR},,y)
   $(call undeclare-kit-parents)
 
   $(call End-Test)
