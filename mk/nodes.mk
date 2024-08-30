@@ -227,7 +227,7 @@ $(call Add-Help,${_macro})
 $(call Declare-Callable-Macro,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0),node=$(1))
-  $(if $(call node-is-declared,$(1))
+  $(if $(call node-is-declared,$(1)),
     $(call Display-Vars,\
       $(foreach _a,${node_attributes},$(1).${_a})
     )
