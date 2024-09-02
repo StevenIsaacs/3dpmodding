@@ -84,19 +84,12 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := mod_node_names
-${_var} := ${mod_ignored_nodes}
+${_var} := INC_DIR ${mod_ignored_nodes}
 define _help
 ${_var}
   A mod is always contained within a kit which contains a number of mods. A kit
-  also defines context for the mods within a kit.
-
-  Mod node names:
-  <kit>.<mod>.$${BUILD_DIR} (default = ${BUILD_DIR})
-    The name of the build artifact directory within the kit build directory.
-    This is a child of the <kit>.$${BUILD_DIR} node.
-  <kit>.<mod>.$${STAGING_DIR} (default = ${STAGING_DIR})
-    The name of the staging artifact directory within the kit staging directory.
-    This is a child of the <kit>.$${STAGING_DIR} node.
+  also defines context for the mods within a kit. See help-modfw_structure for
+  more information.
 
 endef
 help-${_var} := $(call _help)

@@ -60,7 +60,8 @@ and projects.
 This make file and the included make segments define a framework for developing
 new projects or modifying existing projects. A project can consist of both
 software and hardware. All of the tools and existing components needed to build
-the project are automatically downloaded, configured and built when needed.
+the project are automatically downloaded, configured, built, and installed when
+needed.
 
 Definitions:
   deliverable: A deliverable is the end result of a ModFW run. In make
@@ -436,12 +437,8 @@ define ${_macro}
 
   $(call declare-root-node,${ModFW_node},${ModFW_path})
 
-  $(foreach _child,STICKY MK DOWNLOADS PROJECTS BUILD TOOLS,
+  $(foreach _child,STICKY MK DOWNLOADS PROJECTS,
     $(call declare-child-node,${${_child}_DIR},${ModFW_node})
-    $(call mk-node,${${_child}})
-  )
-  $(foreach _child,BIN LIB INC,
-    $(call declare-child-node,${${_child}_DIR},${TOOLS_DIR})
     $(call mk-node,${${_child}})
   )
 

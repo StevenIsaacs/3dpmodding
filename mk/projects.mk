@@ -32,8 +32,14 @@ However, it is recommended this be avoided because of introducing the risk of
 confusion resulting from different kit versions (branches).
 
 This segment uses repo macros in repos.mk help manage ModFW projects. Each
-project is contained in a separate repo. the install-repo macro is used to install
-the active project if it doesn't yet exist in the projects directory.
+project is contained in a separate repo. the install-repo macro is used to
+install the active project if it doesn't yet exist in the projects directory.
+
+Projects are intended to be self contained. All kits, mods, and tools needed by
+the project are installed within the project directory tree. This simplifies
+removal of a project and helps avoid accumulation of files which are no
+longer relevant and helps avoid conflicts between projects which use different
+versions of kits or tools.
 
 Sticky variables are stored in the project subdirectory thus allowing each
 project to have unique values for sticky variables. This segment (${Seg})
@@ -91,7 +97,7 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := project_ignored_nodes
-${_var} := KITS_DIR BUILD_DIR STAGING_DIR TOOLS_DIR BIN_DIR LIB_DIR
+${_var} := TOOLS_DIR KITS_DIR BUILD_DIR STAGING_DIR DEPLOYMENT_DIR
 define _help
 ${_var}
   These nodes are not part of the git repository and are therefore ignored using
@@ -101,7 +107,7 @@ help-${_var} := $(call _help)
 $(call Add-Help,${_var})
 
 _var := project_node_names
-${_var} := PROJECT_STICKY_DIR ${project_ignored_nodes}
+${_var} := PROJECT_STICKY_DIR INC_DIR ${project_ignored_nodes}
 define _help
 ${_var}
   A project is intended to be self contained meaning all components used to
@@ -123,8 +129,7 @@ $(call Add-Help,${_var})
 
 _var := project_attributes
 ${_var} := \
-  goals sticky_path kits_path build_path staging_path tools_path bin_path \
-  lib_path
+  goals
 define _help
 ${_var}
   A project is a ModFW repo and extends a repo with the additional attributes.
@@ -132,26 +137,26 @@ ${_var}
   Additional attributes:
   $${PROJECT}.goals
     The list of goals for the project.
-  $${PROJECT}.kits_path
-    Where kits are installed.
-  $${PROJECT}.sticky_path
-    Where project sticky variables are stored. NOTE: These are part of the
-    project repo.
-  $${PROJECT}.build_path
-    Where project build artifacts are stored.
-  $${PROJECT},staging_path
-    Where project deliverables are staged. Additional files are cherry picked
-    from kits and mods and placed here.
-  $${PROJECT}.tools_path
-    Where the project specific build tools are stored. Typically, tools are
-    built in this directory and then installed in the project bin or lib
-    directories.
-  $${PROJECT}.bin_path
-    Where the project specific tools and utilities are installed.
-  $${PROJECT}.lib_path
-    Where the project specific libraries are installed.
 
 ${help-repo_attributes}
+endef
+help-${_var} := $(call _help)
+$(call Add-Help,${_var})
+
+_var := tool_node_names
+${_var} := BIN_DIR INC_DIR LIB_DIR
+define _help
+${_var}
+  Tools used by mods are installed within the project $${TOOLS_DIR} directory.
+  Each tool can provide executables, include files, and libraries. The location
+  of these is defined by the project. A mod can add to this structure as needed.
+
+  See help-modfw_structure for more information.
+
+Project node names:
+$(foreach _node,${tool_node_names},
+$(call help-${_node})
+)
 endef
 help-${_var} := $(call _help)
 $(call Add-Help,${_var})
@@ -220,55 +225,64 @@ _macro := declare-project
 define _help
   Declare a project as a repo and a child of the $${PROJECTS_DIR} node.
 
-  NOTE: Only one project can be declared at a time.
+  By default this declares the active project. Only one project can be the
+  active project. If an alternate project name is used then nodes are given
+  a prefix to avoid name conflicts with the active project. Alternate names
+  are used when declaring new projects (see help-mk-project).
 
   Parameters:
-    1 = The name of the project.
-    2 = The parent node for the project.
+    1 = Optional name of the project. If this is empty then $${PROJECT} is
+        used. This parameter is provided for using callable macros having
+        a project name as a parameter. Projects declared using using an
+        alternate name are NOT the active project.
 endef
 help-${_macro} := $(call _help)
 $(call Add-Help,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),project=$(1) parent=$(2))
 
-$(if $(call project-is-declared,$(1)),
-  $(call Attention,Using existing declaration for project $(1).)
+$(if $(1),
+  $(eval _prj := $(1))
+  $(eval _pfx := $(1).)
 ,
-  $(if $(call repo-is-declared,$(1)),
+  $(eval _prj := ${PROJECT})
+  $(eval _pfx :=)
+)
+$(if $(call project-is-declared,${_prj}),
+  $(call Attention,Using existing declaration for project ${_prj}.)
+,
+  $(if $(call repo-is-declared,${_prj}),
     $(call Signal-Error,\
-        A repo using project name $(1) has already been declared.)
+        A repo using project name ${_prj} has already been declared.)
   ,
-    $(if $(call node-is-declared,$(1)),
+    $(if $(call node-is-declared,${_prj}),
       $(call Signal-Error,\
-        A node using project name $(1) has already been declared.)
+        A node using project name ${_prj} has already been declared.)
     ,
-      $(if $(call node-is-declared,$(2)),
-        $(call Verbose,Checking variables for project:$(1))
+      $(if $(call node-is-declared,${PROJECTS_DIR}),
+        $(call Verbose,Checking variables for project:${_prj})
         $(eval _ud := $(call Require,\
-          PROJECTS_DIR ${project_node_names} $(1).URL $(1).BRANCH))
-        $(eval _ud += $(call Require,${project_node_names}))
+          PROJECTS_DIR ${project_node_names} $(1).URL ${_prj}.BRANCH))
         $(if ${_ud},
           $(call Signal-Error,Undefined variables:${_ud})
         ,
-          $(call Verbose,Declaring project $(1).)
-          $(call declare-child-node,$(1),$(2))
-          $(call declare-repo,$(1))
+          $(call Verbose,Declaring project ${_prj}.)
+          $(call declare-child-node,${_prj},${PROJECTS_DIR})
+          $(call declare-repo,${_prj})
           $(foreach _node,${project_node_names},
-            $(call declare-child-node,$(1).${${_node}},$(1),${${_node}})
+            $(call declare-child-node,\
+              ${_pfx}${${_node}},${_prj},${${_node}})
           )
-          $(eval $(1).goals :=)
-          $(eval $(1).sticky_path := ${$(1).${PROJECT_STICKY_DIR}.path})
-          $(eval $(1).build_path := ${$(1).${BUILD_DIR}.path})
-          $(eval $(1).staging_path := ${$(1).${STAGING_DIR}.path})
-          $(eval $(1).tools_path := ${$(1).${TOOLS_DIR}.path})
-          $(eval $(1).bin_path := ${$(1).${BIN_DIR}.path})
-          $(eval $(1).lib_path := ${$(1).${LIB_DIR}.path})
-          $(eval $(1).kits_path := ${$(1).${KITS_DIR}.path})
-          $(eval projects += $(1))
+          $(foreach _node,${tool_node_names},
+            $(call declare-child-node,\
+              ${_pfx}${TOOLS_DIR}.${${_node}},${_pfx}${TOOLS_DIR},${${_node}})
+          )
+          $(eval ${_prj}.goals :=)
+          $(eval projects += ${_prj})
         )
       ,
         $(call Signal-Error,\
-          Parent node $(2) for project $(1) is not declared.)
+          Parent node ${PROJECTS_DIR} for project ${_prj} is not declared.)
       )
     )
   )
@@ -281,6 +295,7 @@ _macro := undeclare-project
 define _help
   Remove a project declaration. The corresponding repo and node are also
   undeclared. The non-sticky project attributes are undefined.
+
   Parameters:
     1 = The name of the project.
 endef
@@ -289,30 +304,41 @@ $(call Add-Help,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),project=$(1))
 
-$(if $(call project-is-declared,$(1)),
-  $(if $(call repo-is-declared,$(1)),
-    $(if $(call node-is-declared,$(1)),
-      $(if $(call is-a-child-node,$(1)),
-        $(call undeclare-repo,$(1))
-        $(foreach _node,${$(1).children},
+$(if $(1),
+  $(eval _prj := $(1))
+  $(eval _pfx := $(1).)
+,
+  $(eval _prj := ${PROJECT})
+  $(eval _pfx :=)
+)
+$(if $(call project-is-declared,${_prj}),
+  $(if $(call repo-is-declared,${_prj}),
+    $(if $(call node-is-declared,${_prj}),
+      $(if $(call is-a-child-node,${_prj}),
+        $(call undeclare-repo,${_prj})
+        $(eval _children := ${${_pfx}${TOOLS_DIR}.children})
+        $(call Verbose,Tools children: ${_children})
+        $(eval _children += ${${_prj}.children})
+        $(call Verbose,All project children:${_children})
+        $(foreach _node,${_children},
           $(call undeclare-child-node,${_node})
         )
-        $(call undeclare-child-node,$(1))
+        $(call undeclare-child-node,${_prj})
         $(foreach _att,${project_attributes},
-          $(eval undefine $(1).${_att})
+          $(eval undefine ${_prj}.${_att})
         )
-        $(eval projects := $(filter-out $(1),${projects}))
+        $(eval projects := $(filter-out ${_prj},${projects}))
       ,
-        $(call Signal-Error,Project $(1) is not a child node.)
+        $(call Signal-Error,Project ${_prj} is not a child node.)
       )
     ,
-      $(call Signal-Error,Project $(1) does not have a declared node.)
+      $(call Signal-Error,Project ${_prj} does not have a declared node.)
     )
   ,
-    $(call Signal-Error,Project $(1) does not have a declared repo.)
+    $(call Signal-Error,Project ${_prj} does not have a declared repo.)
   )
 ,
-  $(call Signal-Error,The project $(1) has not been declared.)
+  $(call Signal-Error,The project ${_prj} has not been declared.)
 )
 $(call Exit-Macro)
 endef
@@ -336,7 +362,7 @@ define ${_macro}
   ,
     $(eval _p_ := ${PROJECT})
   )
-  $(call declare-project,${_p_},${PROJECTS_DIR})
+  $(call declare-project,${_p_})
   $(if $(call project-is-declared,${_p_}),
     $(call Attention,Displaying project ${_p_})
     $(call Display-Vars,\
@@ -404,7 +430,7 @@ define ${_macro}
   $(if $(call project-is-declared,$(1)),
     $(call Attention,Using existing declaration for project $(1).)
   ,
-    $(call declare-project,$(1),${PROJECTS_DIR})
+    $(call declare-project,$(1))
   )
   $(if ${Errors},
     $(call Attention,Unable to make a project.)
@@ -449,7 +475,7 @@ define ${_macro}
   $(if $(call project-is-declared,$(1)),
     $(call Attention,Using existing declaration for project $(1).)
   ,
-    $(call declare-project,$(1),${PROJECTS_DIR})
+    $(call declare-project,$(1))
   )
   $(if ${Errors},
     $(call Attention,Unable to make a project.)
@@ -496,7 +522,7 @@ define ${_macro}
   $(if project-is-declared,$(1),
     $(call Attention,Using existing declaration for project $(1).)
   ,
-    $(call declare-project,$(1),${PROJECTS_DIR})
+    $(call declare-project,$(1))
   )
   $(if ${Errors},
     $(call Attention,Unable to remove project $(1).)
@@ -533,7 +559,7 @@ $(call Add-Help,${_macro})
 define ${_macro}
 $(call Enter-Macro,$(0),project=$(1))
 
-$(call declare-project,$(1),${PROJECTS_DIR})
+$(call declare-project,$(1))
 $(if ${Errors},
   $(call Attention,Unable to install a project.)
 ,
@@ -599,7 +625,7 @@ define ${_macro}
           $(call mk-node,$(1).${${_node}})
         )
       )
-      $(call Redirect-Sticky,${$(1).sticky_path})
+      $(call Redirect-Sticky,${${PROJECT_STICKY_DIR}.path})
       $(call Use-Segment,${$(1).seg_f})
       $(eval active_project := $(1))
     )

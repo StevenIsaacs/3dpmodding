@@ -216,26 +216,22 @@ define ${.TestUN}
     $(call Mark-Step,Verifying project required variables.)
     $(call Expect-Error,\
               Undefined variables:${_project}.URL ${_project}.BRANCH)
-    $(call declare-project,${_project},${PROJECTS_DIR})
+    $(call declare-project,${_project})
     $(call Verify-Error)
+
+    $(call Mark-Step,Verifying project is not declared.)
+    $(call verify-project-attributes,${_project})
+    $(call verify-project-nodes,${_project})
 
     $(eval ${_project}.URL := ${LOCAL_REPO})
     $(eval ${_project}.BRANCH := main)
-
-    $(call Mark-Step,Verifying project is not declared.)
-    $(call Expect-Error,\
-      Parent node foobar for project ${_project} is not declared.)
-    $(call declare-project,${_project},foobar)
-    $(call Verify-Error)
-    $(call verify-project-attributes,${_project})
-    $(call verify-project-nodes,${_project})
 
     $(call Mark-Step,Verifying project node already declared.)
     $(call declare-child-node,${_project},${PROJECTS_DIR})
 
     $(call Expect-Error,\
       A node using project name ${_project} has already been declared.)
-    $(call declare-project,${_project},${PROJECTS_DIR})
+    $(call declare-project,${_project})
     $(call Verify-Error)
     $(call verify-project-attributes,${_project})
     $(call verify-project-nodes,${_project})
@@ -244,7 +240,7 @@ define ${.TestUN}
 
     $(call Expect-Error,\
       A repo using project name ${_project} has already been declared.)
-    $(call declare-project,${_project},${PROJECTS_DIR})
+    $(call declare-project,${_project})
     $(call Verify-Error)
     $(call verify-project-attributes,${_project})
     $(call verify-project-nodes,${_project})
@@ -254,7 +250,7 @@ define ${.TestUN}
 
     $(call Mark-Step,Verifying project can be declared.)
     $(call Expect-No-Error)
-    $(call declare-project,${_project},${PROJECTS_DIR})
+    $(call declare-project,${_project})
     $(call Verify-No-Error)
 
     $(call verify-project-attributes,${_project},defined)
@@ -262,7 +258,7 @@ define ${.TestUN}
 
     $(call Expect-No-Error)
     $(call Expect-Message,Using existing declaration for project ${_project}.)
-    $(call declare-project,${_project},${PROJECTS_DIR})
+    $(call declare-project,${_project})
     $(call Verify-Message)
     $(call Verify-No-Error)
 
@@ -279,27 +275,16 @@ define ${.TestUN}
 
     $(call Mark-Step,Verifying can redeclare the same project.)
     $(call Expect-No-Error)
-    $(call declare-project,${_project},${PROJECTS_DIR})
+    $(call declare-project,${_project})
     $(call Verify-No-Error)
 
-    $(call Test-Info,Undeclaring project nodes.)
-    $(foreach _node,${${_project}.children},
-      $(call undeclare-child-node,${_node})
-    )
-    $(call undeclare-child-node,${_project})
-
     $(call Mark-Step,Verifying can't undeclare a broken project.)
-    $(call Expect-Error,Project ${_project} does not have a declared node.)
-    $(call undeclare-project,${_project})
-    $(call Verify-Error)
-
     $(call undeclare-repo,${_project})
 
     $(call Expect-Error,Project ${_project} does not have a declared repo.)
     $(call undeclare-project,${_project})
     $(call Verify-Error)
 
-    $(call declare-child-node,${_project},${PROJECTS_DIR})
     $(call declare-repo,${_project})
 
     $(call Expect-No-Error)
