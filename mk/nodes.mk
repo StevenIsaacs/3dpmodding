@@ -45,19 +45,19 @@ In ModFW the following terms are used to define nodes:
   descendant: A node's children and children of children and so on.
 
   Here's an example tree:
-  root
+  >-root
     | <root>.mk
     | (files)
-    --> child <-------------------
+    >- child <--------------------
       | <child>.mk                |
       | (files)                   |
-      --> child <------           |
+      >- child <-------           |
         | <child>.mk   |          | siblings
         | (files)      | siblings |
-      --> child <------           |
+      >- child <-------           |
         | <child>.mk              |
         | (files)                 |
-    --> child <-------------------
+    >- child <--------------------
       | <child>.mk
       | (files)
 
@@ -423,6 +423,38 @@ define ${_macro}
 endef
 
 $(call Add-Help-Section,node-mk-remove,Macros for creating and removing nodes.)
+
+_macro := remap-node
+define _help
+${_macro}
+  Map a node onto a different directory structure. This changes the node
+  path and the name of the node directory.
+
+  This changes the attributes <node>.path and <node>.dir. The attribute
+  <node>.dir is set to equal the last directory in the path.
+
+  WARNING: A trailing slash in the path (/) will cause unpredictable results.
+
+  NOTE: This MUST be called after declaring the node and before using mk-node
+  to create the node.
+
+  Parameters:
+    1 = The node name.
+    2 = The new path.
+
+endef
+help-${_macro} := $(call _help)
+$(call Add-Help,${_macro})
+define ${_macro}
+  $(call Enter-Macro,$(0),node=$(1) path=$(2))
+  $(if $(call node-is-declared,$(1)),
+    $(eval $(1).path := $(abspath $(2)))
+    $(eval $(1).dir := $(notdir $(2)))
+  ,
+    $(call Signal-Error,Node $(1) has not been declared.)
+  )
+  $(call Exit-Macro)
+endef
 
 _macro := mk-node
 define _help
