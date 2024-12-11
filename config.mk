@@ -306,7 +306,7 @@ ${_h}
   This is the structure of the declared nodes. Typically, the resulting
   directory structure matches the node structure but it is possible to
   change the location of a particular node. See help-nodes for more
-  information. A typical case for this is to use the variable PROJECTS_PATH
+  information. A typical case for this is to use the variable PROJECTS_DIR
   to change the location where projects are installed and built.
 
   Legend:
