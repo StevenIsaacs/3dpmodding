@@ -267,7 +267,7 @@ $(call Add-Help,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0),node=$(1) path=$(2))
   $(if $(call node-is-declared($(1))),
-    $(call Attention,Node $(1) has already been declared.)
+    $(call Attention,Using existing declaration for root node $(1).)
   ,
     $(if $(2),
       $(call Info,Declaring root node:$(1))
@@ -330,7 +330,7 @@ $(call Add-Help,${_macro})
 define ${_macro}
   $(call Enter-Macro,$(0),node=$(1) parent=$(2) dir=$(3))
   $(if $(call node-is-declared,$(1)),
-    $(call Attention,Node $(1) has already been declared.)
+    $(call Attention,Using existing declaration for child node $(1).)
   ,
     $(if $(2),
       $(if $(call node-is-declared,$(2)),
