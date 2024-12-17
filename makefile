@@ -325,7 +325,6 @@ Command line goals:
                   help for more information.
 
   Help and debug:
-  help            Display this help message (default).
   show-project_deps
                   Display the list of goals a project is dependent upon.
   show-<variable> This is a special goal which can be used to display
